@@ -181,6 +181,108 @@
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Ancora nessun allenamento" } }
       }
     },
+    "import.add" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Add Plan" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Aggiungi scheda" } }
+      }
+    },
+    "import.error.exercise %lld" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Exercise %lld in this link isn't written correctly." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "L'esercizio %lld nel link non è scritto correttamente." } }
+      }
+    },
+    "import.error.name" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This link has no plan name." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Questo link non ha il nome della scheda." } }
+      }
+    },
+    "import.error.nameTooLong" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The plan name in this link is too long." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Il nome della scheda nel link è troppo lungo." } }
+      }
+    },
+    "import.error.noExercises" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This link has no exercises." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Questo link non contiene esercizi." } }
+      }
+    },
+    "import.error.notLink" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This isn't an Ammutta plan link." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Questo non è il link di una scheda Ammutta." } }
+      }
+    },
+    "import.error.tooLong" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This link is too long." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Questo link è troppo lungo." } }
+      }
+    },
+    "import.error.tooManyExercises" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This link has too many exercises." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Questo link contiene troppi esercizi." } }
+      }
+    },
+    "import.error.unit" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The weight unit in this link must be kg or lb." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "L'unità di peso nel link deve essere kg o lb." } }
+      }
+    },
+    "import.error.version" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This link needs a newer version of Ammutta." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Questo link richiede una versione più recente di Ammutta." } }
+      }
+    },
+    "import.newBadge" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "New" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Nuovo" } }
+      }
+    },
+    "import.paste" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Paste" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Incolla" } }
+      }
+    },
+    "import.placeholder" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Plan link" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Link della scheda" } }
+      }
+    },
+    "import.preview" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Preview" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Anteprima" } }
+      }
+    },
+    "import.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Import Plan" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Importa scheda" } }
+      }
+    },
+    "plan.shareLink" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Share Link" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Condividi link" } }
+      }
+    },
+    "plans.importLink" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Import Plan Link" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Importa link scheda" } }
+      }
+    },
     "kind.duration" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Time" } },

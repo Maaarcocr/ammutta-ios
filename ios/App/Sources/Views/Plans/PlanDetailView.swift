@@ -61,6 +61,13 @@ struct PlanDetailView: View {
                 Button(L10n.edit) { editing = plan }
             }
             ToolbarItem(placement: .secondaryAction) {
+                if let url = model.shareURL(for: plan) {
+                    ShareLink(item: url) {
+                        Label(L10n.planShareLink, systemImage: "square.and.arrow.up")
+                    }
+                }
+            }
+            ToolbarItem(placement: .secondaryAction) {
                 Button {
                     model.duplicate(plan)
                 } label: {

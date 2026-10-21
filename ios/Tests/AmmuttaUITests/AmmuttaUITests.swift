@@ -96,6 +96,26 @@ final class AmmuttaUITests: XCTestCase {
         XCTAssertTrue(element(app, "timer.skip").waitForExistence(timeout: 30))
     }
 
+    @MainActor
+    func testOpeningAPlanLinkShowsAPreviewAndAddsThePlan() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-ui-testing", "-weightUnit", "kg"]
+        app.launch()
+
+        let link = "ammutta://plan?v=1&name=Link%20Day&e=barbell-bench-press:3x5@80:180" +
+            "&e=Band%20Pull-Apart:3x15:60&e=plank:2x45s:60"
+        app.open(try XCTUnwrap(URL(string: link)))
+
+        let confirm = element(app, "import.confirm")
+        XCTAssertTrue(confirm.waitForExistence(timeout: 30))
+        capture("13-plan-link-preview")
+        confirm.tap()
+
+        XCTAssertTrue(element(app, "plans.row").waitForExistence(timeout: 30))
+        capture("14-plan-link-imported")
+    }
+
     /// Every element the tests tap is a button (list rows with NavigationLink included).
     /// Querying buttons only is much cheaper than `descendants(matching: .any)`, which
     /// timed out on slow CI simulators.

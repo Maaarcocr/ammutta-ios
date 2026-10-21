@@ -28,7 +28,7 @@ Ammutta ("push!" in Sicilian) lets you build workout plans, run them set by set 
 - **Bluetooth heart rate:** any standard BLE heart-rate sensor (chest straps, armbands) and **Google Fitbit Air** with "Share heart rate" turned on.
 - **History and progress:** every set with timestamps, last performance and personal bests per exercise.
 - **Apple Health (optional):** completed workouts and heart rate written on device, kept in sync when you edit or delete.
-- **Plan sharing:** links, QR codes, files and CSV. They carry plan structure only, never personal data.
+- **Plan links:** a whole plan in one readable `ammutta://plan?…` link that works offline. Easy enough for an AI assistant to write: see **[docs/plan-links.md](docs/plan-links.md)**. Links carry plan structure only, never personal data.
 - **Your data, your files:** full export and import, and delete everything at any time.
 
 The full behavior is specified in **[docs/product-spec.md](docs/product-spec.md)**.

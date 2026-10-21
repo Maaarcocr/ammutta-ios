@@ -160,7 +160,7 @@ struct WorkoutEngine {
 | --- | --- |
 | `ExerciseCatalog` | Loads and validates `ExerciseCatalog.json`; key → kind, metadata |
 | `ProgressCalculator` | Last performance, personal bests and volume from completed workouts |
-| `PlanCodec` | `Plan` ↔ versioned share payload (JSON → compressed → base64url link; same JSON for `.ammuttaplan` files) with size and range limits |
+| `PlanLink` | `Plan` ↔ readable `ammutta://plan?v=1&…` link ([`plan-links.md`](plan-links.md)) with size and range limits. Parses to a draft with unresolved names; the app resolves them against the catalog and custom exercises |
 | `PlanCSV` | Template, tolerant parser (`,`/`;` delimiters and both decimal separators), and exporter |
 | `DataArchive` | Full versioned JSON export/import of all user data |
 | `HeartRateMeasurementParser` | Bytes of characteristic `0x2A37` → `HeartRateSample?` per the spec rules |
@@ -321,6 +321,6 @@ The first prototype implements the core loop and deliberately simplifies some of
 | Timers | In-app only: deadlines in the engine, a task that wakes at the next deadline, a haptic on completion | AlarmKit + notification fallback, effects diffing (§4.3, §6) |
 | Catalog | 32 built-in exercises as Swift data in `ExerciseCatalog.swift` | ~80 exercises in `ExerciseCatalog.json` (§3) |
 | Formatting | `Format` in the app target, tested on iOS | `Formatting` in the core (§4.4) |
-| Not yet built | Live Activity, heart rate, Apple Health, sharing/import, export, personal bests, archiving exercises | §7–§9, product spec §11–§12 |
+| Not yet built | Live Activity, heart rate, Apple Health, QR/file/CSV sharing (plan links are built), export, personal bests, archiving exercises | §7–§9, product spec §11–§12 |
 
 The app icon is rendered from `branding/ammutta-logo.svg`, a simplified vector redraw of the original logo (product spec §17.3).

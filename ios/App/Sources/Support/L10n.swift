@@ -1,3 +1,4 @@
+import AmmuttaCore
 import SwiftUI
 
 /// Every user-facing string in the app. Keys live in Localizable.xcstrings (English and
@@ -37,6 +38,29 @@ enum L10n {
     static var planDeleteTitle: LocalizedStringKey { "plan.delete.title" }
     static var planMissing: LocalizedStringKey { "plan.missing" }
     static func restValue(_ duration: String) -> String { String(localized: "plan.restValue \(duration)") }
+    static var planShareLink: LocalizedStringKey { "plan.shareLink" }
+
+    // MARK: Plan links
+    static var plansImportLink: LocalizedStringKey { "plans.importLink" }
+    static var importTitle: LocalizedStringKey { "import.title" }
+    static var importPlaceholder: LocalizedStringKey { "import.placeholder" }
+    static var importPaste: LocalizedStringKey { "import.paste" }
+    static var importPreview: LocalizedStringKey { "import.preview" }
+    static var importAdd: LocalizedStringKey { "import.add" }
+    static var importNewBadge: LocalizedStringKey { "import.newBadge" }
+    static func importError(_ error: PlanLink.ParseError) -> String {
+        switch error {
+        case .notAPlanLink: String(localized: "import.error.notLink")
+        case .tooLong: String(localized: "import.error.tooLong")
+        case .unsupportedVersion: String(localized: "import.error.version")
+        case .invalidUnit: String(localized: "import.error.unit")
+        case .missingName: String(localized: "import.error.name")
+        case .nameTooLong: String(localized: "import.error.nameTooLong")
+        case .noExercises: String(localized: "import.error.noExercises")
+        case .tooManyExercises: String(localized: "import.error.tooManyExercises")
+        case .invalidExercise(let position): String(localized: "import.error.exercise \(position)")
+        }
+    }
 
     // MARK: Plan editor
     static var planEditorNewTitle: LocalizedStringKey { "planEditor.newTitle" }

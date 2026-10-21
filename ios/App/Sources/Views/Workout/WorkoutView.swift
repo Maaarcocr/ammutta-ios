@@ -10,10 +10,17 @@ struct WorkoutView: View {
     @State private var toggled: Set<UUID> = []
 
     var body: some View {
-        if session.isFinished {
-            WorkoutSummaryView(workout: session.workout)
-        } else {
-            active
+        @Bindable var model = model
+        Group {
+            if session.isFinished {
+                WorkoutSummaryView(workout: session.workout)
+            } else {
+                active
+            }
+        }
+        .sheet(item: $model.importRequest) { request in
+            PlanImportSheet(request: request)
+                .environment(model)
         }
     }
 

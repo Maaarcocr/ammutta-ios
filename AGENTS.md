@@ -11,6 +11,7 @@ Status: first prototype (0.1): plans, guided workouts with in-app timers, histor
 - `docs/product-spec.md`: what the app does. Read it before any product, UX, copy or flow change, and update it in the same change when behavior changes intentionally.
 - `docs/architecture.md`: how the app is built. Keep it current when modules, data model, persistence, services or testing strategy change.
 - `docs/testflight.md`: release pipeline and Apple/GitHub setup.
+- `docs/plan-links.md`: the `ammutta://plan` link format. Keep it in sync with `PlanLink.swift` and the built-in exercise catalog (new built-ins go in its table and AI prompt).
 - `AGENTS.md` (this file): how agents work here. Keep it current when commands, layout or conventions change.
 
 There is no design system yet. Use stock SwiftUI components and semantic styles. Do not invent a visual language or carry over the Android "Neon" design.

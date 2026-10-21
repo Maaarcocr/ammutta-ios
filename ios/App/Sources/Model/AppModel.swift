@@ -49,6 +49,9 @@ final class AppModel {
     /// The active workout, shown full screen above the tabs while it exists.
     var session: WorkoutSession?
     var showingError = false
+    var selectedTab: AppTab = .plans
+    /// A plan link being previewed (opened from a link, or pasted).
+    var importRequest: ImportRequest?
 
     private var storedWeightUnit: WeightUnit
     private var storedDefaultRest: Int

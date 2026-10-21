@@ -72,6 +72,57 @@ struct AppModelTests {
         #expect(reloaded.defaultRestSeconds == 90)
     }
 
+    @Test func planLinksResolveNamesAndSaveOnlyOnConfirm() throws {
+        let model = AppModel(store: try AmmuttaStore(inMemory: true), defaults: try makeDefaults())
+        model.load()
+        // English names match built-ins in any app language; unknown names become custom exercises.
+        let link = "ammutta://plan?v=1&name=Link%20Day&e=Bench%20Press:3x5@80:180&e=Band%20Pull-Apart:3x15&e=plank:2x45s:60"
+        guard case .success(let preview) = model.preparePlanImport(from: link) else {
+            Issue.record("Link did not parse")
+            return
+        }
+        #expect(preview.plan.name == "Link Day")
+        #expect(preview.plan.exercises.map(\.exercise).first == .builtIn(key: "barbell-bench-press"))
+        #expect(preview.newExercises.map(\.name) == ["Band Pull-Apart"])
+        #expect(preview.plan.exercises[1].restSeconds == model.defaultRestSeconds)
+        #expect(model.plans.isEmpty)
+        #expect(model.customExercises.isEmpty)
+
+        model.confirmImport(preview)
+        #expect(model.plans.count == 1)
+        #expect(model.customExercises.map(\.name) == ["Band Pull-Apart"])
+        #expect(model.selectedTab == .plans)
+
+        // A second import reuses the custom exercise instead of duplicating it.
+        guard case .success(let again) = model.preparePlanImport(from: link) else {
+            Issue.record("Link did not parse")
+            return
+        }
+        #expect(again.newExercises.isEmpty)
+    }
+
+    @Test func sharedLinksImportBackToTheSamePlan() throws {
+        let model = AppModel(store: try AmmuttaStore(inMemory: true), defaults: try makeDefaults())
+        let plan = legDay()
+        let url = try #require(model.shareURL(for: plan))
+        guard case .success(let preview) = model.preparePlanImport(from: url.absoluteString) else {
+            Issue.record("Shared link did not parse")
+            return
+        }
+        #expect(preview.plan.exercises.map(\.exercise) == plan.exercises.map(\.exercise))
+        #expect(preview.plan.exercises.map(\.sets) == plan.exercises.map(\.sets))
+    }
+
+    @Test func badLinksReportAnError() throws {
+        let model = AppModel(store: try AmmuttaStore(inMemory: true), defaults: try makeDefaults())
+        guard case .failure(let error) = model.preparePlanImport(from: "ammutta://plan?v=1&name=X&e=plank:10") else {
+            Issue.record("Bad link was accepted")
+            return
+        }
+        #expect(error == .invalidExercise(1))
+        #expect(!L10n.importError(error).isEmpty)
+    }
+
     @Test func customNamesCannotDuplicateBuiltInsOfTheSameKind() throws {
         let model = AppModel(store: try AmmuttaStore(inMemory: true), defaults: try makeDefaults())
         let plank = ExerciseText.name("plank")

@@ -262,17 +262,20 @@ Rest timers and duration-set countdowns must alert the user reliably when the ph
 ## 11. Sharing and importing plans
 
 - **Share a plan** as:
-  - an `ammutta://plan` **link** (compact JSON, compressed and base64url-encoded);
+  - an `ammutta://plan` **link** in a readable, self-contained text format that people and AI assistants can write by hand. No server is involved. The format is specified in [`plan-links.md`](plan-links.md);
   - a **QR code** of that link, shown full-screen for another phone's camera;
   - a `.ammuttaplan` **file** via the share sheet;
   - a **CSV** export.
+
+  *Built so far:* links (share, tap to open, paste). QR codes, files and CSV are not built yet.
 - Shared content contains **plan structure only**: name, exercises (built-in key, or custom name and kind), set targets and rest. **Never history, heart rate, Health data or any personal data.**
 - **Import** by:
   - opening a link (scanned with the Camera app or tapped);
   - opening a `.ammuttaplan` or `.csv` file;
   - pasting a link.
-- Import shows a **preview** with the plan, the exercises that will be matched, and the custom exercises that will be created. Nothing is saved until the user confirms. The imported plan then opens in the editor as a new plan.
-- Exercise matching on import: built-in keys map to the catalog. Custom exercises match existing ones by name and kind (case- and diacritic-insensitive), otherwise they are created.
+- Import shows a **preview** with the plan, the exercises that will be matched, and the custom exercises that will be created (marked "New"). Nothing is saved until the user confirms with **Add Plan**; the plan then appears in Plans and can be edited like any other.
+- Exercise matching on import: built-in keys map to the catalog. A name matches a built-in exercise of the same kind by its English or current-language name, then an existing custom exercise by name and kind (case- and diacritic-insensitive); otherwise a custom exercise is created.
+- Sets in a link carry no rest when the author leaves it out; the user's default rest is used.
 - **Validation**: strict limits on decoded size, set counts and value ranges, with clear localized errors. Malformed input never crashes or partially imports.
 - **CSV**: a documented template, available from the import screen to share or save, with one row per set. The parser tolerates `,` and `;` delimiters and both decimal separators, because Italian spreadsheet exports use `;` and `,`.
 
@@ -322,6 +325,6 @@ Several of these (Watch app, supersets, charts) are reasonable v1.x candidates. 
 1. **Device backups.** By default iOS includes app data in the user's own iCloud or computer device backups. Excluding it (as the Android app does) means history is lost on a phone switch unless the user exported it.
    - *Recommendation:* allow standard device backups, since they are user-controlled and not an Ammutta service, and keep the manual export.
 2. **Plan-link compatibility with Ammutta for Android.** Sharing plans between iOS and Android users would need one wire format.
-   - *Recommendation:* define a single documented `plan v1` format that both apps implement, keyed by built-in exercise keys. It would be designed fresh, not inherited.
+   - *Status:* `plan v1` is defined in [`plan-links.md`](plan-links.md) and implemented on iOS. Android would need to implement the same format.
 3. **App icon master.** *Resolved:* `branding/ammutta-logo.svg` is a vector redraw of `ammutta-logo-512.png`; the 1024×1024 opaque app icon is rendered from it.
 4. **License** for this public repository. Without one, the code is all rights reserved by default.
