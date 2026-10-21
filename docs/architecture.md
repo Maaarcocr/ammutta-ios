@@ -323,4 +323,4 @@ The first prototype implements the core loop and deliberately simplifies some of
 | Formatting | `Format` in the app target, tested on iOS | `Formatting` in the core (§4.4) |
 | Not yet built | Live Activity, heart rate, Apple Health, sharing/import, export, personal bests, archiving exercises | §7–§9, product spec §11–§12 |
 
-The app icon is a placeholder upscaled from the 512 px logo (product spec §17.3).
+The app icon is rendered from `branding/ammutta-logo.svg`, a simplified vector redraw of the original logo (product spec §17.3).
