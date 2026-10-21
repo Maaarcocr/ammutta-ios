@@ -1,6 +1,18 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "activity.allDone" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "All sets done" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Tutte le serie completate" } }
+      }
+    },
+    "activity.setOf %lld %lld" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Set %1$lld of %2$lld" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Serie %1$lld di %2$lld" } }
+      }
+    },
     "alert.rest.body" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Time for the next set." } },

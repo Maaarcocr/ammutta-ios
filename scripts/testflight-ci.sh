@@ -70,7 +70,8 @@ KEYCHAIN_PASSWORD="$(openssl rand -hex 32)"
 STAGE='decoding owner-supplied signing files'
 python3 "$HELPER" decode APPLE_DISTRIBUTION_P12_BASE64 "$WORK/distribution.p12"
 python3 "$HELPER" decode APPLE_APP_STORE_PROFILE_BASE64 "$WORK/profile.mobileprovision"
-unset APPLE_DISTRIBUTION_P12_BASE64 APPLE_DISTRIBUTION_P12_PASSWORD APPLE_APP_STORE_PROFILE_BASE64
+python3 "$HELPER" decode APPLE_APP_STORE_WIDGETS_PROFILE_BASE64 "$WORK/widgets.mobileprovision"
+unset APPLE_DISTRIBUTION_P12_BASE64 APPLE_DISTRIBUTION_P12_PASSWORD APPLE_APP_STORE_PROFILE_BASE64 APPLE_APP_STORE_WIDGETS_PROFILE_BASE64
 if [[ "$ACTION" == upload ]]; then
   mkdir "$WORK/private_keys"
   python3 "$HELPER" decode ASC_PRIVATE_KEY_BASE64 "$WORK/private_keys/AuthKey_$ASC_KEY_ID.p8"
@@ -81,6 +82,13 @@ unset ASC_PRIVATE_KEY_BASE64
 STAGE='validating the App Store provisioning profile'
 security cms -D -i "$WORK/profile.mobileprovision" > "$WORK/profile.plist" 2>> "$LOG"
 PROFILE_UUID="$(python3 "$HELPER" profile "$WORK/profile.plist")"
+
+STAGE='validating the widget extension provisioning profile'
+# The Live Activity extension has its own App ID and App Store profile.
+WIDGETS_BUNDLE_ID="$AMMUTTA_BUNDLE_ID.Widgets"
+security cms -D -i "$WORK/widgets.mobileprovision" > "$WORK/widgets.plist" 2>> "$LOG"
+WIDGETS_PROFILE_UUID="$(AMMUTTA_BUNDLE_ID="$WIDGETS_BUNDLE_ID" python3 "$HELPER" profile "$WORK/widgets.plist")"
+[[ "$WIDGETS_PROFILE_UUID" != "$PROFILE_UUID" ]] || fail 'The app and widget extension need different profiles.'
 
 STAGE='preserving the original keychain search list'
 security list-keychains -d user > "$WORK/keychains.txt" 2>> "$LOG"
@@ -98,8 +106,11 @@ quiet security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KE
 unset KEYCHAIN_PASSWORD
 security find-identity -v -p codesigning "$KEYCHAIN" > "$WORK/identities.txt" 2>> "$LOG"
 IDENTITY="$(python3 "$HELPER" identity "$WORK/profile.plist" "$WORK/identities.txt")"
+[[ "$(AMMUTTA_BUNDLE_ID="$WIDGETS_BUNDLE_ID" python3 "$HELPER" identity "$WORK/widgets.plist" "$WORK/identities.txt")" == "$IDENTITY" ]] ||
+  fail 'The widget extension profile must include the same distribution certificate as the app profile.'
 quiet security list-keychains -d user -s "$KEYCHAIN" "${ORIGINAL_KEYCHAINS[@]}"
-python3 "$HELPER" install-profile "$WORK" "$PROFILE_UUID"
+python3 "$HELPER" install-profile "$WORK" "$PROFILE_UUID" profile.mobileprovision
+python3 "$HELPER" install-profile "$WORK" "$WIDGETS_PROFILE_UUID" widgets.mobileprovision
 
 STAGE='preparing app-target-only signing settings'
 mkdir -p "$(dirname "$SIGNING_XCCONFIG")"
@@ -108,6 +119,7 @@ printf '%s\n' \
   "AMMUTTA_DEVELOPMENT_TEAM = $AMMUTTA_TEAM_ID" \
   "AMMUTTA_APP_BUNDLE_ID = $AMMUTTA_BUNDLE_ID" \
   "AMMUTTA_PROVISIONING_PROFILE = $PROFILE_UUID" \
+  "AMMUTTA_WIDGETS_PROVISIONING_PROFILE = $WIDGETS_PROFILE_UUID" \
   "AMMUTTA_CODE_SIGN_IDENTITY = $IDENTITY" \
   "AMMUTTA_OTHER_CODE_SIGN_FLAGS = --keychain $KEYCHAIN" \
   "CURRENT_PROJECT_VERSION = $BUILD_NUMBER" > "$SIGNING_XCCONFIG"
@@ -129,10 +141,20 @@ else
 fi
 
 verify_app() {
-  local app="$1" label="$2" actual_profile_uuid
+  local app="$1" label="$2"
   # Only these hand-written substeps reach the job log; Apple tool output stays private.
   STAGE="verifying $label: Release bundle contents"
   quiet python3 "$ROOT/scripts/verify-ios-bundle.py" "$app"
+  verify_signed_bundle "$app" "$label" "$PROFILE_UUID" "$AMMUTTA_BUNDLE_ID"
+  local extension="$app/PlugIns/AmmuttaWidgets.appex"
+  STAGE="verifying $label: embedded widget extension"
+  [[ -d "$extension" ]] || fail 'The widget extension is missing from the app.'
+  verify_signed_bundle "$extension" "$label-widgets" "$WIDGETS_PROFILE_UUID" "$WIDGETS_BUNDLE_ID"
+}
+
+# Signature, entitlements, certificate and embedded profile of one app or extension bundle.
+verify_signed_bundle() {
+  local app="$1" label="$2" expected_profile="$3" bundle_id="$4" actual_profile_uuid
   STAGE="verifying $label: strict code signature"
   quiet codesign --verify --deep --strict "$app"
   STAGE="verifying $label: extracting XML entitlements"
@@ -146,18 +168,19 @@ verify_app() {
   STAGE="verifying $label: decoding the embedded provisioning profile"
   security cms -D -i "$app/embedded.mobileprovision" > "$WORK/$label-profile.plist" 2>> "$LOG"
   STAGE="verifying $label: validating the embedded provisioning profile"
-  actual_profile_uuid="$(python3 "$HELPER" profile "$WORK/$label-profile.plist")"
-  [[ "$actual_profile_uuid" == "$PROFILE_UUID" ]] || fail 'Actual embedded profile differs.'
+  actual_profile_uuid="$(AMMUTTA_BUNDLE_ID="$bundle_id" python3 "$HELPER" profile "$WORK/$label-profile.plist")"
+  [[ "$actual_profile_uuid" == "$expected_profile" ]] || fail 'Actual embedded profile differs.'
   STAGE="verifying $label: matching signed metadata, entitlements and certificate"
-  python3 "$HELPER" verify-app "$app" "$WORK/$label-profile.plist" "$WORK/$label-entitlements.plist" \
-    "$WORK/$label-signature.txt" "$BUILD_NUMBER" "$IDENTITY" "$WORK/${label}-cert0"
+  AMMUTTA_BUNDLE_ID="$bundle_id" python3 "$HELPER" verify-app "$app" "$WORK/$label-profile.plist" \
+    "$WORK/$label-entitlements.plist" "$WORK/$label-signature.txt" "$BUILD_NUMBER" "$IDENTITY" "$WORK/${label}-cert0"
   printf 'Signed %s bundle verification passed.\n' "$label"
 }
 STAGE='verifying the signed archive bundle'
 verify_app "$ARCHIVE/Products/Applications/Ammutta.app" archive
 
 STAGE='exporting a manually signed App Store Connect IPA'
-python3 "$HELPER" export-options "$WORK/profile.plist" "$IDENTITY" "$WORK/ExportOptions.plist"
+python3 "$HELPER" export-options "$WORK/profile.plist" "$IDENTITY" "$WORK/ExportOptions.plist" \
+  "$WIDGETS_BUNDLE_ID" "$WIDGETS_PROFILE_UUID"
 quiet xcodebuild -exportArchive -archivePath "$ARCHIVE" -exportPath "$EXPORT" -exportOptionsPlist "$WORK/ExportOptions.plist"
 shopt -s nullglob
 IPAS=("$EXPORT"/*.ipa)

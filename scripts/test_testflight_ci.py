@@ -31,6 +31,7 @@ BASH = shutil.which("bash")
 TEAM = "ABCDEFGHIJ"
 BUNDLE = "com.example.ammutta"
 UUID = "12345678-1234-1234-1234-123456789ABC"
+WIDGETS_UUID = "87654321-4321-4321-4321-CBA987654321"
 CERTIFICATE = b"FAKE-CERTIFICATE-NOT-DER-NO-PRIVATE-KEY"
 FINGERPRINT = hashlib.sha1(CERTIFICATE).hexdigest().upper()
 TOOL_OUTPUT = "PRIVATE-TOOL-DIAGNOSTIC-MUST-NOT-REACH-OUTPUT"
@@ -43,9 +44,9 @@ signing = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(signing)
 
 
-def profile_fixture():
+def profile_fixture(bundle=BUNDLE, uuid=UUID):
     return {
-        "UUID": UUID,
+        "UUID": uuid,
         "Name": "Synthetic App Store profile",
         "ExpirationDate": dt.datetime.now(dt.timezone.utc).replace(tzinfo=None) + dt.timedelta(days=30),
         "TeamIdentifier": [TEAM],
@@ -53,7 +54,7 @@ def profile_fixture():
         "Platform": ["iOS"],
         "DeveloperCertificates": [CERTIFICATE],
         "Entitlements": {
-            "application-identifier": f"{TEAM}.{BUNDLE}",
+            "application-identifier": f"{TEAM}.{bundle}",
             "com.apple.developer.team-identifier": TEAM,
             "get-task-allow": False,
             "beta-reports-active": True,
@@ -72,6 +73,8 @@ with (root / "calls.jsonl").open("a") as output:
     output.write(json.dumps([name, *args]) + "\n")
 profile_bytes = (root / "fixture.plist").read_bytes()
 profile = plistlib.loads(profile_bytes)
+widgets_bytes = (root / "widgets-fixture.plist").read_bytes()
+widgets_profile = plistlib.loads(widgets_bytes)
 certificate = profile["DeveloperCertificates"][0]
 fingerprint = hashlib.sha1(certificate).hexdigest().upper()
 marker = "PRIVATE-TOOL-DIAGNOSTIC-MUST-NOT-REACH-OUTPUT"
@@ -104,6 +107,15 @@ def make_app(app):
         (app / (language + ".lproj")).mkdir()
         (app / (language + ".lproj") / "Localizable.strings").write_bytes(b"synthetic strings")
     (app / "embedded.mobileprovision").write_bytes(profile_bytes)
+    extension = app / "PlugIns" / "AmmuttaWidgets.appex"
+    extension.mkdir(parents=True)
+    (extension / "Info.plist").write_bytes(plistlib.dumps({
+        "CFBundleIdentifier": os.environ["AMMUTTA_BUNDLE_ID"] + ".Widgets",
+        "CFBundleVersion": os.environ["FAKE_BUILD_NUMBER"], "CFBundleShortVersionString": "0.1.0",
+        "CFBundleSupportedPlatforms": ["iPhoneOS"],
+    }))
+    (extension / "AmmuttaWidgets").write_bytes(b"synthetic extension executable")
+    (extension / "embedded.mobileprovision").write_bytes(widgets_bytes)
 
 if name == "uname":
     print("Darwin")
@@ -169,7 +181,8 @@ elif name == "codesign":
     if "--entitlements" in args:
         # Current codesign prints DER unless asked for XML.
         assert value("--entitlements") == "-" and "--xml" in args
-        sys.stdout.buffer.write(plistlib.dumps(profile["Entitlements"]))
+        signed = widgets_profile if args[-1].endswith(".appex") else profile
+        sys.stdout.buffer.write(plistlib.dumps(signed["Entitlements"]))
     elif "--verbose=4" in args:
         print("TeamIdentifier=" + os.environ["AMMUTTA_TEAM_ID"])
     elif extract:
@@ -234,6 +247,8 @@ class OfflineRunner:
         (self.root / "keychains.json").write_text(json.dumps(self.original_keychains))
         profile = plistlib.dumps(profile_fixture())
         (self.root / "fixture.plist").write_bytes(profile)
+        widgets = plistlib.dumps(profile_fixture(bundle=BUNDLE + ".Widgets", uuid=WIDGETS_UUID))
+        (self.root / "widgets-fixture.plist").write_bytes(widgets)
         for name in ("uname", "git", "openssl", "security", "xcodegen", "xcodebuild", "codesign", "ditto", "xcrun"):
             target = self.bin / name
             target.write_text(f"#!{sys.executable}\n" + FAKE_TOOL)
@@ -254,6 +269,7 @@ class OfflineRunner:
             "APPLE_DISTRIBUTION_P12_BASE64": base64.b64encode(b"FAKE-P12-NOT-A-CERTIFICATE").decode(),
             "APPLE_DISTRIBUTION_P12_PASSWORD": "FAKE-P12-PASSWORD-MUST-STAY-PRIVATE",
             "APPLE_APP_STORE_PROFILE_BASE64": base64.b64encode(profile).decode(),
+            "APPLE_APP_STORE_WIDGETS_PROFILE_BASE64": base64.b64encode(widgets).decode(),
         }
 
     def add_upload_secrets(self):
@@ -410,6 +426,17 @@ class ProfileSafetyTests(unittest.TestCase):
         self.assertFalse(options["manageAppVersionAndBuildNumber"])
         self.assertFalse(options["uploadSymbols"])
 
+    def test_export_options_map_extension_profiles(self):
+        self.validate(profile_fixture())
+        destination = self.path.with_name("ExportOptions.plist")
+        signing.export_options(self.path, FINGERPRINT, destination, BUNDLE + ".Widgets", WIDGETS_UUID)
+        options = plistlib.loads(destination.read_bytes())
+        self.assertEqual(options["provisioningProfiles"], {BUNDLE: UUID, BUNDLE + ".Widgets": WIDGETS_UUID})
+        for embedded in (("com.example.other.Widgets", WIDGETS_UUID), (BUNDLE + ".Widgets", "../outside"),
+                         (BUNDLE + ".Widgets",)):
+            with self.subTest(embedded=embedded), self.assertRaises(signing.ValidationError):
+                signing.export_options(self.path, FINGERPRINT, destination.with_name("other.plist"), *embedded)
+
     def test_base64_decode_is_strict_and_does_not_overwrite(self):
         destination = self.path.with_name("decoded")
         for value in ("%%%invalid%%%", "", " \n "):
@@ -552,7 +579,8 @@ class SigningOrchestrationTests(unittest.TestCase):
         self.assert_clean(runner)
 
     def test_missing_configuration_and_invalid_input_fail_before_signing(self):
-        cases = [(key, "") for key in (*CONFIG, "APPLE_DISTRIBUTION_P12_BASE64", "APPLE_DISTRIBUTION_P12_PASSWORD", "APPLE_APP_STORE_PROFILE_BASE64")]
+        cases = [(key, "") for key in (*CONFIG, "APPLE_DISTRIBUTION_P12_BASE64", "APPLE_DISTRIBUTION_P12_PASSWORD", "APPLE_APP_STORE_PROFILE_BASE64",
+                                                    "APPLE_APP_STORE_WIDGETS_PROFILE_BASE64")]
         cases += [("AMMUTTA_TEAM_ID", "bad"), ("AMMUTTA_BUNDLE_ID", "dev.ammutta.app"), ("AMMUTTA_BUNDLE_ID", "noreversedns")]
         for key, value in cases:
             with self.subTest(key=key, value=value):
@@ -609,7 +637,10 @@ class SigningOrchestrationTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         calls = runner.calls()
         self.assertFalse(any(call[:2] == ["xcrun", "altool"] for call in calls))
-        self.assertEqual(sum(call[:2] == ["codesign", "--verify"] for call in calls), 2)
+        # The app and its widget extension, in both the archive and the exported IPA.
+        self.assertEqual(sum(call[:2] == ["codesign", "--verify"] for call in calls), 4)
+        options = json.loads((runner.root / "export-options.json").read_text())
+        self.assertEqual(options["provisioningProfiles"], {BUNDLE: UUID, BUNDLE + ".Widgets": WIDGETS_UUID})
         self.assertEqual(sum(call[:2] == ["xcodebuild", "archive"] for call in calls), 1)
         self.assertEqual(sum(call[:2] == ["xcodebuild", "-exportArchive"] for call in calls), 1)
         self.assertFalse(any("-allowProvisioningUpdates" in call for call in calls))
@@ -704,6 +735,20 @@ class SigningOrchestrationTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertFalse(any(call[:2] == ["security", "import"] for call in runner.calls()))
         self.assert_clean(runner)
+
+    def test_widget_profile_must_match_the_extension_bundle(self):
+        for label, widgets in [("app's own profile", profile_fixture()),
+                               ("other bundle", profile_fixture(bundle="com.example.other.Widgets", uuid=WIDGETS_UUID)),
+                               ("development", {**profile_fixture(bundle=BUNDLE + ".Widgets", uuid=WIDGETS_UUID),
+                                                "ProvisionedDevices": ["fake-device"]})]:
+            with self.subTest(label=label):
+                runner = self.make_runner()
+                runner.env["APPLE_APP_STORE_WIDGETS_PROFILE_BASE64"] = base64.b64encode(plistlib.dumps(widgets)).decode()
+                result = runner.run("archive", "17")
+                self.assertNotEqual(result.returncode, 0)
+                self.assertFalse(any(call[:2] == ["security", "import"] for call in runner.calls()))
+                self.assert_private_output(runner, result)
+                self.assert_clean(runner)
 
     def test_invalid_base64_fails_and_removes_private_temp_files(self):
         runner = self.make_runner()

@@ -42,6 +42,7 @@ final class AppModel {
     @ObservationIgnored private let store: AmmuttaStore
     @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private let alerts: any TimerAlerting
+    @ObservationIgnored private let activityPresenter: any WorkoutActivityPresenting
 
     private(set) var plans: [Plan] = []
     private(set) var customExercises: [CustomExercise] = []
@@ -62,10 +63,16 @@ final class AppModel {
         static let defaultRest = "defaultRestSeconds"
     }
 
-    init(store: AmmuttaStore, defaults: UserDefaults = .standard, alerts: any TimerAlerting = DisabledAlerting()) {
+    init(
+        store: AmmuttaStore,
+        defaults: UserDefaults = .standard,
+        alerts: any TimerAlerting = DisabledAlerting(),
+        activityPresenter: any WorkoutActivityPresenting = DisabledActivityPresenter()
+    ) {
         self.store = store
         self.defaults = defaults
         self.alerts = alerts
+        self.activityPresenter = activityPresenter
         let localeDefault: WeightUnit = Locale.current.measurementSystem == .us ? .pounds : .kilograms
         storedWeightUnit = defaults.string(forKey: Keys.weightUnit).flatMap(WeightUnit.init(rawValue:)) ?? localeDefault
         if defaults.object(forKey: Keys.defaultRest) != nil {
@@ -242,7 +249,7 @@ final class AppModel {
 
     func discardActiveWorkout() {
         guard let session else { return }
-        session.endAlerts()
+        session.close()
         do {
             try store.deleteWorkout(session.workout.id)
         } catch {
@@ -301,10 +308,34 @@ final class AppModel {
             alertContent: { [weak self] plan, workout in
                 self?.alertContent(plan, in: workout) ?? TimerAlertRequest(fireDate: plan.fireDate, title: "", body: "")
             },
+            activity: activityPresenter,
+            activityContent: { [weak self] workout in
+                self?.activityContent(for: workout)
+                    ?? (WorkoutActivityAttributes(planName: workout.planName, startedAt: workout.startedAt),
+                        WorkoutActivityAttributes.ContentState(exercise: workout.planName, detail: ""))
+            },
             persist: { [weak self] updated in
                 self?.persist(updated)
             }
         )
+    }
+
+    /// What the Live Activity shows: the exercise to do now or next, its set, and any countdown.
+    func activityContent(for workout: Workout) -> (WorkoutActivityAttributes, WorkoutActivityAttributes.ContentState) {
+        let attributes = WorkoutActivityAttributes(planName: workout.planName, startedAt: workout.startedAt)
+        var state = WorkoutActivityAttributes.ContentState(exercise: workout.planName, detail: L10n.activityAllDone)
+        let focusSet = workout.timer?.workSetID ?? workout.nextPendingSetID
+        if let focusSet, let location = workout.location(ofSet: focusSet) {
+            let exercise = workout.exercises[location.exercise]
+            state.exercise = name(of: exercise.exercise, snapshot: exercise.nameSnapshot)
+            state.detail = L10n.activitySetOf(location.set + 1, exercise.sets.count)
+        }
+        if let timer = workout.timer {
+            state.timerLabel = timer.isRest ? L10n.timerRestText : L10n.timerWorkText
+            state.timerStart = timer.startedAt
+            state.timerEnd = timer.endsAt
+        }
+        return (attributes, state)
     }
 
     /// The localized text of a Lock Screen timer alert.

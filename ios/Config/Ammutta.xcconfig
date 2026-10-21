@@ -9,6 +9,11 @@ AMMUTTA_DEVELOPMENT_TEAM =
 AMMUTTA_PROVISIONING_PROFILE =
 AMMUTTA_OTHER_CODE_SIGN_FLAGS =
 
+// The Live Activity widget extension: its own bundle ID (always the app's plus ".Widgets")
+// and its own App Store provisioning profile.
+AMMUTTA_WIDGETS_BUNDLE_ID = $(AMMUTTA_APP_BUNDLE_ID).Widgets
+AMMUTTA_WIDGETS_PROVISIONING_PROFILE =
+
 // The TestFlight workflow writes this file just before archiving and deletes it afterwards.
 // Passing signing settings on the xcodebuild command line instead would also apply them
 // to the Swift package targets, which cannot use a provisioning profile.

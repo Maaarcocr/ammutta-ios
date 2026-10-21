@@ -35,11 +35,13 @@ targets:
       - path: App/Assets.xcassets
       - path: App/PrivacyInfo.xcprivacy
         buildPhase: resources
+      - path: Shared
     dependencies:
       - package: AmmuttaKit
         product: AmmuttaCore
       - package: AmmuttaKit
         product: AmmuttaPersistence
+      - target: AmmuttaWidgets
     configFiles:
       Debug: Config/Ammutta.xcconfig
       Release: Config/Ammutta.xcconfig
@@ -65,6 +67,36 @@ targets:
         SUPPORTS_MACCATALYST: NO
         SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
         SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: NO
+
+  # Live Activity (Lock Screen and Dynamic Island). Embedded in the app; signed with its own
+  # bundle ID and App Store profile from Config/Ammutta.xcconfig.
+  AmmuttaWidgets:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: Widgets
+      - path: Shared
+    dependencies:
+      - sdk: WidgetKit.framework
+      - sdk: SwiftUI.framework
+      - sdk: ActivityKit.framework
+    configFiles:
+      Debug: Config/Ammutta.xcconfig
+      Release: Config/Ammutta.xcconfig
+    settings:
+      base:
+        PRODUCT_NAME: AmmuttaWidgets
+        PRODUCT_BUNDLE_IDENTIFIER: $(AMMUTTA_WIDGETS_BUNDLE_ID)
+        CODE_SIGN_STYLE: $(AMMUTTA_CODE_SIGN_STYLE)
+        CODE_SIGN_IDENTITY: $(AMMUTTA_CODE_SIGN_IDENTITY)
+        "CODE_SIGN_IDENTITY[sdk=iphoneos*]": $(AMMUTTA_CODE_SIGN_IDENTITY)
+        DEVELOPMENT_TEAM: $(AMMUTTA_DEVELOPMENT_TEAM)
+        PROVISIONING_PROFILE_SPECIFIER: $(AMMUTTA_WIDGETS_PROVISIONING_PROFILE)
+        OTHER_CODE_SIGN_FLAGS: $(AMMUTTA_OTHER_CODE_SIGN_FLAGS)
+        INFOPLIST_FILE: Widgets/Info.plist
+        TARGETED_DEVICE_FAMILY: "1"
+        SKIP_INSTALL: YES
+        SUPPORTS_MACCATALYST: NO
 
   AmmuttaTests:
     type: bundle.unit-test

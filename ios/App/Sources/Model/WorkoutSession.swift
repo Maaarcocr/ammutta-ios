@@ -20,6 +20,8 @@ final class WorkoutSession: Identifiable {
     @ObservationIgnored private let persist: (Workout) -> Void
     @ObservationIgnored private let alerts: any TimerAlerting
     @ObservationIgnored private let alertContent: (TimerAlertPlan, Workout) -> TimerAlertRequest
+    @ObservationIgnored private let activity: any WorkoutActivityPresenting
+    @ObservationIgnored private let activityContent: (Workout) -> (WorkoutActivityAttributes, WorkoutActivityAttributes.ContentState)
     @ObservationIgnored private var timerTask: Task<Void, Never>?
     @ObservationIgnored private var alertQueue: Task<Void, Never>?
     @ObservationIgnored private var scheduledAlert: TimerAlertRequest?
@@ -29,12 +31,16 @@ final class WorkoutSession: Identifiable {
         workout: Workout,
         alerts: any TimerAlerting,
         alertContent: @escaping (TimerAlertPlan, Workout) -> TimerAlertRequest,
+        activity: any WorkoutActivityPresenting,
+        activityContent: @escaping (Workout) -> (WorkoutActivityAttributes, WorkoutActivityAttributes.ContentState),
         persist: @escaping (Workout) -> Void
     ) {
         id = workout.id
         self.workout = workout
         self.alerts = alerts
         self.alertContent = alertContent
+        self.activity = activity
+        self.activityContent = activityContent
         self.persist = persist
         refresh()
     }
@@ -54,12 +60,14 @@ final class WorkoutSession: Identifiable {
         }
         scheduleTimer()
         syncAlert()
+        syncActivity()
     }
 
     /// Settles a deadline that passed while the app was in the background or not running.
     func refresh() {
         guard !isFinished else {
             syncAlert()
+            syncActivity()
             return
         }
         if let timer = workout.timer, timer.endsAt <= .now {
@@ -67,12 +75,23 @@ final class WorkoutSession: Identifiable {
         } else {
             scheduleTimer()
             syncAlert()
+            syncActivity()
         }
     }
 
-    /// Removes any pending system alert, for example when the workout is discarded.
-    func endAlerts() {
+    /// Removes the pending system alert and the Live Activity, for example when the workout is discarded.
+    func close() {
         enqueueAlert(nil)
+        activity.end()
+    }
+
+    private func syncActivity() {
+        if isFinished {
+            activity.end()
+        } else {
+            let (attributes, state) = activityContent(workout)
+            activity.show(attributes, state)
+        }
     }
 
     /// Lets tests wait until queued alert changes have reached the alert service.
