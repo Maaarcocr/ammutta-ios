@@ -24,3 +24,4 @@ xcuserdata/
 *.key.pem
 *.certSigningRequest
 /ammutta-signing/
+/ios/Config/Signing.local.xcconfig

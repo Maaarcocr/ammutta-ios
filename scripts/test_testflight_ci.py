@@ -146,6 +146,9 @@ elif name == "xcodebuild":
     if args == ["-version"]:
         print("Xcode 26.6\nBuild version SYNTHETIC")
     elif args[0] == "archive":
+        # Record the app-target signing settings exactly as the archive would read them.
+        settings = pathlib.Path(value("-project")).parent / "Config" / "Signing.local.xcconfig"
+        (root / "archive-signing.xcconfig").write_text(settings.read_text())
         make_app(pathlib.Path(value("-archivePath")) / "Products/Applications/Ammutta.app")
         print(marker)
     else:
@@ -207,7 +210,8 @@ class OfflineRunner:
         scripts.mkdir(parents=True)
         (self.repo / "ios").mkdir()
         (self.repo / "ios/project.yml").write_text("name: Ammutta\n")
-        for name in ("testflight-ci.sh", "testflight-signing.py", "validate-archive-config.py", "verify-ios-bundle.py"):
+        for name in ("testflight-ci.sh", "testflight-signing.py", "validate-archive-config.py", "verify-ios-bundle.py",
+                     "archive-diagnostics.py"):
             shutil.copy2(ROOT / "scripts" / name, scripts / name)
         self.home = self.root / "home"
         self.temp = self.root / "runner-temp"
@@ -480,6 +484,40 @@ class BundleRulesTests(unittest.TestCase):
                     bundle_rules.verify(app)
 
 
+diagnostics_spec = importlib.util.spec_from_file_location("archive_diagnostics", ROOT / "scripts/archive-diagnostics.py")
+archive_diagnostics = importlib.util.module_from_spec(diagnostics_spec)
+diagnostics_spec.loader.exec_module(archive_diagnostics)
+
+
+class ArchiveDiagnosticsTests(unittest.TestCase):
+    """Archive failures are reported as fixed codes; raw log text is never printed."""
+
+    def classify(self, text):
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        log = Path(temp.name) / "archive.log"
+        log.write_text(text)
+        return archive_diagnostics.classify(log)
+
+    def test_package_target_profile_error_is_recognized(self):
+        codes = self.classify("note: building\nerror: AmmuttaCore does not support provisioning profiles, "
+                              "but provisioning profile REVIEW_SECRET_MARKER has been manually specified.\n")
+        self.assertEqual(codes, ["ARCHIVE_PROVISIONING_NOT_SUPPORTED"])
+
+    def test_successful_compiler_lines_are_not_misclassified(self):
+        self.assertEqual(self.classify("SwiftCompile normal arm64 Workout.swift\n"), ["ARCHIVE_UNCLASSIFIED"])
+
+    def test_output_contains_only_codes(self):
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        log = Path(temp.name) / "archive.log"
+        log.write_text("error: linker command failed REVIEW_SECRET_MARKER\n")
+        result = subprocess.run([sys.executable, str(ROOT / "scripts/archive-diagnostics.py"), str(log)],
+                                capture_output=True, text=True)
+        self.assertEqual(result.stdout.split(), ["ARCHIVE_LINK"])
+        self.assertNotIn("REVIEW_SECRET_MARKER", result.stdout + result.stderr)
+
+
 class SigningOrchestrationTests(unittest.TestCase):
     def make_runner(self):
         temp = tempfile.TemporaryDirectory()
@@ -497,6 +535,7 @@ class SigningOrchestrationTests(unittest.TestCase):
 
     def assert_clean(self, runner):
         self.assertEqual(list(runner.temp.iterdir()), [])
+        self.assertFalse((runner.repo / "ios/Config/Signing.local.xcconfig").exists())
         self.assertEqual(sorted(path.name for path in runner.profile_dir.iterdir()), ["unrelated.mobileprovision"])
         self.assertEqual((runner.profile_dir / "unrelated.mobileprovision").read_text(), "preserve unrelated profile")
         self.assertEqual(json.loads((runner.root / "keychains.json").read_text()), runner.original_keychains)
@@ -577,6 +616,30 @@ class SigningOrchestrationTests(unittest.TestCase):
         runner.env[key] = value
         again = runner.run("cleanup")
         self.assertEqual(again.returncode, 0, again.stderr)
+        self.assert_clean(runner)
+
+    def test_signing_settings_are_scoped_to_the_app_target(self):
+        # Global xcodebuild settings would also reach the Swift package targets, which
+        # cannot use a provisioning profile; the app target reads them from an xcconfig.
+        runner = self.make_runner()
+        result = runner.run("archive", "17")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        archive = next(call for call in runner.calls() if call[:2] == ["xcodebuild", "archive"])
+        self.assertEqual([arg for arg in archive if re.match(r"^[A-Z_]+(\[[^\]]*\])?=", arg)], [])
+        settings = (runner.root / "archive-signing.xcconfig").read_text().splitlines()
+        for line in ("AMMUTTA_CODE_SIGN_STYLE = Manual", f"AMMUTTA_DEVELOPMENT_TEAM = {TEAM}",
+                     f"AMMUTTA_APP_BUNDLE_ID = {BUNDLE}", f"AMMUTTA_PROVISIONING_PROFILE = {UUID}",
+                     f"AMMUTTA_CODE_SIGN_IDENTITY = {FINGERPRINT}", "CURRENT_PROJECT_VERSION = 17"):
+            self.assertIn(line, settings)
+        self.assert_clean(runner)
+
+    def test_archive_failure_prints_only_fixed_diagnostic_codes(self):
+        runner = self.make_runner()
+        runner.env["FAKE_FAIL_AT"] = "xcodebuild:archive"
+        result = runner.run("archive", "17")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("ARCHIVE_UNCLASSIFIED", result.stdout)
+        self.assert_private_output(runner, result)
         self.assert_clean(runner)
 
     def test_explicit_upload_uses_only_mocked_uploader_then_cleans_up(self):
