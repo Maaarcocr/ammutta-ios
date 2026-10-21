@@ -1,6 +1,36 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "alert.rest.body" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Time for the next set." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "È ora della prossima serie." } }
+      }
+    },
+    "alert.rest.next %@ %lld" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Next: %1$@, set %2$lld" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Prossimo: %1$@, serie %2$lld" } }
+      }
+    },
+    "alert.rest.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Rest's over" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Recupero finito" } }
+      }
+    },
+    "alert.work.body %@" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ is done." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "%@: fatto." } }
+      }
+    },
+    "alert.work.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Time's up" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Tempo scaduto" } }
+      }
+    },
     "common.cancel" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Cancel" } },
@@ -701,6 +731,18 @@
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Pounds (lb)" } },
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Libbre (lb)" } }
+      }
+    },
+    "workout.alertsOff" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Timer alerts are off." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Avvisi del timer disattivati." } }
+      }
+    },
+    "workout.openSettings" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Settings" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Impostazioni" } }
       }
     },
     "workout.decrease" : {

@@ -318,7 +318,7 @@ The first prototype implements the core loop and deliberately simplifies some of
 | --- | --- | --- |
 | Modules | `AmmuttaCore` + `AmmuttaPersistence` in the package; screens, app model and formatting live in the app target | `AmmuttaFeatures` and the service packages (§3) as features arrive |
 | Persistence | `AmmuttaStore` on the main actor; plans and workouts stored as one JSON blob per row with scalar columns for queries | Background `ModelActor` (§5) |
-| Timers | In-app only: deadlines in the engine, a task that wakes at the next deadline, a haptic on completion | AlarmKit + notification fallback, effects diffing (§4.3, §6) |
+| Timers | Deadlines in the engine; in-app task and haptic while open; one local notification per workout, derived purely from state (`Workout.pendingTimerAlert`) and replaced in order on every event, so the phone alerts on time when locked | AlarmKit as the primary path, Live Activity (§4.3, §6, §7) |
 | Catalog | 32 built-in exercises as Swift data in `ExerciseCatalog.swift` | ~80 exercises in `ExerciseCatalog.json` (§3) |
 | Formatting | `Format` in the app target, tested on iOS | `Formatting` in the core (§4.4) |
 | Not yet built | Live Activity, heart rate, Apple Health, QR/file/CSV sharing (plan links are built), export, personal bests, archiving exercises | §7–§9, product spec §11–§12 |

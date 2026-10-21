@@ -41,6 +41,7 @@ struct MonthGroup: Identifiable {
 final class AppModel {
     @ObservationIgnored private let store: AmmuttaStore
     @ObservationIgnored private let defaults: UserDefaults
+    @ObservationIgnored private let alerts: any TimerAlerting
 
     private(set) var plans: [Plan] = []
     private(set) var customExercises: [CustomExercise] = []
@@ -61,9 +62,10 @@ final class AppModel {
         static let defaultRest = "defaultRestSeconds"
     }
 
-    init(store: AmmuttaStore, defaults: UserDefaults = .standard) {
+    init(store: AmmuttaStore, defaults: UserDefaults = .standard, alerts: any TimerAlerting = DisabledAlerting()) {
         self.store = store
         self.defaults = defaults
+        self.alerts = alerts
         let localeDefault: WeightUnit = Locale.current.measurementSystem == .us ? .pounds : .kilograms
         storedWeightUnit = defaults.string(forKey: Keys.weightUnit).flatMap(WeightUnit.init(rawValue:)) ?? localeDefault
         if defaults.object(forKey: Keys.defaultRest) != nil {
@@ -240,6 +242,7 @@ final class AppModel {
 
     func discardActiveWorkout() {
         guard let session else { return }
+        session.endAlerts()
         do {
             try store.deleteWorkout(session.workout.id)
         } catch {
@@ -292,8 +295,35 @@ final class AppModel {
     }
 
     private func makeSession(_ workout: Workout) -> WorkoutSession {
-        WorkoutSession(workout: workout) { [weak self] updated in
-            self?.persist(updated)
+        WorkoutSession(
+            workout: workout,
+            alerts: alerts,
+            alertContent: { [weak self] plan, workout in
+                self?.alertContent(plan, in: workout) ?? TimerAlertRequest(fireDate: plan.fireDate, title: "", body: "")
+            },
+            persist: { [weak self] updated in
+                self?.persist(updated)
+            }
+        )
+    }
+
+    /// The localized text of a Lock Screen timer alert.
+    func alertContent(_ plan: TimerAlertPlan, in workout: Workout) -> TimerAlertRequest {
+        switch plan.kind {
+        case .restOver(let nextSet):
+            var body = L10n.alertRestBody
+            if let nextSet, let location = workout.location(ofSet: nextSet) {
+                let exercise = workout.exercises[location.exercise]
+                body = L10n.alertNextSet(name(of: exercise.exercise, snapshot: exercise.nameSnapshot), location.set + 1)
+            }
+            return TimerAlertRequest(fireDate: plan.fireDate, title: L10n.alertRestTitle, body: body)
+        case .workDone(let set):
+            var name = ""
+            if let location = workout.location(ofSet: set) {
+                let exercise = workout.exercises[location.exercise]
+                name = self.name(of: exercise.exercise, snapshot: exercise.nameSnapshot)
+            }
+            return TimerAlertRequest(fireDate: plan.fireDate, title: L10n.alertWorkTitle, body: L10n.alertWorkBody(name))
         }
     }
 

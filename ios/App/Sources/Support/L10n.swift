@@ -142,6 +142,15 @@ enum L10n {
     static var timerMinus: LocalizedStringKey { "timer.minus15" }
     static var timerPlus: LocalizedStringKey { "timer.plus15" }
 
+    // MARK: Timer alerts (Lock Screen notifications)
+    static var alertRestTitle: String { String(localized: "alert.rest.title") }
+    static var alertRestBody: String { String(localized: "alert.rest.body") }
+    static func alertNextSet(_ exercise: String, _ set: Int) -> String { String(localized: "alert.rest.next \(exercise) \(set)") }
+    static var alertWorkTitle: String { String(localized: "alert.work.title") }
+    static func alertWorkBody(_ exercise: String) -> String { String(localized: "alert.work.body \(exercise)") }
+    static var alertsOff: LocalizedStringKey { "workout.alertsOff" }
+    static var openSettings: LocalizedStringKey { "workout.openSettings" }
+
     // MARK: Summary
     static var summaryTitle: LocalizedStringKey { "summary.title" }
     static var summaryDuration: LocalizedStringKey { "summary.duration" }

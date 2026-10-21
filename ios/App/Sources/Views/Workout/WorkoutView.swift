@@ -1,5 +1,6 @@
 import AmmuttaCore
 import SwiftUI
+import UIKit
 
 /// The active workout: one scrolling dashboard of exercises, with the current one
 /// expanded and the rest or exercise countdown pinned to the bottom.
@@ -34,6 +35,9 @@ struct WorkoutView: View {
         NavigationStack {
             ScrollView {
                 LazyVStack(spacing: 16) {
+                    if session.alertsOff {
+                        AlertsOffRow()
+                    }
                     ForEach(session.workout.exercises) { exercise in
                         let isCurrent = exercise.id == currentExerciseID
                         ExerciseCard(
@@ -316,6 +320,27 @@ private struct SetRow: View {
 
     private func update(_ value: SetValue) {
         session.send(.setValue(set.id, value))
+    }
+}
+
+/// Shown when notifications are declined: timers still run, but only alert inside the app.
+private struct AlertsOffRow: View {
+    @Environment(\.openURL) private var openURL
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "bell.slash")
+                .foregroundStyle(.secondary)
+            Text(L10n.alertsOff)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+            Spacer(minLength: 0)
+            Button(L10n.openSettings) {
+                if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
+            }
+            .font(.footnote.weight(.semibold))
+        }
+        .padding(.horizontal, 4)
     }
 }
 

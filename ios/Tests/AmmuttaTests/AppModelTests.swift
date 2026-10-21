@@ -4,6 +4,92 @@ import Foundation
 import Testing
 @testable import Ammutta
 
+/// Records what would be scheduled with the system.
+@MainActor
+final class RecordingAlerting: TimerAlerting {
+    var status: AlertAuthorization = .allowed
+    private(set) var current: [String: TimerAlertRequest] = [:]
+    private(set) var permissionRequests = 0
+
+    func authorization() async -> AlertAuthorization { status == .notDetermined ? .notDetermined : status }
+    func requestAuthorization() async -> AlertAuthorization {
+        permissionRequests += 1
+        status = .allowed
+        return status
+    }
+    func replace(id: String, with alert: TimerAlertRequest?) async { current[id] = alert }
+}
+
+@MainActor
+struct TimerAlertTests {
+    private func plan() -> Plan {
+        Plan(name: "Legs", exercises: [
+            PlanExercise(exercise: .builtIn(key: "barbell-back-squat"), kind: .reps, restSeconds: 120,
+                         sets: [.reps(count: 5, weight: .kilograms(100)), .reps(count: 5, weight: .kilograms(100))]),
+            PlanExercise(exercise: .builtIn(key: "plank"), kind: .duration, restSeconds: 60, sets: [.duration(seconds: 45)]),
+        ], createdAt: .now)
+    }
+
+    private func makeModel(_ alerts: RecordingAlerting) throws -> AppModel {
+        let defaults = try #require(UserDefaults(suiteName: "ammutta.tests.\(UUID().uuidString)"))
+        return AppModel(store: try AmmuttaStore(inMemory: true), defaults: defaults, alerts: alerts)
+    }
+
+    @Test func restSchedulesALockScreenAlertAndSkippingRemovesIt() async throws {
+        let alerts = RecordingAlerting()
+        alerts.status = .notDetermined
+        let model = try makeModel(alerts)
+        model.startWorkout(from: plan())
+        let session = try #require(model.session)
+        await session.alertsSettled()
+        #expect(alerts.current.isEmpty)
+        #expect(alerts.permissionRequests == 0)
+
+        session.send(.logSet(try #require(session.workout.nextPendingSetID)))
+        await session.alertsSettled()
+        let alert = try #require(alerts.current.values.first)
+        #expect(alert.fireDate == session.workout.timer?.endsAt)
+        #expect(alert.title == L10n.alertRestTitle)
+        #expect(alert.body.contains(ExerciseText.name("barbell-back-squat")))
+        #expect(alerts.permissionRequests == 1)
+        #expect(!session.alertsOff)
+
+        session.send(.adjustRest(seconds: 15))
+        await session.alertsSettled()
+        #expect(alerts.current.values.first?.fireDate == session.workout.timer?.endsAt)
+
+        session.send(.skipRest)
+        await session.alertsSettled()
+        #expect(alerts.current.isEmpty)
+    }
+
+    @Test func timedSetsAlertAndDiscardingCancels() async throws {
+        let alerts = RecordingAlerting()
+        let model = try makeModel(alerts)
+        model.startWorkout(from: plan())
+        let session = try #require(model.session)
+        let plank = session.workout.exercises[1].sets[0].id
+        session.send(.startWork(plank))
+        await session.alertsSettled()
+        #expect(alerts.current.values.first?.title == L10n.alertWorkTitle)
+
+        model.discardActiveWorkout()
+        await session.alertsSettled()
+        #expect(alerts.current.isEmpty)
+    }
+
+    @Test func declinedNotificationsShowTheAlertsOffLine() async throws {
+        let alerts = RecordingAlerting()
+        alerts.status = .denied
+        let model = try makeModel(alerts)
+        model.startWorkout(from: plan())
+        let session = try #require(model.session)
+        session.send(.logSet(try #require(session.workout.nextPendingSetID)))
+        await session.alertsSettled()
+        #expect(session.alertsOff)
+    }
+}
+
 @MainActor
 struct AppModelTests {
     private func makeDefaults() throws -> UserDefaults {
