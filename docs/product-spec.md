@@ -323,5 +323,5 @@ Several of these (Watch app, supersets, charts) are reasonable v1.x candidates. 
    - *Recommendation:* allow standard device backups, since they are user-controlled and not an Ammutta service, and keep the manual export.
 2. **Plan-link compatibility with Ammutta for Android.** Sharing plans between iOS and Android users would need one wire format.
    - *Recommendation:* define a single documented `plan v1` format that both apps implement, keyed by built-in exercise keys. It would be designed fresh, not inherited.
-3. **App icon master.** `branding/ammutta-logo-512.png` is 512 px, but iOS needs a 1024×1024 opaque master. Re-export from the original artwork rather than upscaling.
+3. **App icon master.** *Resolved:* `branding/ammutta-logo.svg` is a vector redraw of `ammutta-logo-512.png`; the 1024×1024 opaque app icon is rendered from it.
 4. **License** for this public repository. Without one, the code is all rights reserved by default.

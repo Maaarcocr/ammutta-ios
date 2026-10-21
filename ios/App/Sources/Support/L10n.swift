@@ -1,0 +1,125 @@
+import SwiftUI
+
+/// Every user-facing string in the app. Keys live in Localizable.xcstrings (English and
+/// Italian); `scripts/check-strings.py` fails CI when a key here is missing a translation,
+/// or when a view passes a raw string literal instead of going through this file.
+enum L10n {
+    // MARK: Tabs
+    static var tabPlans: LocalizedStringKey { "tab.plans" }
+    static var tabExercises: LocalizedStringKey { "tab.exercises" }
+    static var tabHistory: LocalizedStringKey { "tab.history" }
+    static var tabSettings: LocalizedStringKey { "tab.settings" }
+
+    // MARK: Common
+    static var cancel: LocalizedStringKey { "common.cancel" }
+    static var save: LocalizedStringKey { "common.save" }
+    static var done: LocalizedStringKey { "common.done" }
+    static var delete: LocalizedStringKey { "common.delete" }
+    static var edit: LocalizedStringKey { "common.edit" }
+    static var more: LocalizedStringKey { "common.more" }
+    static var ok: LocalizedStringKey { "common.ok" }
+    static func fraction(_ part: Int, _ total: Int) -> String { String(localized: "common.fraction \(part) \(total)") }
+    static var errorTitle: LocalizedStringKey { "error.title" }
+    static var errorMessage: LocalizedStringKey { "error.message" }
+
+    // MARK: Plans
+    static var plansNew: LocalizedStringKey { "plans.new" }
+    static var plansEmptyTitle: LocalizedStringKey { "plans.empty.title" }
+    static var plansEmptyMessage: LocalizedStringKey { "plans.empty.message" }
+    static func exerciseCount(_ count: Int) -> String { String(localized: "plan.exerciseCount \(count)") }
+    static var planLastPerformed: LocalizedStringKey { "plan.lastPerformed" }
+    static var planEstimated: LocalizedStringKey { "plan.estimated" }
+    static func approximately(_ duration: String) -> String { String(localized: "plan.approximately \(duration)") }
+    static var planExercises: LocalizedStringKey { "plan.exercises" }
+    static var planStart: LocalizedStringKey { "plan.start" }
+    static var planDuplicate: LocalizedStringKey { "plan.duplicate" }
+    static func copyName(_ name: String) -> String { String(localized: "plan.copyName \(name)") }
+    static var planDeleteTitle: LocalizedStringKey { "plan.delete.title" }
+    static var planMissing: LocalizedStringKey { "plan.missing" }
+    static func restValue(_ duration: String) -> String { String(localized: "plan.restValue \(duration)") }
+
+    // MARK: Plan editor
+    static var planEditorNewTitle: LocalizedStringKey { "planEditor.newTitle" }
+    static var planEditorEditTitle: LocalizedStringKey { "planEditor.editTitle" }
+    static var planEditorName: LocalizedStringKey { "planEditor.name" }
+    static var planEditorAddExercise: LocalizedStringKey { "planEditor.addExercise" }
+    static var rest: LocalizedStringKey { "exerciseEditor.rest" }
+    static var sets: LocalizedStringKey { "exerciseEditor.sets" }
+    static var applyToAll: LocalizedStringKey { "exerciseEditor.applyToAll" }
+
+    // MARK: Sets
+    static var addSet: LocalizedStringKey { "set.add" }
+    static func setNumber(_ number: Int) -> String { String(localized: "set.number \(number)") }
+    static var weight: LocalizedStringKey { "set.weight" }
+    static var duration: LocalizedStringKey { "set.duration" }
+    static var reps: LocalizedStringKey { "set.repsLabel" }
+    static func repsCount(_ count: Int) -> String { String(localized: "set.reps \(count)") }
+    static func setsCount(_ count: Int) -> String { String(localized: "set.count \(count)") }
+    static func repsWeight(_ count: Int, _ weight: String) -> String { String(localized: "set.repsWeight \(count) \(weight)") }
+    static var skipped: LocalizedStringKey { "set.skipped" }
+    static var notDone: LocalizedStringKey { "set.notDone" }
+    static var unitKg: String { String(localized: "unit.kg") }
+    static var unitLb: String { String(localized: "unit.lb") }
+    static var unitKgName: LocalizedStringKey { "unit.kg.name" }
+    static var unitLbName: LocalizedStringKey { "unit.lb.name" }
+
+    // MARK: Exercises
+    static var pickerTitle: LocalizedStringKey { "picker.title" }
+    static var exercisesNew: LocalizedStringKey { "exercises.new" }
+    static var exercisesCustom: LocalizedStringKey { "exercises.custom" }
+    static var exercisesBuiltIn: LocalizedStringKey { "exercises.builtIn" }
+    static var customLabel: String { String(localized: "exercise.customLabel") }
+    static var exerciseKind: LocalizedStringKey { "exercise.kind" }
+    static var kindReps: LocalizedStringKey { "kind.reps" }
+    static var kindDuration: LocalizedStringKey { "kind.duration" }
+    static var kindRepsText: String { String(localized: "kind.reps") }
+    static var kindDurationText: String { String(localized: "kind.duration") }
+    static var exerciseEquipment: LocalizedStringKey { "exercise.equipment" }
+    static var exerciseMuscle: LocalizedStringKey { "exercise.muscle" }
+    static var exerciseLast: LocalizedStringKey { "exercise.last" }
+    static var exerciseHistory: LocalizedStringKey { "exercise.history" }
+    static var exerciseNoHistory: LocalizedStringKey { "exercise.noHistory" }
+    static var exerciseName: LocalizedStringKey { "exercise.name" }
+    static var exerciseDuplicate: LocalizedStringKey { "exercise.duplicate" }
+    static var exerciseDeleted: String { String(localized: "exercise.deleted") }
+    static var exerciseDeleteTitle: LocalizedStringKey { "exercise.delete.title" }
+    static var exerciseEditTitle: LocalizedStringKey { "exerciseEditor.editTitle" }
+
+    // MARK: History
+    static var historyEmpty: LocalizedStringKey { "history.empty" }
+    static var historyDeleteTitle: LocalizedStringKey { "history.delete.title" }
+
+    // MARK: Workout
+    static var workoutFinish: LocalizedStringKey { "workout.finish" }
+    static var workoutDiscard: LocalizedStringKey { "workout.discard" }
+    static var workoutDiscardTitle: LocalizedStringKey { "workout.discard.title" }
+    static var workoutSkipSet: LocalizedStringKey { "workout.skipSet" }
+    static var workoutRemoveSet: LocalizedStringKey { "workout.removeSet" }
+    static func lastTime(_ value: String) -> String { String(localized: "workout.last \(value)") }
+    static var workoutLogSet: LocalizedStringKey { "workout.logSet" }
+    static var workoutStartTimer: LocalizedStringKey { "workout.startTimer" }
+    static var workoutStopTimer: LocalizedStringKey { "workout.stopTimer" }
+    static var workoutLogged: LocalizedStringKey { "workout.logged" }
+    static var increase: LocalizedStringKey { "workout.increase" }
+    static var decrease: LocalizedStringKey { "workout.decrease" }
+    static var timerRest: LocalizedStringKey { "timer.rest" }
+    static var timerWork: LocalizedStringKey { "timer.work" }
+    static var timerSkip: LocalizedStringKey { "timer.skip" }
+    static var timerMinus: LocalizedStringKey { "timer.minus15" }
+    static var timerPlus: LocalizedStringKey { "timer.plus15" }
+
+    // MARK: Summary
+    static var summaryTitle: LocalizedStringKey { "summary.title" }
+    static var summaryDuration: LocalizedStringKey { "summary.duration" }
+    static var summarySets: LocalizedStringKey { "summary.sets" }
+    static var summaryVolume: LocalizedStringKey { "summary.volume" }
+
+    // MARK: Settings
+    static var settingsWorkout: LocalizedStringKey { "settings.workout" }
+    static var settingsWeightUnit: LocalizedStringKey { "settings.weightUnit" }
+    static var settingsDefaultRest: LocalizedStringKey { "settings.defaultRest" }
+    static var settingsLanguage: LocalizedStringKey { "settings.language" }
+    static var settingsAbout: LocalizedStringKey { "settings.about" }
+    static var settingsVersion: LocalizedStringKey { "settings.version" }
+    static var settingsTagline: LocalizedStringKey { "settings.tagline" }
+}

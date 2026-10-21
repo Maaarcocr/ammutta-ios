@@ -27,6 +27,20 @@ jobs:
         shell: bash
         run: |
           if [[ -f ios/project.yml ]]; then echo has_app=true >> "$GITHUB_OUTPUT"; else echo has_app=false >> "$GITHUB_OUTPUT"; fi
+      - name: String catalogs complete in English and Italian
+        if: steps.detect.outputs.has_app == 'true'
+        run: python3 scripts/check-strings.py
+  core:
+    name: Domain core tests (Linux)
+    needs: pipeline
+    if: needs.pipeline.outputs.has_app == 'true'
+    runs-on: ubuntu-latest
+    container: swift:6.2
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and test AmmuttaCore
+        run: swift test --package-path ios/Packages/AmmuttaKit
   ios:
     name: Native build and tests (en + it)
     needs: pipeline
@@ -45,6 +59,8 @@ jobs:
           xcrun simctl list devices available
       - name: Inspect manual TestFlight CLI compatibility (no credentials)
         run: ./scripts/check-testflight-tools.sh
+      - name: Package tests (core + SwiftData persistence)
+        run: swift test --package-path ios/Packages/AmmuttaKit
       - name: Build Release for a real iOS device (unsigned) and check bundle rules
         run: |
           (cd ios && xcodegen generate)
@@ -54,6 +70,22 @@ jobs:
           python3 scripts/verify-ios-bundle.py ios/DerivedData-Release/Build/Products/Release-iphoneos/Ammutta.app
       - name: Run native unit and UI tests in English and Italian
         run: ./scripts/test-ios.sh
+      - name: Export UI test screenshots
+        if: always()
+        run: |
+          mkdir -p ios/build/screenshots
+          for result in ios/build/*.xcresult; do
+            [[ -e "$result" ]] || continue
+            name="$(basename "$result" .xcresult)"
+            xcrun xcresulttool export attachments --path "$result" --output-path "ios/build/screenshots/$name" || true
+          done
+      - name: Save UI test screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-screenshots
+          path: ios/build/screenshots
+          if-no-files-found: warn
       - name: Save Xcode test results
         if: always()
         uses: actions/upload-artifact@v4

@@ -309,3 +309,18 @@ protocol HealthSyncing: Sendable {
   - pipeline safety tests on Linux, always;
   - an unsigned Release device build, bundle-rule check, and unit/UI tests in en and it on `macos-26` once `ios/project.yml` exists.
 - TestFlight: manual `.github/workflows/testflight.yml` (archive by default, upload on explicit choice). See [`testflight.md`](testflight.md).
+
+## 15. Prototype status (0.1)
+
+The first prototype implements the core loop and deliberately simplifies some of the design above. Each simplification is meant to be replaced, not kept.
+
+| Area | Prototype | Target design |
+| --- | --- | --- |
+| Modules | `AmmuttaCore` + `AmmuttaPersistence` in the package; screens, app model and formatting live in the app target | `AmmuttaFeatures` and the service packages (§3) as features arrive |
+| Persistence | `AmmuttaStore` on the main actor; plans and workouts stored as one JSON blob per row with scalar columns for queries | Background `ModelActor` (§5) |
+| Timers | In-app only: deadlines in the engine, a task that wakes at the next deadline, a haptic on completion | AlarmKit + notification fallback, effects diffing (§4.3, §6) |
+| Catalog | 32 built-in exercises as Swift data in `ExerciseCatalog.swift` | ~80 exercises in `ExerciseCatalog.json` (§3) |
+| Formatting | `Format` in the app target, tested on iOS | `Formatting` in the core (§4.4) |
+| Not yet built | Live Activity, heart rate, Apple Health, sharing/import, export, personal bests, archiving exercises | §7–§9, product spec §11–§12 |
+
+The app icon is rendered from `branding/ammutta-logo.svg`, a simplified vector redraw of the original logo (product spec §17.3).

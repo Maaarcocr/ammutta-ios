@@ -14,7 +14,7 @@
 
 Ammutta ("push!" in Sicilian) lets you build workout plans, run them set by set with rest and exercise timers, and keep a complete training history, without handing your data to anyone.
 
-> **Status:** specification and release pipeline only. The app has not been written yet; this repository starts from a clean slate.
+> **Status:** first prototype (0.1). Plans, guided workouts with in-app rest and exercise timers, history and settings, in English and Italian. Lock Screen alerts, Live Activity, Bluetooth heart rate, Apple Health, sharing and export come next.
 
 ## What it does
 
@@ -55,8 +55,15 @@ Details: **[docs/architecture.md](docs/architecture.md)**.
 ## Repository layout
 
 ```
+ios/
+  project.yml       XcodeGen spec (the .xcodeproj is generated, never committed)
+  App/              SwiftUI app: screens, app model, string catalogs, assets
+  Packages/AmmuttaKit/
+    AmmuttaCore         pure domain + workout engine (Foundation only)
+    AmmuttaPersistence  SwiftData storage
+  Tests/            app unit tests and UI tests
 .github/workflows/
-  ci.yml            pipeline safety tests; native build + en/it tests once ios/ exists
+  ci.yml            pipeline safety tests, strings check, core tests on Linux, native build + en/it tests
   testflight.yml    manual, main-only: signed archive, or explicit TestFlight upload
 scripts/            signing, archive, bundle-rule checks, simulator tests + offline test harness
 docs/
@@ -69,17 +76,26 @@ AGENTS.md           guidance for coding agents working in this repo
 
 ## Development
 
-Pipeline tests, which run anywhere with Python 3:
+Checks that run anywhere with Python 3:
 
 ```sh
+python3 scripts/check-strings.py                                   # en/it string catalogs complete
 python3 -m unittest discover -s scripts -p 'test_testflight_ci.py' -v
 ```
 
-Once the app exists (macOS, Xcode 26.6+, `brew install xcodegen`):
+Domain core tests (any OS with Swift 6.2, including Linux):
+
+```sh
+swift test --package-path ios/Packages/AmmuttaKit
+```
+
+The app (macOS, Xcode 26.6+, `brew install xcodegen`):
 
 ```sh
 cd ios && xcodegen generate && open Ammutta.xcodeproj
 ./scripts/test-ios.sh            # unit + UI tests in English and Italian
 ```
+
+Without a Mac, push a branch or open a pull request: CI builds the app, runs every test in both languages and uploads simulator screenshots as the `ios-screenshots` artifact.
 
 Shipping to TestFlight: see **[docs/testflight.md](docs/testflight.md)**.

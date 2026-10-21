@@ -1,0 +1,107 @@
+# XcodeGen spec. Generate the project with `xcodegen generate` (the .xcodeproj is never committed).
+name: Ammutta
+
+options:
+  bundleIdPrefix: dev.ammutta
+  developmentLanguage: en
+  deploymentTarget:
+    iOS: "26.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    TARGETED_DEVICE_FAMILY: "1"
+    LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+    SWIFT_EMIT_LOC_STRINGS: NO
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+  configs:
+    Debug:
+      DEAD_CODE_STRIPPING: NO
+
+packages:
+  AmmuttaKit:
+    path: Packages/AmmuttaKit
+
+targets:
+  Ammutta:
+    type: application
+    platform: iOS
+    sources:
+      - path: App/Sources
+      - path: App/Resources
+      - path: App/Assets.xcassets
+      - path: App/PrivacyInfo.xcprivacy
+        buildPhase: resources
+    dependencies:
+      - package: AmmuttaKit
+        product: AmmuttaCore
+      - package: AmmuttaKit
+        product: AmmuttaPersistence
+    settings:
+      base:
+        PRODUCT_NAME: Ammutta
+        # Placeholder for local builds; release scripts inject the real ID and reject this one.
+        PRODUCT_BUNDLE_IDENTIFIER: dev.ammutta.app
+        INFOPLIST_FILE: App/Info.plist
+        # iPhone only. Set on the target because XcodeGen's app preset defaults to "1,2".
+        TARGETED_DEVICE_FAMILY: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        CODE_SIGN_STYLE: Automatic
+        SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+        SWIFT_APPROACHABLE_CONCURRENCY: YES
+        SUPPORTS_MACCATALYST: NO
+        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
+        SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: NO
+
+  AmmuttaTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests/AmmuttaTests
+    dependencies:
+      - target: Ammutta
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.ammutta.app.tests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Ammutta.app/Ammutta"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+        CODE_SIGN_STYLE: Automatic
+
+  AmmuttaUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: Tests/AmmuttaUITests
+    dependencies:
+      - target: Ammutta
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.ammutta.app.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: Ammutta
+        CODE_SIGN_STYLE: Automatic
+
+schemes:
+  Ammutta:
+    build:
+      targets:
+        Ammutta: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - AmmuttaTests
+        - AmmuttaUITests
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release

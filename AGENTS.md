@@ -4,7 +4,7 @@
 
 Ammutta for iOS is a free, local-only workout tracker for iPhone (Swift 6, SwiftUI, iOS 26+), built from scratch. It shares a name and product idea with Ammutta for Android, but no code, data format or legacy behavior.
 
-Status: specification and release pipeline only; no app code yet.
+Status: first prototype (0.1): plans, guided workouts with in-app timers, history, settings, en + it. See `docs/architecture.md` §15 for what the prototype simplifies.
 
 ## Source-of-truth documents
 
@@ -45,17 +45,25 @@ There is no design system yet. Use stock SwiftUI components and semantic styles.
 ## Commands
 
 ```sh
-# Pipeline safety tests (any OS with Python 3)
+# Any OS with Python 3
+python3 scripts/check-strings.py
 python3 -m unittest discover -s scripts -p 'test_testflight_ci.py' -v
 bash -n scripts/*.sh
 
-# Once ios/ exists (macOS, Xcode 26.6+, xcodegen)
+# Any OS with Swift 6.2 (Linux runs the core only; macOS also runs persistence tests)
+swift test --package-path ios/Packages/AmmuttaKit
+
+# macOS, Xcode 26.6+, xcodegen
 (cd ios && xcodegen generate)
 ./scripts/test-ios.sh
 xcodebuild build -project ios/Ammutta.xcodeproj -scheme Ammutta -configuration Release \
   -destination 'generic/platform=iOS' -derivedDataPath ios/DerivedData-Release CODE_SIGNING_ALLOWED=NO
 python3 scripts/verify-ios-bundle.py ios/DerivedData-Release/Build/Products/Release-iphoneos/Ammutta.app
 ```
+
+## Strings
+
+All UI strings go through `ios/App/Sources/Support/L10n.swift` with semantic keys, and every key needs English and Italian in `ios/App/Resources/Localizable.xcstrings`. Built-in exercise, equipment and muscle names live in `Exercises.xcstrings`. `scripts/check-strings.py` enforces this, including no raw string literals in SwiftUI text APIs.
 
 ## Testing expectations
 
