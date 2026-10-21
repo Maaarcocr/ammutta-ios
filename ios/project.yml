@@ -47,6 +47,8 @@ targets:
         # Placeholder for local builds; release scripts inject the real ID and reject this one.
         PRODUCT_BUNDLE_IDENTIFIER: dev.ammutta.app
         INFOPLIST_FILE: App/Info.plist
+        # iPhone only. Set on the target because XcodeGen's app preset defaults to "1,2".
+        TARGETED_DEVICE_FAMILY: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         CODE_SIGN_STYLE: Automatic
