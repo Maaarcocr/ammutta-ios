@@ -317,7 +317,9 @@ class WorkflowSafetyTests(unittest.TestCase):
             cases.extend(({key: value}, False) for value in values)
         for updates, expected in cases:
             with self.subTest(updates=updates):
-                result = subprocess.run([BASH, "-c", script], env={**valid, **updates}, capture_output=True, text=True)
+                # Inherit the host environment: some hosts re-exec bash endlessly under an empty one.
+                env = {**os.environ, **valid, **updates}
+                result = subprocess.run([BASH, "-c", script], env=env, capture_output=True, text=True, timeout=10)
                 self.assertEqual(result.returncode == 0, expected, result.stderr)
 
 
