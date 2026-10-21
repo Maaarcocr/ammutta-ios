@@ -165,12 +165,17 @@ elif name == "xcodebuild":
                     ipa.write(item, "Payload/" + str(item.relative_to(source)))
         print(marker)
 elif name == "codesign":
+    extract = [arg for arg in args if arg.startswith("--extract-certificates")]
     if "--entitlements" in args:
+        # Current codesign prints DER unless asked for XML.
+        assert value("--entitlements") == "-" and "--xml" in args
         sys.stdout.buffer.write(plistlib.dumps(profile["Entitlements"]))
     elif "--verbose=4" in args:
         print("TeamIdentifier=" + os.environ["AMMUTTA_TEAM_ID"])
-    elif "--extract-certificates" in args:
-        pathlib.Path(value("--extract-certificates") + "0").write_bytes(certificate)
+    elif extract:
+        # The prefix must share a token with the flag; a separate token would be read as a code path.
+        assert extract[0].startswith("--extract-certificates=")
+        pathlib.Path(extract[0].split("=", 1)[1] + "0").write_bytes(certificate)
         print(marker)
     else:
         assert args[:3] == ["--verify", "--deep", "--strict"]
