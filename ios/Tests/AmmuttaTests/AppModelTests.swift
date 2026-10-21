@@ -116,6 +116,7 @@ struct AppModelTests {
     @Test func aiPromptListsBuiltInsAndTheUsersOwnExercises() throws {
         let model = AppModel(store: try AmmuttaStore(inMemory: true), defaults: try makeDefaults())
         model.load()
+        model.weightUnit = .kilograms   // the default follows the locale (pounds in en_US)
         let basic = model.planLinkPrompt()
         #expect(basic.contains("ammutta://plan?v=1"))
         #expect(basic.contains("%20"))
