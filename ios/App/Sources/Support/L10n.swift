@@ -48,6 +48,16 @@ enum L10n {
     static var importPreview: LocalizedStringKey { "import.preview" }
     static var importAdd: LocalizedStringKey { "import.add" }
     static var importNewBadge: LocalizedStringKey { "import.newBadge" }
+    static var plansSharePrompt: LocalizedStringKey { "plans.sharePrompt" }
+    static func promptFormat(_ repsKeys: String, _ timedKeys: String) -> String {
+        String(localized: "prompt.format \(repsKeys) \(timedKeys)")
+    }
+    static func promptOwnExercises(_ list: String) -> String { String(localized: "prompt.ownExercises \(list)") }
+    static var promptKindReps: String { String(localized: "prompt.kind.reps") }
+    static var promptKindTimed: String { String(localized: "prompt.kind.timed") }
+    static var promptUnitKilograms: String { String(localized: "prompt.unit.kg") }
+    static var promptUnitPounds: String { String(localized: "prompt.unit.lb") }
+    static var promptReply: String { String(localized: "prompt.reply") }
     static func importError(_ error: PlanLink.ParseError) -> String {
         switch error {
         case .notAPlanLink: String(localized: "import.error.notLink")

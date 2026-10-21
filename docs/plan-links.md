@@ -138,11 +138,14 @@ ammutta://plan?v=1&name=Mobility&e=Cat%20Cow:2x10:30&e=Couch%20Stretch:2x1m:30&e
 - **Tap it** in Notes, Messages, Mail, Safari or a chat app that makes links tappable. iOS opens Ammutta (it may ask to confirm "Open in Ammutta?").
 - **Paste it**: in Ammutta, go to Plans → **⋯** → **Import Plan Link**, paste, then **Preview**.
 - **Share one**: open a plan → **⋯** → **Share Link** produces a link in this format.
+- **Ask an AI for one**: Plans → **⋯** → **Share AI Prompt** (see below).
 
 Nothing is saved until **Add Plan** is tapped in the preview. Links contain plan structure only, never history or personal data.
 
 ## Prompt for AI assistants
 
-Paste this into an AI chat, followed by what you want:
+**In the app:** Plans → **⋯** → **Share AI Prompt** generates this prompt for you. It lists every built-in key *and the exercises you added yourself*, and uses your weight unit. Send it to an AI app or copy it, then describe the plan you want.
+
+Without the app at hand, paste this into an AI chat, followed by what you want:
 
 > Create an Ammutta workout plan link. Format: `ammutta://plan?v=1&name=<name, spaces as %20>&e=<exercise>:<sets>:<rest>` with one `&e=` per exercise in order. `<exercise>` is a built-in key (barbell-bench-press, barbell-back-squat, barbell-deadlift, barbell-overhead-press, barbell-row, barbell-romanian-deadlift, barbell-hip-thrust, dumbbell-bench-press, dumbbell-shoulder-press, dumbbell-row, dumbbell-curl, dumbbell-lateral-raise, dumbbell-lunge, kettlebell-goblet-squat, kettlebell-swing, pull-up, chin-up, push-up, dip, bodyweight-squat, lat-pulldown, seated-cable-row, triceps-pushdown, leg-press, leg-curl, crunch, hanging-leg-raise; timed: plank, side-plank, wall-sit, dead-hang, jump-rope) or any other exercise name (exercises outside this list are fine and get created on the phone), with spaces as %20 and no colons. `<sets>` is comma-separated: `8` = 8 reps bodyweight, `8@60` = 8 reps at 60 kg, `45s`/`2m`/`1m30s` = timed set, `3x8@60` = three identical sets; one exercise uses only reps or only timed sets. `<rest>` is seconds between sets (0–600) and may be omitted. Add `&unit=lb` for pounds. Limits: 1–30 exercises, 1–20 sets each, reps 1–999, timed sets 5 s–60 min. Reply with the link on its own line, then the same plan as a short list.

@@ -57,6 +57,23 @@ extension AppModel {
         selectedTab = .plans
     }
 
+    /// A prompt that teaches an AI assistant the link format, listing the built-in keys and
+    /// this user's own exercises, in the user's weight unit.
+    func planLinkPrompt() -> String {
+        let reps = ExerciseCatalog.all.filter { $0.kind == .reps }.map(\.key).joined(separator: ", ")
+        let timed = ExerciseCatalog.all.filter { $0.kind == .duration }.map(\.key).joined(separator: ", ")
+        var paragraphs = [L10n.promptFormat(reps, timed)]
+        let own = customExercises
+            .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+            .map { "\($0.name) (\($0.kind == .reps ? L10n.promptKindReps : L10n.promptKindTimed))" }
+        if !own.isEmpty {
+            paragraphs.append(L10n.promptOwnExercises(own.joined(separator: ", ")))
+        }
+        paragraphs.append(weightUnit == .pounds ? L10n.promptUnitPounds : L10n.promptUnitKilograms)
+        paragraphs.append(L10n.promptReply)
+        return paragraphs.joined(separator: "\n\n")
+    }
+
     func shareURL(for plan: Plan) -> URL? {
         let names = Dictionary(customExercises.map { ($0.id, $0.name) }, uniquingKeysWith: { first, _ in first })
         return PlanLink.url(for: plan, customNames: names, unit: weightUnit)
