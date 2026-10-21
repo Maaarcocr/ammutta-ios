@@ -291,7 +291,9 @@ private struct SetRow: View {
         switch set.value {
         case .reps(let count, let weight):
             HStack(spacing: 20) {
-                ValueStepper(text: L10n.repsCount(count),
+                // Just the number: the row above already says "8 reps", and the
+                // Italian "ripetizioni" doesn't fit next to the +/- buttons.
+                ValueStepper(text: count.formatted(),
                              decrement: { update(set.value.withReps(count - 1)) },
                              increment: { update(set.value.withReps(count + 1)) })
                 ValueStepper(text: Format.mass(weight ?? .zero, unit: unit),
