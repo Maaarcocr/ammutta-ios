@@ -2,7 +2,7 @@
 
 An Ammutta plan link carries a whole workout plan inside the link itself. It needs no server, no account and no internet connection: tapping it on an iPhone with Ammutta opens a preview of the plan, and **Add Plan** saves it.
 
-The format is plain text on purpose, so people and AI assistants can write links by hand. This document is the specification (implemented in `ios/Packages/AmmuttaKit/Sources/AmmuttaCore/PlanLink.swift`) and a guide for generating links.
+The format is plain text on purpose, so people and AI assistants can write links by hand. Plans are not limited to the built-in library: any exercise name works, and exercises that don't exist yet are created on the phone when the plan is added. This document is the specification (implemented in `ios/Packages/AmmuttaKit/Sources/AmmuttaCore/PlanLink.swift`) and a guide for generating links.
 
 ## Quick example
 
@@ -37,7 +37,7 @@ Three fields separated by `:`.
 **1. `<exercise>`** is either:
 
 - a **built-in key** from the [table below](#built-in-exercises), for example `barbell-bench-press`. This is the most reliable choice;
-- or a **name**, for example `Face%20Pull`. A name that matches a built-in exercise in English or Italian (ignoring case and accents) uses that exercise. Otherwise it matches the user's own exercise with the same name and type, or a new custom exercise is created. Names must not contain `:`.
+- or **any exercise name**, including exercises that are not in the library, for example `Face%20Pull` or `Bulgarian%20Split%20Squat`. A name that matches a built-in exercise in English or Italian (ignoring case and accents) uses that exercise. Otherwise it matches the user's own exercise with the same name and type, or a new custom exercise is created; its type (reps or timed) comes from its sets. Names must not contain `:`.
 
 **2. `<sets>`** is a comma-separated list of sets. All sets of one exercise must be the same type.
 
@@ -145,4 +145,4 @@ Nothing is saved until **Add Plan** is tapped in the preview. Links contain plan
 
 Paste this into an AI chat, followed by what you want:
 
-> Create an Ammutta workout plan link. Format: `ammutta://plan?v=1&name=<name, spaces as %20>&e=<exercise>:<sets>:<rest>` with one `&e=` per exercise in order. `<exercise>` is a built-in key (barbell-bench-press, barbell-back-squat, barbell-deadlift, barbell-overhead-press, barbell-row, barbell-romanian-deadlift, barbell-hip-thrust, dumbbell-bench-press, dumbbell-shoulder-press, dumbbell-row, dumbbell-curl, dumbbell-lateral-raise, dumbbell-lunge, kettlebell-goblet-squat, kettlebell-swing, pull-up, chin-up, push-up, dip, bodyweight-squat, lat-pulldown, seated-cable-row, triceps-pushdown, leg-press, leg-curl, crunch, hanging-leg-raise; timed: plank, side-plank, wall-sit, dead-hang, jump-rope) or any other exercise name with spaces as %20 and no colons. `<sets>` is comma-separated: `8` = 8 reps bodyweight, `8@60` = 8 reps at 60 kg, `45s`/`2m`/`1m30s` = timed set, `3x8@60` = three identical sets; one exercise uses only reps or only timed sets. `<rest>` is seconds between sets (0–600) and may be omitted. Add `&unit=lb` for pounds. Limits: 1–30 exercises, 1–20 sets each, reps 1–999, timed sets 5 s–60 min. Reply with the link on its own line, then the same plan as a short list.
+> Create an Ammutta workout plan link. Format: `ammutta://plan?v=1&name=<name, spaces as %20>&e=<exercise>:<sets>:<rest>` with one `&e=` per exercise in order. `<exercise>` is a built-in key (barbell-bench-press, barbell-back-squat, barbell-deadlift, barbell-overhead-press, barbell-row, barbell-romanian-deadlift, barbell-hip-thrust, dumbbell-bench-press, dumbbell-shoulder-press, dumbbell-row, dumbbell-curl, dumbbell-lateral-raise, dumbbell-lunge, kettlebell-goblet-squat, kettlebell-swing, pull-up, chin-up, push-up, dip, bodyweight-squat, lat-pulldown, seated-cable-row, triceps-pushdown, leg-press, leg-curl, crunch, hanging-leg-raise; timed: plank, side-plank, wall-sit, dead-hang, jump-rope) or any other exercise name (exercises outside this list are fine and get created on the phone), with spaces as %20 and no colons. `<sets>` is comma-separated: `8` = 8 reps bodyweight, `8@60` = 8 reps at 60 kg, `45s`/`2m`/`1m30s` = timed set, `3x8@60` = three identical sets; one exercise uses only reps or only timed sets. `<rest>` is seconds between sets (0–600) and may be omitted. Add `&unit=lb` for pounds. Limits: 1–30 exercises, 1–20 sets each, reps 1–999, timed sets 5 s–60 min. Reply with the link on its own line, then the same plan as a short list.
