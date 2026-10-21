@@ -1,0 +1,26 @@
+# OS / tooling
+.DS_Store
+__pycache__/
+*.log
+
+# Xcode generated project, build products and user state
+/ios/Ammutta.xcodeproj/
+/ios/build/
+/ios/DerivedData/
+/ios/DerivedData-Release/
+.build/
+.swiftpm/
+*.xcuserstate
+xcuserdata/
+*.xcresult/
+
+# Signing material (never commit)
+/ios/Config/Local.xcconfig
+*.p12
+*.mobileprovision
+*.p8
+*.ipa
+*.xcarchive/
+*.key.pem
+*.certSigningRequest
+/ammutta-signing/
