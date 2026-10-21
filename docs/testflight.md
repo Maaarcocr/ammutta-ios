@@ -13,6 +13,8 @@ Nothing in this repository creates Apple credentials, sets secrets or uploads a 
 | `scripts/testflight-ci.sh` | Orchestration: temporary keychain, manual signing, archive, export, verification, optional upload and guaranteed cleanup |
 | `scripts/testflight-signing.py` | Offline validation of profile, identity and export options, plus cleanup. Never prints secret material |
 | `scripts/validate-archive-config.py` | Team ID, bundle ID and build-number checks before any secret is touched |
+| `scripts/archive-diagnostics.py` | On an archive failure, prints fixed diagnostic codes (for example `ARCHIVE_PROVISIONING_NOT_SUPPORTED`), never log text |
+| `ios/Config/Ammutta.xcconfig` | App-target signing variables. The workflow writes `Signing.local.xcconfig` next to it before archiving and always deletes it, so signing applies to the app target only and never to the Swift package targets |
 | `scripts/verify-ios-bundle.py` | Checks the *built* app: no ATS exceptions, no declared data collection or tracking, `en` and `it` localizations present, compiled icon, iPhone-only, export-compliance flag |
 | `scripts/check-testflight-tools.sh` | Confirms the pinned Xcode still exposes the CLI options the pipeline needs |
 | `scripts/archive-ios.sh` | Optional local Mac route: archive only, then upload manually from Xcode Organizer |

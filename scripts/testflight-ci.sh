@@ -5,9 +5,16 @@ set -euo pipefail
 umask 077
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 HELPER="$ROOT/scripts/testflight-signing.py"
+# App-target-only signing settings, included by ios/Config/Ammutta.xcconfig. Holds no secrets
+# (team, bundle ID, profile UUID, certificate fingerprint, keychain path) and is always removed.
+SIGNING_XCCONFIG="$ROOT/ios/Config/Signing.local.xcconfig"
+remove_signing_xcconfig() {
+  python3 -c 'import os, sys; os.path.isfile(sys.argv[1]) and os.remove(sys.argv[1])' "$SIGNING_XCCONFIG"
+}
 
 # An always() workflow step is the second cleanup line of defense after the EXIT/signal traps.
 if [[ "${1:-}" == cleanup ]]; then
+  remove_signing_xcconfig
   [[ -z "${AMMUTTA_TESTFLIGHT_STATE:-}" ]] || python3 "$HELPER" cleanup "$AMMUTTA_TESTFLIGHT_STATE"
   exit 0
 fi
@@ -36,6 +43,9 @@ STAGE='initializing temporary signing storage'
 finish() {
   result=$?
   trap - EXIT INT TERM
+  if ! remove_signing_xcconfig; then
+    [[ "$result" != 0 ]] || result=1
+  fi
   if ! python3 "$HELPER" cleanup "$WORK"; then
     [[ "$result" != 0 ]] || result=1
   fi
@@ -91,16 +101,32 @@ IDENTITY="$(python3 "$HELPER" identity "$WORK/profile.plist" "$WORK/identities.t
 quiet security list-keychains -d user -s "$KEYCHAIN" "${ORIGINAL_KEYCHAINS[@]}"
 python3 "$HELPER" install-profile "$WORK" "$PROFILE_UUID"
 
+STAGE='preparing app-target-only signing settings'
+mkdir -p "$(dirname "$SIGNING_XCCONFIG")"
+printf '%s\n' \
+  'AMMUTTA_CODE_SIGN_STYLE = Manual' \
+  "AMMUTTA_DEVELOPMENT_TEAM = $AMMUTTA_TEAM_ID" \
+  "AMMUTTA_APP_BUNDLE_ID = $AMMUTTA_BUNDLE_ID" \
+  "AMMUTTA_PROVISIONING_PROFILE = $PROFILE_UUID" \
+  "AMMUTTA_CODE_SIGN_IDENTITY = $IDENTITY" \
+  "AMMUTTA_OTHER_CODE_SIGN_FLAGS = --keychain $KEYCHAIN" \
+  "CURRENT_PROJECT_VERSION = $BUILD_NUMBER" > "$SIGNING_XCCONFIG"
+
 STAGE='archiving the manually signed Release app'
 (cd "$ROOT/ios" && quiet xcodegen generate)
-quiet xcodebuild archive \
+# Do not pass signing settings globally: Swift package targets cannot use the app's
+# provisioning profile. The app target reads them from the file written above.
+if xcodebuild archive \
   -project "$ROOT/ios/Ammutta.xcodeproj" -scheme Ammutta -configuration Release \
   -destination 'generic/platform=iOS' -archivePath "$ARCHIVE" -derivedDataPath "$WORK/DerivedData" \
-  CODE_SIGN_STYLE=Manual CODE_SIGNING_ALLOWED=YES CODE_SIGNING_REQUIRED=YES \
-  DEVELOPMENT_TEAM="$AMMUTTA_TEAM_ID" PRODUCT_BUNDLE_IDENTIFIER="$AMMUTTA_BUNDLE_ID" \
-  PROVISIONING_PROFILE_SPECIFIER="$PROFILE_UUID" CODE_SIGN_IDENTITY="$IDENTITY" \
-  OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN" \
-  CURRENT_PROJECT_VERSION="$BUILD_NUMBER"
+  > "$WORK/private-archive.log" 2>&1; then
+  :
+else
+  status=$?
+  # Prints fixed diagnostic codes only, never log text.
+  python3 "$ROOT/scripts/archive-diagnostics.py" "$WORK/private-archive.log" || true
+  exit "$status"
+fi
 
 verify_app() {
   local app="$1" label="$2"

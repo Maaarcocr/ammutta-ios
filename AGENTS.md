@@ -80,5 +80,6 @@ All UI strings go through `ios/App/Sources/Support/L10n.swift` with semantic key
 
 ## Git
 
-- Never commit signing material (`*.p12`, `*.p8`, `*.mobileprovision`, `*.key.pem`, `*.certSigningRequest`), generated `ios/Ammutta.xcodeproj`, build products or DerivedData.
+- Never commit signing material (`*.p12`, `*.p8`, `*.mobileprovision`, `*.key.pem`, `*.certSigningRequest`), the workflow-generated `ios/Config/Signing.local.xcconfig`, generated `ios/Ammutta.xcodeproj`, build products or DerivedData.
+- Never pass signing settings to `xcodebuild` on the command line: they would also reach the Swift package targets. App signing goes through `ios/Config/Ammutta.xcconfig`.
 - Commit source, String Catalogs, `project.yml`, the privacy manifest, docs and tests.

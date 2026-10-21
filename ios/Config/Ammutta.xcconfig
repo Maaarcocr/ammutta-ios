@@ -1,0 +1,15 @@
+// App target signing, Debug and Release. project.yml points the app target's signing
+// settings at these AMMUTTA_* variables, so they apply to the app target only.
+//
+// Local development: automatic signing with the placeholder bundle ID.
+AMMUTTA_APP_BUNDLE_ID = dev.ammutta.app
+AMMUTTA_CODE_SIGN_STYLE = Automatic
+AMMUTTA_CODE_SIGN_IDENTITY = Apple Development
+AMMUTTA_DEVELOPMENT_TEAM =
+AMMUTTA_PROVISIONING_PROFILE =
+AMMUTTA_OTHER_CODE_SIGN_FLAGS =
+
+// The TestFlight workflow writes this file just before archiving and deletes it afterwards.
+// Passing signing settings on the xcodebuild command line instead would also apply them
+// to the Swift package targets, which cannot use a provisioning profile.
+#include? "Signing.local.xcconfig"
