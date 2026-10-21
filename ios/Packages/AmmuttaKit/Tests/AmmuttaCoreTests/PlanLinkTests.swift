@@ -133,13 +133,13 @@ struct PlanLinkEncodingTests {
 
     @Test func roundTripsThroughParsing() throws {
         let id = ExerciseID()
-        let plan = samplePlan(customID: id, unit: unit)
         for unit in WeightUnit.allCases {
+            let plan = samplePlan(customID: id, unit: unit)
             let url = try #require(PlanLink.url(for: plan, customNames: [id: "Band Pull-Apart"], unit: unit))
             let draft = try PlanLink.parse(url)
             #expect(draft.name == plan.name)
             #expect(draft.exercises.map(\.sets) == plan.exercises.map(\.sets))
-            #expect(draft.exercises.map(\.restSeconds) == plan.exercises.map { $0.restSeconds })
+            #expect(draft.exercises.map(\.restSeconds) == plan.exercises.map { Optional($0.restSeconds) })
             #expect(draft.exercises[1].reference == .named("Band Pull-Apart"))
         }
     }
