@@ -1,6 +1,36 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "alert.rest.body" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Time for the next set." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "È ora della prossima serie." } }
+      }
+    },
+    "alert.rest.next %@ %lld" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Next: %1$@, set %2$lld" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Prossimo: %1$@, serie %2$lld" } }
+      }
+    },
+    "alert.rest.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Rest's over" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Recupero finito" } }
+      }
+    },
+    "alert.work.body %@" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ is done." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "%@: fatto." } }
+      }
+    },
+    "alert.work.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Time's up" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Tempo scaduto" } }
+      }
+    },
     "common.cancel" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Cancel" } },
@@ -179,6 +209,156 @@
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "No Workouts Yet" } },
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Ancora nessun allenamento" } }
+      }
+    },
+    "import.add" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Add Plan" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Aggiungi scheda" } }
+      }
+    },
+    "import.error.exercise %lld" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Exercise %lld in this link isn't written correctly." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "L'esercizio %lld nel link non è scritto correttamente." } }
+      }
+    },
+    "import.error.name" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This link has no plan name." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Questo link non ha il nome della scheda." } }
+      }
+    },
+    "import.error.nameTooLong" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The plan name in this link is too long." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Il nome della scheda nel link è troppo lungo." } }
+      }
+    },
+    "import.error.noExercises" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This link has no exercises." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Questo link non contiene esercizi." } }
+      }
+    },
+    "import.error.notLink" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This isn't an Ammutta plan link." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Questo non è il link di una scheda Ammutta." } }
+      }
+    },
+    "import.error.tooLong" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This link is too long." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Questo link è troppo lungo." } }
+      }
+    },
+    "import.error.tooManyExercises" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This link has too many exercises." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Questo link contiene troppi esercizi." } }
+      }
+    },
+    "import.error.unit" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The weight unit in this link must be kg or lb." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "L'unità di peso nel link deve essere kg o lb." } }
+      }
+    },
+    "import.error.version" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This link needs a newer version of Ammutta." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Questo link richiede una versione più recente di Ammutta." } }
+      }
+    },
+    "import.newBadge" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "New" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Nuovo" } }
+      }
+    },
+    "import.paste" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Paste" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Incolla" } }
+      }
+    },
+    "import.placeholder" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Plan link" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Link della scheda" } }
+      }
+    },
+    "import.preview" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Preview" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Anteprima" } }
+      }
+    },
+    "import.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Import Plan" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Importa scheda" } }
+      }
+    },
+    "plan.shareLink" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Share Link" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Condividi link" } }
+      }
+    },
+    "plans.sharePrompt" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Share AI Prompt" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Condividi prompt per l'IA" } }
+      }
+    },
+    "prompt.format %@ %@" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Create an Ammutta workout plan link for me. Format: ammutta://plan?v=1&name=<plan name>&e=<exercise>:<sets>:<rest>, with one &e= per exercise, in order. Write spaces as %%20 and never put colons inside names.\n\n<exercise> is a built-in key (reps: %1$@; timed: %2$@) or any other exercise name. Exercises that aren't built in are fine: the app creates them.\n\n<sets> is comma-separated: 8 = 8 reps without added weight, 8@60 = 8 reps with 60 of weight (decimals use a dot: 8@62.5), 45s, 2m or 1m30s = a timed set, 3x8@60 = three identical sets. One exercise uses only reps or only timed sets. <rest> is the rest between sets in seconds (0–600) and can be left out. Limits: 1–30 exercises, 1–20 sets each, 1–999 reps, timed sets from 5 seconds to 60 minutes." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Crea per me il link di una scheda di allenamento Ammutta. Formato: ammutta://plan?v=1&name=<nome della scheda>&e=<esercizio>:<serie>:<recupero>, con un &e= per esercizio, in ordine. Scrivi gli spazi come %%20 e non usare mai i due punti nei nomi.\n\n<esercizio> è una chiave predefinita (ripetizioni: %1$@; a tempo: %2$@) oppure qualsiasi altro nome di esercizio. Gli esercizi non predefiniti vanno bene: l'app li crea.\n\n<serie> è un elenco separato da virgole: 8 = 8 ripetizioni senza peso aggiunto, 8@60 = 8 ripetizioni con 60 di peso (i decimali usano il punto: 8@62.5), 45s, 2m o 1m30s = una serie a tempo, 3x8@60 = tre serie uguali. Un esercizio usa solo ripetizioni o solo serie a tempo. <recupero> è il recupero tra le serie in secondi (0–600) e si può omettere. Limiti: 1–30 esercizi, 1–20 serie ciascuno, 1–999 ripetizioni, serie a tempo da 5 secondi a 60 minuti." } }
+      }
+    },
+    "prompt.kind.reps" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "reps" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "ripetizioni" } }
+      }
+    },
+    "prompt.kind.timed" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "timed" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "a tempo" } }
+      }
+    },
+    "prompt.ownExercises %@" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "I also have these exercises of my own. Use their exact names when they fit: %@." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Ho anche questi esercizi miei. Usa i loro nomi esatti quando sono adatti: %@." } }
+      }
+    },
+    "prompt.reply" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Reply with the link on a line by itself, then the plan as a short list. The plan I want:" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Rispondi con il link da solo su una riga, poi la scheda come breve elenco. La scheda che voglio:" } }
+      }
+    },
+    "prompt.unit.kg" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Weights are in kilograms." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "I pesi sono in chilogrammi." } }
+      }
+    },
+    "prompt.unit.lb" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Weights are in pounds: add &unit=lb to the link." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "I pesi sono in libbre: aggiungi &unit=lb al link." } }
+      }
+    },
+    "plans.importLink" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Import Plan Link" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Importa link scheda" } }
       }
     },
     "kind.duration" : {
@@ -551,6 +731,18 @@
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Pounds (lb)" } },
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Libbre (lb)" } }
+      }
+    },
+    "workout.alertsOff" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Timer alerts are off." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Avvisi del timer disattivati." } }
+      }
+    },
+    "workout.openSettings" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Settings" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Impostazioni" } }
       }
     },
     "workout.decrease" : {

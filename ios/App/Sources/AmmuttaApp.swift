@@ -15,7 +15,9 @@ struct AmmuttaApp: App {
         } catch {
             fatalError("Could not open the Ammutta database: \(error)")
         }
-        let model = AppModel(store: store)
+        // UI tests must not raise the notification permission prompt.
+        let alerts: any TimerAlerting = uiTesting ? DisabledAlerting() : NotificationAlerting()
+        let model = AppModel(store: store, alerts: alerts)
         model.load()
         if uiTesting, arguments.contains("-seed-sample-plan") {
             model.seedSamplePlan()

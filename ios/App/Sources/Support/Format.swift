@@ -55,6 +55,15 @@ enum Format {
 /// Display names for built-in exercises, equipment and muscle groups (Exercises.xcstrings).
 enum ExerciseText {
     static func name(_ key: String) -> String { lookup("exercise." + key) }
+
+    /// The English name regardless of the device language, so plan links written in English
+    /// (for example by an AI) still match built-in exercises on an Italian phone.
+    static func englishName(_ key: String) -> String {
+        (englishBundle ?? .main).localizedString(forKey: "exercise." + key, value: nil, table: "Exercises")
+    }
+
+    private static let englishBundle: Bundle? =
+        Bundle.main.path(forResource: "en", ofType: "lproj").flatMap(Bundle.init(path:))
     static func equipment(_ equipment: Equipment) -> String { lookup("equipment." + equipment.rawValue) }
     static func muscle(_ muscle: MuscleGroup) -> String { lookup("muscle." + muscle.rawValue) }
 

@@ -1,3 +1,4 @@
+import AmmuttaCore
 import SwiftUI
 
 /// Every user-facing string in the app. Keys live in Localizable.xcstrings (English and
@@ -37,6 +38,39 @@ enum L10n {
     static var planDeleteTitle: LocalizedStringKey { "plan.delete.title" }
     static var planMissing: LocalizedStringKey { "plan.missing" }
     static func restValue(_ duration: String) -> String { String(localized: "plan.restValue \(duration)") }
+    static var planShareLink: LocalizedStringKey { "plan.shareLink" }
+
+    // MARK: Plan links
+    static var plansImportLink: LocalizedStringKey { "plans.importLink" }
+    static var importTitle: LocalizedStringKey { "import.title" }
+    static var importPlaceholder: LocalizedStringKey { "import.placeholder" }
+    static var importPaste: LocalizedStringKey { "import.paste" }
+    static var importPreview: LocalizedStringKey { "import.preview" }
+    static var importAdd: LocalizedStringKey { "import.add" }
+    static var importNewBadge: LocalizedStringKey { "import.newBadge" }
+    static var plansSharePrompt: LocalizedStringKey { "plans.sharePrompt" }
+    static func promptFormat(_ repsKeys: String, _ timedKeys: String) -> String {
+        String(localized: "prompt.format \(repsKeys) \(timedKeys)")
+    }
+    static func promptOwnExercises(_ list: String) -> String { String(localized: "prompt.ownExercises \(list)") }
+    static var promptKindReps: String { String(localized: "prompt.kind.reps") }
+    static var promptKindTimed: String { String(localized: "prompt.kind.timed") }
+    static var promptUnitKilograms: String { String(localized: "prompt.unit.kg") }
+    static var promptUnitPounds: String { String(localized: "prompt.unit.lb") }
+    static var promptReply: String { String(localized: "prompt.reply") }
+    static func importError(_ error: PlanLink.ParseError) -> String {
+        switch error {
+        case .notAPlanLink: String(localized: "import.error.notLink")
+        case .tooLong: String(localized: "import.error.tooLong")
+        case .unsupportedVersion: String(localized: "import.error.version")
+        case .invalidUnit: String(localized: "import.error.unit")
+        case .missingName: String(localized: "import.error.name")
+        case .nameTooLong: String(localized: "import.error.nameTooLong")
+        case .noExercises: String(localized: "import.error.noExercises")
+        case .tooManyExercises: String(localized: "import.error.tooManyExercises")
+        case .invalidExercise(let position): String(localized: "import.error.exercise \(position)")
+        }
+    }
 
     // MARK: Plan editor
     static var planEditorNewTitle: LocalizedStringKey { "planEditor.newTitle" }
@@ -107,6 +141,15 @@ enum L10n {
     static var timerSkip: LocalizedStringKey { "timer.skip" }
     static var timerMinus: LocalizedStringKey { "timer.minus15" }
     static var timerPlus: LocalizedStringKey { "timer.plus15" }
+
+    // MARK: Timer alerts (Lock Screen notifications)
+    static var alertRestTitle: String { String(localized: "alert.rest.title") }
+    static var alertRestBody: String { String(localized: "alert.rest.body") }
+    static func alertNextSet(_ exercise: String, _ set: Int) -> String { String(localized: "alert.rest.next \(exercise) \(set)") }
+    static var alertWorkTitle: String { String(localized: "alert.work.title") }
+    static func alertWorkBody(_ exercise: String) -> String { String(localized: "alert.work.body \(exercise)") }
+    static var alertsOff: LocalizedStringKey { "workout.alertsOff" }
+    static var openSettings: LocalizedStringKey { "workout.openSettings" }
 
     // MARK: Summary
     static var summaryTitle: LocalizedStringKey { "summary.title" }

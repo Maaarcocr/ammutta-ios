@@ -44,6 +44,18 @@ struct PlansView: View {
                     }
                     .accessibilityIdentifier("plans.add")
                 }
+                ToolbarItem(placement: .secondaryAction) {
+                    Button {
+                        model.startPasteImport()
+                    } label: {
+                        Label(L10n.plansImportLink, systemImage: "link")
+                    }
+                }
+                ToolbarItem(placement: .secondaryAction) {
+                    ShareLink(item: model.planLinkPrompt()) {
+                        Label(L10n.plansSharePrompt, systemImage: "sparkles")
+                    }
+                }
             }
             .sheet(item: $newPlan) { plan in
                 PlanEditorView(plan: plan, isNew: true)
