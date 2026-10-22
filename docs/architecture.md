@@ -236,31 +236,30 @@ protocol TimerAlerting: Sendable {
 - Encrypted characteristics trigger the iOS pairing prompt automatically. There is no custom pairing code.
 - **Google Fitbit Air** (with "Share heart rate" enabled in Google Health) is just another `0x180D` peripheral. No vendor-specific code paths exist.
 
-## 9. Apple Health (`AmmuttaHealth`)
+## 9. Apple Health
 
 ```swift
-protocol HealthSyncing: Sendable {
-  func isAvailable() -> Bool
-  func requestAuthorization() async throws
-  func enqueue(_ job: HealthSyncJob.Kind, for workout: WorkoutID) async  // .upsert / .delete
-  func drain() async                                                      // retry pending jobs
+@MainActor protocol HealthSyncing: AnyObject {
+  var isAvailable: Bool { get }
+  var isAuthorized: Bool { get }              // sharing allowed for workouts
+  func requestAuthorization() async
+  func save(_ workout: Workout) async throws  // skips if Health already has it
+  func delete(_ id: WorkoutID) async throws
 }
 ```
 
-- **Outbox pattern.** Finishing, editing or deleting a workout writes a `HealthSyncJob` row in the same transaction as the workout change. `drain()` runs:
+- **Outbox.** `HealthSyncQueue` (core, Linux-tested) holds `HealthSyncJob`s (`.save` / `.delete` by workout ID), oldest first, at most one per workout: a delete replaces a pending save. The app's `HealthSync` (`Model/HealthSync.swift`) persists the queue as JSON in `UserDefaults` next to the on/off setting, so no SwiftData schema change was needed.
+- Jobs are queued when a workout is saved finished and when one is deleted, but only while sync is on. The queue runs one job at a time:
   - on launch;
   - on returning to the foreground;
-  - after enqueueing.
+  - after queueing.
 
-  It processes jobs FIFO per workout and deletes a job only after HealthKit confirms success.
-- **Upsert**:
-  1. find existing Ammutta objects by `HKMetadataKeyExternalUUID` = workout ID;
-  2. delete them;
-  3. write a fresh `HKWorkout` via `HKWorkoutBuilder` with workout activities/events and associated heart-rate samples.
-
-  The external UUID makes the job idempotent: retries never duplicate data.
-- **Delete** removes only objects whose source is Ammutta and whose external UUID matches.
-- Mapping from domain to HealthKit is a pure function in the core (`HealthWorkoutDescription`). It is unit-tested without HealthKit, and the HealthKit adapter just executes the description.
+  A job leaves the queue only after HealthKit succeeds. The first failure stops the run until the next trigger.
+- **Save** (`HealthKitSync`): if a workout with `HKMetadataKeyExternalUUID` = workout ID already exists, do nothing. Otherwise `HKWorkoutBuilder` writes a `traditionalStrengthTraining` workout from start to end, with the heart-rate samples. The workout and every sample carry that external UUID.
+- **Delete** removes the workouts and heart-rate samples with that external UUID: only objects Ammutta wrote.
+- HealthKit work runs in `@concurrent` static functions, so the non-Sendable builder never crosses actors.
+- Signing: the app has the `com.apple.developer.healthkit` entitlement (`App/Ammutta.entitlements`, generated from `project.yml`). The App ID has the HealthKit capability, and the App Store profile was regenerated with it.
+- `FakeHealthSync` serves unit tests and UI tests. Reads from Health are not used.
 
 ## 10. Features and navigation (`AmmuttaFeatures`)
 
@@ -326,6 +325,6 @@ The first prototype implements the core loop and deliberately simplifies some of
 | Persistence | `AmmuttaStore` on the main actor; plans and workouts stored as one JSON blob per row with scalar columns for queries | Background `ModelActor` (§5) |
 | Timers | Deadlines in the engine; in-app task and haptic while open; one local notification per workout, derived purely from state (`Workout.pendingTimerAlert`) and replaced in order on every event, so the phone alerts on time when locked | AlarmKit as the primary path, Live Activity (§4.3, §6, §7) |
 | Formatting | `Format` in the app target, tested on iOS | `Formatting` in the core (§4.4) |
-| Not yet built | Apple Health, QR/file/CSV sharing (plan links are built), export, personal bests, archiving exercises | §7–§9, product spec §11–§12 |
+| Not yet built | QR/file/CSV sharing (plan links are built), export, personal bests, archiving exercises | §7–§9, product spec §11–§12 |
 
 The app icon is rendered from `branding/ammutta-logo.svg`, a simplified vector redraw of the original logo (product spec §17.3).

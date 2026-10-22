@@ -229,6 +229,18 @@
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Nuovo esercizio" } }
       }
     },
+    "health.notAllowed" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Ammutta isn't allowed to save workouts to Health." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Ammutta non ha il permesso di salvare gli allenamenti in Salute." } }
+      }
+    },
+    "health.openSettings" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open Settings" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Apri Impostazioni" } }
+      }
+    },
     "heartRate.bpm %lld" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld bpm" } },
@@ -731,6 +743,18 @@
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Default rest" } },
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Recupero predefinito" } }
+      }
+    },
+    "settings.health" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Apple Health" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Apple Salute" } }
+      }
+    },
+    "settings.healthSync" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Sync to Apple Health" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Sincronizza con Apple Salute" } }
       }
     },
     "settings.heartRate" : {

@@ -42,6 +42,11 @@ targets:
       - package: AmmuttaKit
         product: AmmuttaPersistence
       - target: AmmuttaWidgets
+    # HealthKit, matching the capability on the App ID and its App Store profile.
+    entitlements:
+      path: App/Ammutta.entitlements
+      properties:
+        com.apple.developer.healthkit: true
     configFiles:
       Debug: Config/Ammutta.xcconfig
       Release: Config/Ammutta.xcconfig

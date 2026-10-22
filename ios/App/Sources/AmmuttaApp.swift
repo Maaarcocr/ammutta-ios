@@ -24,7 +24,8 @@ struct AmmuttaApp: App {
         } else {
             BluetoothHeartRateSource()
         }
-        let model = AppModel(store: store, alerts: alerts, activityPresenter: activityPresenter, heartRate: heartRate)
+        let health: any HealthSyncing = uiTesting ? FakeHealthSync() : HealthKitSync()
+        let model = AppModel(store: store, alerts: alerts, activityPresenter: activityPresenter, heartRate: heartRate, healthService: health)
         model.load()
         if uiTesting, arguments.contains("-seed-sample-plan") {
             model.seedSamplePlan()

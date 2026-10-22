@@ -33,6 +33,9 @@ struct SettingsView: View {
                     }
                     .accessibilityIdentifier("settings.heartRate")
                 }
+                if model.health.isAvailable {
+                    HealthSection(health: model.health)
+                }
                 Section {
                     Button(L10n.settingsLanguage) {
                         if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
@@ -45,6 +48,29 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle(L10n.tabSettings)
+        }
+    }
+}
+
+private struct HealthSection: View {
+    @Bindable var health: HealthSync
+    @Environment(\.openURL) private var openURL
+
+    var body: some View {
+        Section {
+            Toggle(L10n.settingsHealthSync, isOn: $health.isEnabled)
+                .accessibilityIdentifier("settings.healthSync")
+            if health.isEnabled, !health.isAuthorized {
+                Button(L10n.healthOpenSettings) {
+                    if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
+                }
+            }
+        } header: {
+            Text(L10n.settingsHealth)
+        } footer: {
+            if health.isEnabled, !health.isAuthorized {
+                Text(L10n.healthNotAllowed)
+            }
         }
     }
 }

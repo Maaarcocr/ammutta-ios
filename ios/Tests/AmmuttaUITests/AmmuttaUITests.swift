@@ -253,6 +253,22 @@ final class AmmuttaUITests: XCTestCase {
         capture("21-summary-heart-rate")
     }
 
+    @MainActor
+    func testTurningOnAppleHealthSync() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-ui-testing", "-weightUnit", "kg"]
+        app.launch()
+
+        app.tabBars.buttons.element(boundBy: 3).tap()
+        let toggle = app.switches.matching(identifier: "settings.healthSync").firstMatch
+        XCTAssertTrue(toggle.waitForExistence(timeout: 30))
+        // Tap the switch itself, at the trailing edge of the row.
+        toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5)).tap()
+        XCTAssertEqual(toggle.value as? String, "1")
+        capture("22-apple-health")
+    }
+
     /// Every element the tests tap is a button (list rows with NavigationLink included).
     /// Querying buttons only is much cheaper than `descendants(matching: .any)`, which
     /// timed out on slow CI simulators.

@@ -30,7 +30,10 @@ struct RootView: View {
             model.handleOpenURL(url)
         }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active { model.session?.refresh() }
+            if phase == .active {
+                model.session?.refresh()
+                model.health.run()
+            }
         }
         .alert(L10n.errorTitle, isPresented: $model.showingError) {
             Button(L10n.ok) {}
