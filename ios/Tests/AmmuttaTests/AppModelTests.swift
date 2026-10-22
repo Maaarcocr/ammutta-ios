@@ -353,4 +353,94 @@ struct AppModelTests {
         #expect(health.saved == [id])
         #expect(relaunched.health.queue.jobs.isEmpty)
     }
+
+    private func agentModel(_ server: FakeAgentServer, accounts: MemoryAgentAccountStore = MemoryAgentAccountStore()) throws -> AppModel {
+        let model = AppModel(
+            store: try AmmuttaStore(inMemory: true), defaults: try makeDefaults(),
+            agentServer: server, agentAccounts: accounts
+        )
+        model.load()
+        return model
+    }
+
+    @Test func connectingAgentsSendsTheDataAndEveryChange() async throws {
+        let server = FakeAgentServer()
+        let accounts = MemoryAgentAccountStore()
+        let model = try agentModel(server, accounts: accounts)
+        #expect(model.agents.isAvailable && !model.agents.isEnabled)
+        model.save(legDay())
+        await model.agents.settled()
+        #expect(server.snapshots.isEmpty, "nothing leaves the phone while off")
+
+        model.agents.isEnabled = true
+        await model.agents.settled()
+        #expect(accounts.account != nil)
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let first = try decoder.decode(AgentSnapshot.self, from: try #require(server.snapshots.last))
+        #expect(first.plans.map(\.name) == ["Legs"])
+
+        model.save(Plan(name: "Arms", exercises: [.make(exercise: .builtIn(key: "dumbbell-curl"), kind: .reps, restSeconds: 60)], createdAt: .now))
+        await model.agents.settled()
+        let second = try decoder.decode(AgentSnapshot.self, from: try #require(server.snapshots.last))
+        #expect(Set(second.plans.map(\.name)) == ["Legs", "Arms"])
+
+        model.agents.requestPairingCode()
+        await model.agents.settled()
+        #expect(model.agents.pairingCode == "K7M2QX9P")
+    }
+
+    @Test func plansWrittenByAgentsAreImportedAndUpdatesKeepThePlan() async throws {
+        let server = FakeAgentServer()
+        let model = try agentModel(server)
+        let legs = legDay()
+        model.save(legs)
+        server.pending = [
+            AgentInboxItem(id: "1", planId: nil, name: "Pull Day",
+                           link: "ammutta://plan?v=1&name=Pull%20Day&e=Band%20Pull-Apart%3A3x15%3A60&e=plank%3A2x45s"),
+            AgentInboxItem(id: "2", planId: legs.id.rawValue.uuidString, name: "Legs v2",
+                           link: "ammutta://plan?v=1&name=Legs%20v2&e=barbell-back-squat%3A5x5%40100%3A180"),
+            AgentInboxItem(id: "3", planId: nil, name: "Broken", link: "ammutta://plan?v=1&name=Broken"),
+        ]
+        model.agents.isEnabled = true
+        await model.agents.settled()
+
+        #expect(server.pending.isEmpty, "imported and unusable items both leave the inbox")
+        #expect(Set(model.plans.map(\.name)) == ["Pull Day", "Legs v2"])
+        let updated = try #require(model.plan(legs.id))
+        #expect(updated.name == "Legs v2")
+        #expect(updated.exercises.first?.sets.count == 5)
+        #expect(model.customExercises.map(\.name) == ["Band Pull-Apart"])
+    }
+
+    @Test func turningAgentsOffDeletesTheAccount() async throws {
+        let server = FakeAgentServer()
+        let accounts = MemoryAgentAccountStore()
+        let model = try agentModel(server, accounts: accounts)
+        model.agents.isEnabled = true
+        await model.agents.settled()
+        let id = try #require(accounts.account?.id)
+
+        model.agents.isEnabled = false
+        await model.agents.settled()
+        #expect(accounts.account == nil)
+        #expect(server.deletedAccounts == [id])
+    }
+
+    @Test func anUnreachableConnectorKeepsPlansForLater() async throws {
+        let server = FakeAgentServer()
+        server.failing = true
+        server.pending = [AgentInboxItem(id: "1", planId: nil, name: "Later", link: "ammutta://plan?v=1&name=Later&e=plank%3A45s")]
+        let model = try agentModel(server)
+        model.agents.isEnabled = true
+        await model.agents.settled()
+        #expect(model.agents.isOffline)
+        #expect(model.plans.isEmpty)
+
+        server.failing = false
+        model.agents.refresh()
+        await model.agents.settled()
+        #expect(!model.agents.isOffline)
+        #expect(model.plans.map(\.name) == ["Later"])
+    }
 }

@@ -36,6 +36,9 @@ struct SettingsView: View {
                 if model.health.isAvailable {
                     HealthSection(health: model.health)
                 }
+                if model.agents.isAvailable {
+                    AgentsSection(agents: model.agents)
+                }
                 Section {
                     Button(L10n.settingsLanguage) {
                         if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
@@ -43,7 +46,7 @@ struct SettingsView: View {
                 }
                 Section(L10n.settingsAbout) {
                     LabeledContent(L10n.settingsVersion, value: version)
-                    Text(L10n.settingsTagline)
+                    Text(model.agents.isEnabled ? L10n.settingsTaglineConnected : L10n.settingsTagline)
                         .foregroundStyle(.secondary)
                 }
             }
@@ -70,6 +73,52 @@ private struct HealthSection: View {
         } footer: {
             if health.isEnabled, !health.isAuthorized {
                 Text(L10n.healthNotAllowed)
+            }
+        }
+    }
+}
+
+private struct AgentsSection: View {
+    @Bindable var agents: AgentConnector
+
+    var body: some View {
+        Section {
+            Toggle(L10n.agentsToggle, isOn: $agents.isEnabled)
+                .accessibilityIdentifier("settings.agents")
+            if agents.isEnabled, let url = agents.connectorURL {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(L10n.agentsAddress)
+                    Text(url.absoluteString)
+                        .font(.footnote.monospaced())
+                        .foregroundStyle(.secondary)
+                        .textSelection(.enabled)
+                }
+                Button(L10n.agentsCopy) {
+                    UIPasteboard.general.url = url
+                }
+                if let code = agents.pairingCode {
+                    LabeledContent(L10n.agentsCode) {
+                        Text(code)
+                            .font(.title3.monospaced())
+                            .textSelection(.enabled)
+                            .accessibilityIdentifier("agents.code")
+                    }
+                }
+                Button(L10n.agentsGetCode) {
+                    agents.requestPairingCode()
+                }
+                .accessibilityIdentifier("agents.getCode")
+                Button(L10n.agentsDisconnect, role: .destructive) {
+                    agents.disconnectAgents()
+                }
+            }
+        } header: {
+            Text(L10n.settingsAgents)
+        } footer: {
+            if agents.isEnabled, agents.isOffline {
+                Text(L10n.agentsOffline)
+            } else if agents.isEnabled, agents.pairingCode != nil {
+                Text(L10n.agentsCodeNote)
             }
         }
     }

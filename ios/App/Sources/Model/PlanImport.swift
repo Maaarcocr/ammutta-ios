@@ -88,6 +88,28 @@ extension AppModel {
         return paragraphs.joined(separator: "\n\n")
     }
 
+    /// Saves a plan an agent wrote through the connector, without asking: the user connected the
+    /// agent to do exactly this. An update keeps the plan's identity; an unknown plan becomes new.
+    /// Returns true when the item is done with (saved, or unusable and dropped).
+    func importAgentPlan(_ item: AgentInboxItem) -> Bool {
+        let preview: PlanImport
+        switch preparePlanImport(from: item.link) {
+        case .success(let result): preview = result
+        case .failure: return true
+        }
+        for exercise in preview.newExercises {
+            save(exercise)
+        }
+        var plan = preview.plan
+        if let id = item.planId.flatMap(UUID.init(uuidString:)), let existing = plans.first(where: { $0.id.rawValue == id }) {
+            plan.id = existing.id
+            plan.createdAt = existing.createdAt
+            plan.updatedAt = .now
+        }
+        save(plan)
+        return true
+    }
+
     func shareURL(for plan: Plan) -> URL? {
         let names = Dictionary(customExercises.map { ($0.id, $0.name) }, uniquingKeysWith: { first, _ in first })
         return PlanLink.url(for: plan, customNames: names, unit: weightUnit)

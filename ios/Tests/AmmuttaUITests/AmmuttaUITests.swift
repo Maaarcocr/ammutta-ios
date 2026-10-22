@@ -273,6 +273,32 @@ final class AmmuttaUITests: XCTestCase {
         capture("22-apple-health")
     }
 
+    @MainActor
+    func testConnectingAIAgentsShowsAPairingCode() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-ui-testing", "-weightUnit", "kg"]
+        app.launch()
+
+        app.tabBars.buttons.element(boundBy: 3).tap()
+        let toggle = app.switches.matching(identifier: "settings.agents").firstMatch
+        XCTAssertTrue(toggle.waitForExistence(timeout: 30))
+        if !toggle.isHittable { app.swipeUp() }
+        let control = toggle.switches.firstMatch
+        (control.exists ? control : toggle).tap()
+        if toggle.value as? String != "1" {
+            toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+        }
+        let getCode = element(app, "agents.getCode")
+        XCTAssertTrue(getCode.waitForExistence(timeout: 30))
+        if !getCode.isHittable { app.swipeUp() }
+        getCode.tap()
+        let code = app.staticTexts.matching(identifier: "agents.code").firstMatch
+        XCTAssertTrue(code.waitForExistence(timeout: 30))
+        XCTAssertEqual(code.label, "K7M2QX9P")
+        capture("23-ai-agents")
+    }
+
     /// Every element the tests tap is a button (list rows with NavigationLink included).
     /// Querying buttons only is much cheaper than `descendants(matching: .any)`, which
     /// timed out on slow CI simulators.

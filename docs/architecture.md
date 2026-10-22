@@ -286,7 +286,7 @@ protocol TimerAlerting: Sendable {
 
 ## 12. Privacy and security
 
-- No networking code. There is no `URLSession` usage outside tests, and a CI grep (to add with the app) should guard against `URLSession`, `NWConnection` and `WKWebView` in app sources. External links (privacy policy, source code) open via `openURL` in the system browser.
+- The only networking is `HTTPAgentServer` (the opt-in AI agents connector, [agents.md](agents.md)): HTTPS to our own Cloudflare Worker in `server/`, authenticated with a per-phone secret kept in the Keychain. Nothing else may use `URLSession`, `NWConnection` or `WKWebView`. External links (privacy policy, source code) open via `openURL` in the system browser.
 - The privacy manifest declares no tracking and no collected data, and lists required-reason API usage (for example `UserDefaults`, `CA92.1`) as the code adopts it.
 - Entitlements: HealthKit, App Groups (once the widget exists) and Time Sensitive Notifications. Background modes: `bluetooth-central` only.
 - `ITSAppUsesNonExemptEncryption = NO`. The app uses only OS-provided data protection.
