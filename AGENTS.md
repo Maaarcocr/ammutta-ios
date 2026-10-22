@@ -32,7 +32,7 @@ The owner's top rule: plain, standard, boring code. A clever construct needs a r
 ## Non-negotiable rules
 
 - **Local-first.** The only networking is the opt-in AI agents connector (`AgentConnector`, talking to our own `server/` over HTTPS), off by default. Never add accounts with sign-up, analytics, crash reporting, remote config, ads or third-party SDKs to the app, and nothing that sends data without the user turning it on. External links open in the system browser via `openURL`.
-- **Free.** No StoreKit, purchases, subscriptions, ads or paywalls.
+- **Free to use.** Everything that runs on the phone is free, and the app is fully usable without paying. The only paid thing is an optional add-on that needs our servers (the AI agents subscription, StoreKit), priced to cover compute. Never lock on-device features behind it. Ads, if ever added, must never degrade the experience (nothing during workouts, nothing that interrupts, no tracking).
 - **Localized.** Every user-facing string goes through String Catalogs (`.xcstrings`), in **English and Italian**. This covers:
   - UI text and accessibility labels;
   - notification, AlarmKit and Live Activity text;

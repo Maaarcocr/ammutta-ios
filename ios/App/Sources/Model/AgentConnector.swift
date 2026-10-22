@@ -91,10 +91,18 @@ protocol AgentServer: AnyObject {
     func pairingCode(account: AgentAccount) async throws -> String
     func disconnectAgents(account: AgentAccount) async throws
     func deleteAccount(_ account: AgentAccount) async throws
+    /// Whether the AI Agents subscription is active, as the server last verified it.
+    func subscription(account: AgentAccount) async throws -> Bool
+    /// Sends an Apple-signed transaction; the server verifies it and returns whether it's active.
+    func uploadTransaction(_ jws: String, account: AgentAccount) async throws -> Bool
 }
 
 struct AgentServerError: Error {
     let status: Int
+}
+
+private struct SubscriptionStatus: Decodable {
+    let active: Bool
 }
 
 @MainActor
@@ -132,6 +140,15 @@ final class HTTPAgentServer: AgentServer {
         _ = try await send("DELETE", "", account: account)
     }
 
+    func subscription(account: AgentAccount) async throws -> Bool {
+        try JSONDecoder().decode(SubscriptionStatus.self, from: await send("GET", "/subscription", account: account)).active
+    }
+
+    func uploadTransaction(_ jws: String, account: AgentAccount) async throws -> Bool {
+        let body = try JSONEncoder().encode(["transaction": jws])
+        return try JSONDecoder().decode(SubscriptionStatus.self, from: await send("POST", "/subscription", account: account, body: body)).active
+    }
+
     private func send(_ method: String, _ path: String, account: AgentAccount, body: Data? = nil) async throws -> Data {
         var request = URLRequest(url: base.appending(path: "v1/accounts/\(account.id)\(path)"))
         request.httpMethod = method
@@ -153,6 +170,9 @@ final class FakeAgentServer: AgentServer {
     var connectorURL: URL { URL(string: "https://agents.example/mcp")! }
     var failing = false
     private(set) var snapshots: [Data] = []
+    /// The server's view of the subscription; on by default so UI tests reach the connected screen.
+    var active = true
+    private(set) var uploadedTransactions: [String] = []
     var pending: [AgentInboxItem] = []
     private(set) var deletedAccounts: [String] = []
     private(set) var disconnects = 0
@@ -190,6 +210,18 @@ final class FakeAgentServer: AgentServer {
         try check()
         deletedAccounts.append(account.id)
     }
+
+    func subscription(account: AgentAccount) async throws -> Bool {
+        try check()
+        return active
+    }
+
+    func uploadTransaction(_ jws: String, account: AgentAccount) async throws -> Bool {
+        try check()
+        uploadedTransactions.append(jws)
+        active = true
+        return active
+    }
 }
 
 /// The "AI Agents" setting. While on, the app sends its data to the connector whenever it
@@ -198,6 +230,7 @@ final class FakeAgentServer: AgentServer {
 @Observable
 final class AgentConnector {
     @ObservationIgnored let server: (any AgentServer)?
+    @ObservationIgnored private let store: any AgentStore
     @ObservationIgnored private let accounts: any AgentAccountStore
     @ObservationIgnored private let defaults: UserDefaults
     /// The data agents see; set by the app model.
@@ -212,17 +245,25 @@ final class AgentConnector {
     private(set) var pairingExpiry: Date?
     /// True after the last network step failed; cleared by the next success.
     private(set) var isOffline = false
+    /// Whether the AI Agents subscription is active, as the server verified it. Nothing is sent
+    /// and no agent can connect without it.
+    private(set) var isSubscribed = false
 
     private enum Keys {
         static let enabled = "agentsEnabled"
     }
 
-    init(server: (any AgentServer)?, accounts: any AgentAccountStore, defaults: UserDefaults) {
+    init(server: (any AgentServer)?, store: any AgentStore, accounts: any AgentAccountStore, defaults: UserDefaults) {
         self.server = server
+        self.store = store
         self.accounts = accounts
         self.defaults = defaults
         isEnabled = server != nil && defaults.bool(forKey: Keys.enabled)
+        store.observe { [weak self] jws in self?.transactionArrived(jws) }
     }
+
+    /// Ties App Store purchases to this account, so the server knows whose subscription it is.
+    var accountToken: UUID? { accounts.load().flatMap { UUID(uuidString: $0.id) } }
 
     /// False when this build has no connector address.
     var isAvailable: Bool { server != nil }
@@ -243,7 +284,7 @@ final class AgentConnector {
 
     /// The app's data changed: send it.
     func dataChanged() {
-        guard isEnabled, !pushQueued else { return }
+        guard isEnabled, isSubscribed, !pushQueued else { return }
         pushQueued = true
         enqueue { connector, server, account in
             connector.pushQueued = false
@@ -251,15 +292,31 @@ final class AgentConnector {
         }
     }
 
-    /// The app opened or came back: send the latest data and import new plans.
+    /// The app opened or came back: check the subscription, send the latest data and import new plans.
     func refresh() {
         guard isEnabled else { return }
         enqueue { connector, server, account in
+            if let jws = await connector.store.currentTransaction() {
+                connector.isSubscribed = try await server.uploadTransaction(jws, account: account)
+            } else {
+                connector.isSubscribed = try await server.subscription(account: account)
+            }
+            guard connector.isSubscribed else { return }
             try await connector.push(server, account)
             for item in try await server.inbox(account: account) {
                 if connector.importPlan(item) {
                     try await server.removeFromInbox(item.id, account: account)
                 }
+            }
+        }
+    }
+
+    /// A purchase, renewal or redeemed code: let the server verify it, then sync if it's active.
+    func transactionArrived(_ jws: String) {
+        enqueue { connector, server, account in
+            connector.isSubscribed = try await server.uploadTransaction(jws, account: account)
+            if connector.isSubscribed {
+                try await connector.push(server, account)
             }
         }
     }
@@ -285,6 +342,7 @@ final class AgentConnector {
 
     private func turnOff() {
         pairingCode = nil
+        isSubscribed = false
         guard let server, let account = accounts.load() else { return }
         accounts.delete()
         let previous = queue

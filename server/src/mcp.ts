@@ -3,6 +3,7 @@ import * as z from "zod";
 import type { InboxItem } from "./account";
 import { account, type Env, type Props } from "./env";
 import { type Catalog, type PlanInput, planLink, validatePlan } from "./plans";
+import { isActive } from "./subscription";
 
 // The tools agents see. Data comes from the app's last sync; plans agents write wait in the
 // account's inbox until the app next opens and imports them.
@@ -37,6 +38,7 @@ const text = (value: unknown) => ({
 });
 
 const NOT_SYNCED = "Ammutta hasn't shared any data yet. Ask the user to open the Ammutta app with AI Agents turned on in Settings.";
+const NOT_SUBSCRIBED = "The user's Ammutta AI Agents subscription isn't active. Ask them to subscribe in Ammutta → Settings → AI Agents.";
 
 export async function handleMcp(request: Request, env: Env, props: Props): Promise<Response> {
   const store = account(env, props.accountId);
@@ -47,7 +49,11 @@ export async function handleMcp(request: Request, env: Env, props: Props): Promi
       headers: { "WWW-Authenticate": 'Bearer error="invalid_token", error_description="disconnected"' },
     });
   }
+  // Without an active subscription, every tool explains that instead of returning data.
+  const active = isActive(await store.entitlement(), Date.now());
+  const unavailable = active ? NOT_SYNCED : NOT_SUBSCRIBED;
   const loadSnapshot = async (): Promise<Snapshot | null> => {
+    if (!active) return null;
     const json = await store.getSnapshot();
     return json ? (JSON.parse(json) as Snapshot) : null;
   };
@@ -66,7 +72,7 @@ export async function handleMcp(request: Request, env: Env, props: Props): Promi
     },
     async ({ limit, since }) => {
       const snapshot = await loadSnapshot();
-      if (!snapshot) return text(NOT_SYNCED);
+      if (!snapshot) return text(unavailable);
       const from = since ? Date.parse(since) : Number.NaN;
       const workouts = snapshot.workouts
         .filter((workout) => Number.isNaN(from) || Date.parse(workout.startedAt) >= from)
@@ -84,7 +90,7 @@ export async function handleMcp(request: Request, env: Env, props: Props): Promi
     },
     async () => {
       const snapshot = await loadSnapshot();
-      if (!snapshot) return text(NOT_SYNCED);
+      if (!snapshot) return text(unavailable);
       const pending = (await store.listInbox()).map(({ id, planId, name, createdAt }) => ({ id, planId, name, createdAt }));
       return text({ unit: snapshot.unit, syncedAt: snapshot.generatedAt, plans: snapshot.plans, pendingFromAgents: pending });
     },
@@ -99,14 +105,14 @@ export async function handleMcp(request: Request, env: Env, props: Props): Promi
     },
     async () => {
       const snapshot = await loadSnapshot();
-      if (!snapshot) return text(NOT_SYNCED);
+      if (!snapshot) return text(unavailable);
       return text({ builtIn: snapshot.builtInExercises, custom: snapshot.customExercises });
     },
   );
 
   const savePlan = async (input: PlanInput, planId?: string) => {
     const snapshot = await loadSnapshot();
-    if (!snapshot) return text(NOT_SYNCED);
+    if (!snapshot) return text(unavailable);
     if (planId && !snapshot.plans.some((plan) => plan.id === planId)) {
       return text(`No plan with id ${planId}. Use list_plans to find it.`);
     }

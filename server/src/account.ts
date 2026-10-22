@@ -1,4 +1,5 @@
 import { DurableObject } from "cloudflare:workers";
+import type { Entitlement } from "./subscription";
 
 /** A plan written by an agent, waiting for the app to import it. */
 export interface InboxItem {
@@ -46,6 +47,16 @@ export class Account extends DurableObject {
 
   async rotateAgentsKey(): Promise<void> {
     await this.ctx.storage.put("agentsKey", crypto.randomUUID());
+  }
+
+  /** The AI Agents subscription, from the latest Apple-signed transaction. */
+  async entitlement(): Promise<Entitlement | undefined> {
+    return this.ctx.storage.get<Entitlement>("entitlement");
+  }
+
+  async setEntitlement(entitlement: Entitlement | undefined): Promise<void> {
+    if (entitlement) await this.ctx.storage.put("entitlement", entitlement);
+    else await this.ctx.storage.delete("entitlement");
   }
 
   async putSnapshot(json: string): Promise<void> {
