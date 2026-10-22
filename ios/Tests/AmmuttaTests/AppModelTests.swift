@@ -255,4 +255,40 @@ struct AppModelTests {
         let hamstrings = ExerciseText.muscles("leg-curl")
         #expect(model.entries(model.builtInEntries, matching: hamstrings).map(\.ref).contains(.builtIn(key: "lying-leg-curl")))
     }
+
+    @Test func heartRateReadingsAreStoredWithTheWorkout() throws {
+        let sensor = FakeHeartRateSource(sensorName: "Strap")
+        let model = AppModel(store: try AmmuttaStore(inMemory: true), defaults: try makeDefaults(), heartRate: sensor)
+        model.load()
+        let plan = legDay()
+        model.save(plan)
+        #expect(!sensor.workoutActive)
+
+        model.startWorkout(from: plan)
+        #expect(sensor.workoutActive)
+        let session = try #require(model.session)
+        let start = session.workout.startedAt
+        sensor.emit(120, at: start.addingTimeInterval(10))
+        sensor.emit(200, at: start.addingTimeInterval(12)) // too soon after the last one
+        sensor.emit(150, at: start.addingTimeInterval(20))
+        #expect(session.workout.heartRate.map(\.bpm) == [120, 150])
+
+        session.send(.finish)
+        sensor.emit(170, at: start.addingTimeInterval(40)) // after the end
+        model.closeFinishedSession()
+        #expect(!sensor.workoutActive)
+        let saved = try #require(model.history.first)
+        #expect(saved.heartRate.map(\.bpm) == [120, 150])
+        #expect(WorkoutSummary(saved).averageHeartRate == 135)
+        #expect(WorkoutSummary(saved).maxHeartRate == 150)
+    }
+
+    @Test func discardingAWorkoutReleasesTheSensor() throws {
+        let sensor = FakeHeartRateSource(sensorName: "Strap")
+        let model = AppModel(store: try AmmuttaStore(inMemory: true), defaults: try makeDefaults(), heartRate: sensor)
+        model.startWorkout(from: legDay())
+        #expect(sensor.workoutActive)
+        model.discardActiveWorkout()
+        #expect(!sensor.workoutActive)
+    }
 }

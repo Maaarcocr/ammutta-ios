@@ -224,6 +224,35 @@ final class AmmuttaUITests: XCTestCase {
         capture("18-exercise-detail")
     }
 
+    /// The sensor screen and the live reading, with a fake sensor (UI tests never use Bluetooth).
+    @MainActor
+    func testHeartRateSensorAndLiveReading() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-ui-testing", "-fake-heart-rate", "-seed-sample-plan", "-weightUnit", "kg"]
+        app.launch()
+
+        app.tabBars.buttons.element(boundBy: 3).tap()
+        let sensorRow = element(app, "settings.heartRate")
+        XCTAssertTrue(sensorRow.waitForExistence(timeout: 30))
+        sensorRow.tap()
+        XCTAssertTrue(element(app, "sensor.forget").waitForExistence(timeout: 30))
+        XCTAssertTrue(element(app, "sensor.discovered").exists)
+        capture("19-heart-rate-sensor")
+
+        app.tabBars.buttons.element(boundBy: 0).tap()
+        let row = element(app, "plans.row")
+        XCTAssertTrue(row.waitForExistence(timeout: 30))
+        row.tap()
+        element(app, "plan.start").tap()
+        XCTAssertTrue(element(app, "workout.log").waitForExistence(timeout: 30))
+        capture("20-workout-heart-rate")
+
+        element(app, "workout.finish").tap()
+        XCTAssertTrue(element(app, "summary.done").waitForExistence(timeout: 30))
+        capture("21-summary-heart-rate")
+    }
+
     /// Every element the tests tap is a button (list rows with NavigationLink included).
     /// Querying buttons only is much cheaper than `descendants(matching: .any)`, which
     /// timed out on slow CI simulators.

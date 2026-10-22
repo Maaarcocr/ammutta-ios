@@ -63,6 +63,15 @@ final class WorkoutSession: Identifiable {
         syncActivity()
     }
 
+    /// Stores a heart-rate reading. Saved every 30 seconds of readings; the rest are saved
+    /// with the next set or when the workout ends.
+    func recordHeartRate(_ bpm: Int, at date: Date) {
+        guard workout.recordHeartRate(bpm, at: date) else { return }
+        if workout.heartRate.count.isMultiple(of: 6) {
+            persist(workout)
+        }
+    }
+
     /// Settles a deadline that passed while the app was in the background or not running.
     func refresh() {
         guard !isFinished else {

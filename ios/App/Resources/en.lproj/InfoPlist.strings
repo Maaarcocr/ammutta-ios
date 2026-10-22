@@ -1,1 +1,2 @@
 "CFBundleDisplayName" = "Ammutta";
+"NSBluetoothAlwaysUsageDescription" = "Ammutta connects to your heart rate sensor during workouts.";

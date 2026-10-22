@@ -1,1 +1,2 @@
 "CFBundleDisplayName" = "Ammutta";
+"NSBluetoothAlwaysUsageDescription" = "Ammutta si collega al tuo sensore cardiaco durante gli allenamenti.";

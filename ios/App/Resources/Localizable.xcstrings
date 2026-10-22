@@ -43,6 +43,18 @@
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Tempo scaduto" } }
       }
     },
+    "chart.heartRate" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Heart Rate" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Frequenza cardiaca" } }
+      }
+    },
+    "chart.time" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Time" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Ora" } }
+      }
+    },
     "common.cancel" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Cancel" } },
@@ -215,6 +227,24 @@
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "New Exercise" } },
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Nuovo esercizio" } }
+      }
+    },
+    "heartRate.bpm %lld" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld bpm" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "%lld bpm" } }
+      }
+    },
+    "heartRate.unavailable" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Heart rate unavailable" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Frequenza cardiaca non disponibile" } }
+      }
+    },
+    "heartRate.value %lld" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Heart rate %lld beats per minute" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Frequenza cardiaca %lld battiti al minuto" } }
       }
     },
     "history.delete.title" : {
@@ -519,6 +549,78 @@
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Nuova scheda" } }
       }
     },
+    "sensor.bluetoothOff" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Bluetooth is off." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Il Bluetooth è disattivato." } }
+      }
+    },
+    "sensor.connected" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Connected" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Connesso" } }
+      }
+    },
+    "sensor.denied" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Ammutta isn't allowed to use Bluetooth." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Ammutta non ha il permesso di usare il Bluetooth." } }
+      }
+    },
+    "sensor.forget" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Forget Sensor" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Dimentica sensore" } }
+      }
+    },
+    "sensor.mine" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Your Sensor" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Il tuo sensore" } }
+      }
+    },
+    "sensor.nearby" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Nearby Sensors" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Sensori vicini" } }
+      }
+    },
+    "sensor.none" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "None" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Nessuno" } }
+      }
+    },
+    "sensor.openSettings" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open Settings" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Apri Impostazioni" } }
+      }
+    },
+    "sensor.searching" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Searching…" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Ricerca in corso…" } }
+      }
+    },
+    "sensor.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Heart Rate Sensor" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Sensore cardiaco" } }
+      }
+    },
+    "sensor.unnamed" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Heart rate sensor" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Sensore cardiaco" } }
+      }
+    },
+    "sensor.unsupported" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Bluetooth isn't available on this device." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Il Bluetooth non è disponibile su questo dispositivo." } }
+      }
+    },
     "set.add" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Add Set" } },
@@ -631,10 +733,22 @@
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Recupero predefinito" } }
       }
     },
+    "settings.heartRate" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Heart Rate" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Frequenza cardiaca" } }
+      }
+    },
     "settings.language" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Language" } },
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Lingua" } }
+      }
+    },
+    "settings.sensor" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Sensor" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Sensore" } }
       }
     },
     "settings.tagline" : {
@@ -665,6 +779,24 @@
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Duration" } },
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Durata" } }
+      }
+    },
+    "summary.heartRate" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Heart Rate" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Frequenza cardiaca" } }
+      }
+    },
+    "summary.heartRateAverage" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Average Heart Rate" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Frequenza cardiaca media" } }
+      }
+    },
+    "summary.heartRateMax" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Max Heart Rate" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Frequenza cardiaca massima" } }
       }
     },
     "summary.sets" : {

@@ -7,6 +7,9 @@ public struct WorkoutSummary: Equatable, Sendable {
     public var totalSets: Int
     /// Σ reps × weight, in grams.
     public var volumeGrams: Int
+    /// Average and maximum heart rate, when a sensor was connected.
+    public var averageHeartRate: Int?
+    public var maxHeartRate: Int?
 
     public init(_ workout: Workout, now: Date = Date()) {
         let end = workout.endedAt ?? now
@@ -16,6 +19,11 @@ public struct WorkoutSummary: Equatable, Sendable {
         skippedSets = sets.count(where: { $0.status.isSkipped })
         totalSets = sets.count
         volumeGrams = sets.filter { $0.status.isLogged }.reduce(0) { $0 + $1.value.volumeGrams }
+        let readings = workout.heartRate.map(\.bpm)
+        if !readings.isEmpty {
+            averageHeartRate = Int((Double(readings.reduce(0, +)) / Double(readings.count)).rounded())
+            maxHeartRate = readings.max()
+        }
     }
 }
 

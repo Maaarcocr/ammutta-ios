@@ -1,4 +1,5 @@
 import AmmuttaCore
+import Charts
 import SwiftUI
 
 struct HistoryView: View {
@@ -126,8 +127,17 @@ struct WorkoutResultsList: View {
                 if summary.volumeGrams > 0 {
                     LabeledContent(L10n.summaryVolume, value: Format.mass(Mass(grams: summary.volumeGrams), unit: model.weightUnit))
                 }
+                if let average = summary.averageHeartRate, let maximum = summary.maxHeartRate {
+                    LabeledContent(L10n.summaryHeartRateAverage, value: L10n.bpm(average))
+                    LabeledContent(L10n.summaryHeartRateMax, value: L10n.bpm(maximum))
+                }
             } header: {
                 Text(workout.startedAt, format: .dateTime.weekday(.wide).day().month().hour().minute())
+            }
+            if workout.heartRate.count > 1 {
+                Section(L10n.summaryHeartRate) {
+                    HeartRateChart(samples: workout.heartRate)
+                }
             }
             ForEach(workout.exercises) { exercise in
                 Section(model.name(of: exercise.exercise, snapshot: exercise.nameSnapshot)) {
@@ -154,5 +164,23 @@ struct WorkoutResultsList: View {
                 }
             }
         }
+    }
+}
+
+/// Heart rate over the workout.
+struct HeartRateChart: View {
+    let samples: [HeartRateSample]
+
+    var body: some View {
+        Chart(samples, id: \.date) { sample in
+            LineMark(
+                x: .value(L10n.chartTime, sample.date),
+                y: .value(L10n.chartHeartRate, sample.bpm)
+            )
+            .foregroundStyle(.red)
+        }
+        .chartYScale(domain: .automatic(includesZero: false))
+        .frame(height: 160)
+        .padding(.vertical, 8)
     }
 }

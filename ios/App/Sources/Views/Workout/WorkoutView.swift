@@ -79,9 +79,14 @@ struct WorkoutView: View {
                         Text(session.workout.planName)
                             .font(.headline)
                             .lineLimit(1)
-                        Text(session.workout.startedAt, style: .timer)
-                            .font(.caption.monospacedDigit())
-                            .foregroundStyle(.secondary)
+                        HStack(spacing: 8) {
+                            Text(session.workout.startedAt, style: .timer)
+                            if model.heartRate.sensorID != nil {
+                                HeartRateReading(bpm: model.heartRate.bpm)
+                            }
+                        }
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
                     }
                 }
                 ToolbarItemGroup(placement: .keyboard) {
@@ -524,5 +529,25 @@ struct WorkoutSummaryView: View {
                     }
                 }
         }
+    }
+}
+
+/// The live heart rate from the Bluetooth sensor, or a dash while searching or out of range.
+struct HeartRateReading: View {
+    let bpm: Int?
+
+    var body: some View {
+        HStack(spacing: 2) {
+            Image(systemName: bpm == nil ? "heart.slash" : "heart.fill")
+                .foregroundStyle(bpm == nil ? Color.secondary : Color.red)
+            if let bpm {
+                Text(L10n.bpm(bpm))
+            } else {
+                Text(verbatim: "–")
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(bpm.map(L10n.heartRateValue) ?? L10n.heartRateUnavailable)
+        .accessibilityIdentifier("workout.heartRate")
     }
 }

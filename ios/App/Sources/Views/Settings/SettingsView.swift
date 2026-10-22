@@ -25,6 +25,14 @@ struct SettingsView: View {
                         LabeledContent(L10n.settingsDefaultRest, value: Format.clock(model.defaultRestSeconds))
                     }
                 }
+                Section(L10n.settingsHeartRate) {
+                    NavigationLink {
+                        HeartRateSensorView()
+                    } label: {
+                        LabeledContent(L10n.settingsSensor, value: model.heartRate.sensorName ?? L10n.sensorNone)
+                    }
+                    .accessibilityIdentifier("settings.heartRate")
+                }
                 Section {
                     Button(L10n.settingsLanguage) {
                         if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }

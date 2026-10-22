@@ -57,13 +57,17 @@ final class AppModel {
     @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private let alerts: any TimerAlerting
     @ObservationIgnored private let activityPresenter: any WorkoutActivityPresenting
+    /// The Bluetooth heart-rate sensor, connected while a workout is active.
+    @ObservationIgnored let heartRate: any HeartRateSource
 
     private(set) var plans: [Plan] = []
     private(set) var customExercises: [CustomExercise] = []
     /// Completed workouts, newest first.
     private(set) var history: [Workout] = []
     /// The active workout, shown full screen above the tabs while it exists.
-    var session: WorkoutSession?
+    var session: WorkoutSession? {
+        didSet { heartRate.setWorkoutActive(session != nil) }
+    }
     var showingError = false
     var selectedTab: AppTab = .plans
     /// A plan link being previewed (opened from a link, or pasted).
@@ -83,12 +87,14 @@ final class AppModel {
         store: AmmuttaStore,
         defaults: UserDefaults = .standard,
         alerts: any TimerAlerting = DisabledAlerting(),
-        activityPresenter: any WorkoutActivityPresenting = DisabledActivityPresenter()
+        activityPresenter: any WorkoutActivityPresenting = DisabledActivityPresenter(),
+        heartRate: any HeartRateSource = FakeHeartRateSource()
     ) {
         self.store = store
         self.defaults = defaults
         self.alerts = alerts
         self.activityPresenter = activityPresenter
+        self.heartRate = heartRate
         let localeDefault: WeightUnit = Locale.current.measurementSystem == .us ? .pounds : .kilograms
         storedWeightUnit = defaults.string(forKey: Keys.weightUnit).flatMap(WeightUnit.init(rawValue:)) ?? localeDefault
         if defaults.object(forKey: Keys.defaultRest) != nil {
@@ -96,6 +102,9 @@ final class AppModel {
             storedDefaultRest = min(max(saved, Limits.restSeconds.lowerBound), Limits.restSeconds.upperBound)
         } else {
             storedDefaultRest = 150
+        }
+        heartRate.onReading = { [weak self] bpm, date in
+            self?.session?.recordHeartRate(bpm, at: date)
         }
     }
 

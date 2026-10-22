@@ -86,8 +86,10 @@ public struct Workout: Hashable, Codable, Sendable, Identifiable {
     public var endedAt: Date?
     public var exercises: [WorkoutExercise]
     public var timer: ActiveTimer?
+    /// Readings from a Bluetooth heart-rate sensor, oldest first, at most one every few seconds.
+    public var heartRate: [HeartRateSample]
 
-    public init(id: WorkoutID = WorkoutID(), planID: PlanID?, planName: String, startedAt: Date, endedAt: Date? = nil, exercises: [WorkoutExercise], timer: ActiveTimer? = nil) {
+    public init(id: WorkoutID = WorkoutID(), planID: PlanID?, planName: String, startedAt: Date, endedAt: Date? = nil, exercises: [WorkoutExercise], timer: ActiveTimer? = nil, heartRate: [HeartRateSample] = []) {
         self.id = id
         self.planID = planID
         self.planName = planName
@@ -95,6 +97,7 @@ public struct Workout: Hashable, Codable, Sendable, Identifiable {
         self.endedAt = endedAt
         self.exercises = exercises
         self.timer = timer
+        self.heartRate = heartRate
     }
 
     public static func start(from plan: Plan, now: Date, customNames: [ExerciseID: String] = [:], id: WorkoutID = WorkoutID()) -> Workout {
@@ -136,5 +139,26 @@ public struct Workout: Hashable, Codable, Sendable, Identifiable {
     public func set(_ id: UUID) -> WorkoutSet? {
         guard let location = location(ofSet: id) else { return nil }
         return exercises[location.exercise].sets[location.set]
+    }
+}
+
+extension Workout {
+    private enum CodingKeys: String, CodingKey {
+        case id, planID, planName, startedAt, endedAt, exercises, timer, heartRate
+    }
+
+    /// Workouts saved before heart rate existed have no `heartRate` key.
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(
+            id: try container.decode(WorkoutID.self, forKey: .id),
+            planID: try container.decodeIfPresent(PlanID.self, forKey: .planID),
+            planName: try container.decode(String.self, forKey: .planName),
+            startedAt: try container.decode(Date.self, forKey: .startedAt),
+            endedAt: try container.decodeIfPresent(Date.self, forKey: .endedAt),
+            exercises: try container.decode([WorkoutExercise].self, forKey: .exercises),
+            timer: try container.decodeIfPresent(ActiveTimer.self, forKey: .timer),
+            heartRate: try container.decodeIfPresent([HeartRateSample].self, forKey: .heartRate) ?? []
+        )
     }
 }
