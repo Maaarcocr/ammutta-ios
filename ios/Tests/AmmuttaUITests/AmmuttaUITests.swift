@@ -266,6 +266,9 @@ final class AmmuttaUITests: XCTestCase {
         // The row contains the actual switch control; tapping the row's label does nothing.
         let control = toggle.switches.firstMatch
         (control.exists ? control : toggle).tap()
+        if toggle.value as? String != "1" {
+            toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+        }
         XCTAssertEqual(toggle.value as? String, "1")
         capture("22-apple-health")
     }
