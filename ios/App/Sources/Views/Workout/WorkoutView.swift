@@ -8,8 +8,13 @@ struct WorkoutView: View {
     let session: WorkoutSession
     @Environment(AppModel.self) private var model
     @State private var confirmingDiscard = false
-    /// Exercises shown expanded. Reset to just the current one whenever it moves on.
-    @State private var expanded: Set<UUID> = []
+    /// Exercises shown expanded: starts as the current one, and resets to it whenever it moves on.
+    @State private var expanded: Set<UUID>
+
+    init(session: WorkoutSession) {
+        self.session = session
+        _expanded = State(initialValue: Self.currentExercise(in: session.workout).map { Set([$0]) } ?? [])
+    }
 
     var body: some View {
         if session.isFinished {
@@ -19,10 +24,11 @@ struct WorkoutView: View {
         }
     }
 
-    private var currentExerciseID: UUID? {
-        guard let setID = session.workout.nextPendingSetID,
-              let location = session.workout.location(ofSet: setID) else { return nil }
-        return session.workout.exercises[location.exercise].id
+    private var currentExerciseID: UUID? { Self.currentExercise(in: session.workout) }
+
+    private static func currentExercise(in workout: Workout) -> UUID? {
+        guard let setID = workout.nextPendingSetID, let location = workout.location(ofSet: setID) else { return nil }
+        return workout.exercises[location.exercise].id
     }
 
     private var active: some View {
@@ -87,7 +93,7 @@ struct WorkoutView: View {
                 }
             }
             .sensoryFeedback(.success, trigger: session.timerEndedCount)
-            .onChange(of: currentExerciseID, initial: true) { _, current in
+            .onChange(of: currentExerciseID) { _, current in
                 expanded = current.map { Set([$0]) } ?? []
             }
         }
