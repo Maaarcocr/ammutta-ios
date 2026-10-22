@@ -295,7 +295,8 @@ final class AmmuttaUITests: XCTestCase {
         getCode.tap()
         let code = app.staticTexts.matching(identifier: "agents.code").firstMatch
         XCTAssertTrue(code.waitForExistence(timeout: 30))
-        XCTAssertEqual(code.label, "K7M2QX9P")
+        // The row reads as "Pairing Code, K7M2QX9P" (label and value together).
+        XCTAssertTrue(code.label.contains("K7M2QX9P"), code.label)
         capture("23-ai-agents")
     }
 
