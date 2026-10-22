@@ -225,16 +225,16 @@ Rest timers and duration-set countdowns must alert the user reliably when the ph
 
 ## 9. Apple Health
 
-- **Opt-in** from Settings, or from the first workout summary. It is off by default, and the app works fully without it.
-- **Writes** (no reads in v1):
-  - each completed workout as an `HKWorkout`, using `traditionalStrengthTraining`, or `functionalStrengthTraining` / `highIntensityIntervalTraining` when the user picks it per plan;
-  - start and end times;
-  - workout events for sets as segments where supported;
-  - heart-rate quantity samples associated with the workout when they exist.
+- **Opt-in**: Settings → Apple Health → **Sync to Apple Health**. It is off by default, and the app works fully without it. iOS asks for permission the first time it is turned on.
+- **Writes** (no reads):
+  - each workout finished while sync is on, as a strength training workout (`traditionalStrengthTraining`) with its start and end times;
+  - its heart-rate readings, when a sensor was connected.
+- Workouts finished before sync was turned on are not written.
 - Every written object carries the Ammutta workout ID as `HKMetadataKeyExternalUUID`, so writes are **idempotent**.
-- **Durable sync queue**: each pending write, update or delete is persisted as a job. Jobs are retried on launch, on returning to the foreground and after each workout finishes, until they succeed. Health being unavailable or denied must never block finishing a workout or lose the sync intent.
-- **Edits and deletes** in Ammutta update or remove the Health objects Ammutta created. Ammutta never modifies data written by other apps.
-- If the user revokes access, pending jobs pause. History shows a quiet "not synced to Health" state with a way to fix it.
+- **Durable sync queue**: each pending write or delete is saved as a job. Jobs are retried on launch, on returning to the app and after each workout, until they succeed. Health being unavailable or denied never blocks finishing a workout or loses the sync intent.
+- **Deletes** in Ammutta remove the Health workout and heart-rate samples Ammutta wrote. Ammutta never modifies data written by other apps.
+- If Health access is off, pending jobs wait. Settings shows that Ammutta isn't allowed, with a button to open Settings.
+- Later: choosing the workout type per plan, and sets as workout segments.
 
 ## 10. Localization
 

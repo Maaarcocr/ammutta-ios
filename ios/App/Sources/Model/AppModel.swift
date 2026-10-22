@@ -59,6 +59,8 @@ final class AppModel {
     @ObservationIgnored private let activityPresenter: any WorkoutActivityPresenting
     /// The Bluetooth heart-rate sensor, connected while a workout is active.
     @ObservationIgnored let heartRate: any HeartRateSource
+    /// The "Sync to Apple Health" setting and its queue.
+    @ObservationIgnored let health: HealthSync
 
     private(set) var plans: [Plan] = []
     private(set) var customExercises: [CustomExercise] = []
@@ -88,13 +90,15 @@ final class AppModel {
         defaults: UserDefaults = .standard,
         alerts: any TimerAlerting = DisabledAlerting(),
         activityPresenter: any WorkoutActivityPresenting = DisabledActivityPresenter(),
-        heartRate: any HeartRateSource = FakeHeartRateSource()
+        heartRate: any HeartRateSource = FakeHeartRateSource(),
+        healthService: any HealthSyncing = FakeHealthSync()
     ) {
         self.store = store
         self.defaults = defaults
         self.alerts = alerts
         self.activityPresenter = activityPresenter
         self.heartRate = heartRate
+        health = HealthSync(service: healthService, defaults: defaults)
         let localeDefault: WeightUnit = Locale.current.measurementSystem == .us ? .pounds : .kilograms
         storedWeightUnit = defaults.string(forKey: Keys.weightUnit).flatMap(WeightUnit.init(rawValue:)) ?? localeDefault
         if defaults.object(forKey: Keys.defaultRest) != nil {
@@ -105,6 +109,9 @@ final class AppModel {
         }
         heartRate.onReading = { [weak self] bpm, date in
             self?.session?.recordHeartRate(bpm, at: date)
+        }
+        health.lookup = { [weak self] id in
+            (try? self?.store.completedWorkouts())?.first { $0.id == id }
         }
     }
 
@@ -136,6 +143,7 @@ final class AppModel {
             if let active = try store.activeWorkout() {
                 session = makeSession(active)
             }
+            health.run()
         } catch {
             report(error)
         }
@@ -294,6 +302,7 @@ final class AppModel {
     func deleteWorkout(_ id: WorkoutID) {
         do {
             try store.deleteWorkout(id)
+            health.workoutDeleted(id)
         } catch {
             report(error)
         }
@@ -386,6 +395,9 @@ final class AppModel {
     private func persist(_ workout: Workout) {
         do {
             try store.save(workout)
+            if workout.isFinished {
+                health.workoutFinished(workout.id)
+            }
         } catch {
             report(error)
         }

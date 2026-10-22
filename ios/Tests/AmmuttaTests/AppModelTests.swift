@@ -291,4 +291,66 @@ struct AppModelTests {
         model.discardActiveWorkout()
         #expect(!sensor.workoutActive)
     }
+
+    private func finishWorkout(in model: AppModel) throws -> WorkoutID {
+        model.startWorkout(from: legDay())
+        let session = try #require(model.session)
+        session.send(.finish)
+        model.closeFinishedSession()
+        return session.workout.id
+    }
+
+    @Test func finishedAndDeletedWorkoutsSyncToHealthWhenOn() async throws {
+        let health = FakeHealthSync()
+        let model = AppModel(store: try AmmuttaStore(inMemory: true), defaults: try makeDefaults(), healthService: health)
+        model.load()
+        model.health.isEnabled = true
+        await model.health.authorizeAndRun()
+        #expect(model.health.isAuthorized)
+
+        let id = try finishWorkout(in: model)
+        await model.health.settled()
+        #expect(health.saved == [id])
+        #expect(model.health.queue.jobs.isEmpty)
+
+        model.deleteWorkout(id)
+        await model.health.settled()
+        #expect(health.saved.isEmpty)
+        #expect(health.deleted == [id])
+    }
+
+    @Test func healthSyncIsOffByDefault() async throws {
+        let health = FakeHealthSync()
+        let model = AppModel(store: try AmmuttaStore(inMemory: true), defaults: try makeDefaults(), healthService: health)
+        _ = try finishWorkout(in: model)
+        await model.health.settled()
+        #expect(!model.health.isEnabled)
+        #expect(health.saved.isEmpty)
+        #expect(model.health.queue.jobs.isEmpty)
+    }
+
+    @Test func failedHealthWritesStayQueuedAndRetry() async throws {
+        let health = FakeHealthSync()
+        health.isAuthorized = true
+        health.failing = true
+        let defaults = try makeDefaults()
+        let store = try AmmuttaStore(inMemory: true)
+        let model = AppModel(store: store, defaults: defaults, healthService: health)
+        model.health.isEnabled = true
+        await model.health.settled()
+
+        let id = try finishWorkout(in: model)
+        await model.health.settled()
+        #expect(health.saved.isEmpty)
+        #expect(model.health.queue.jobs == [.save(id)])
+
+        // The queue survives a relaunch and runs once Health works again.
+        health.failing = false
+        let relaunched = AppModel(store: store, defaults: defaults, healthService: health)
+        #expect(relaunched.health.queue.jobs == [.save(id)])
+        relaunched.load()
+        await relaunched.health.settled()
+        #expect(health.saved == [id])
+        #expect(relaunched.health.queue.jobs.isEmpty)
+    }
 }

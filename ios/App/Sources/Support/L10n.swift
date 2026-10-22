@@ -178,6 +178,10 @@ enum L10n {
     static var settingsDefaultRest: LocalizedStringKey { "settings.defaultRest" }
     static var settingsHeartRate: LocalizedStringKey { "settings.heartRate" }
     static var settingsSensor: LocalizedStringKey { "settings.sensor" }
+    static var settingsHealth: LocalizedStringKey { "settings.health" }
+    static var settingsHealthSync: LocalizedStringKey { "settings.healthSync" }
+    static var healthNotAllowed: LocalizedStringKey { "health.notAllowed" }
+    static var healthOpenSettings: LocalizedStringKey { "health.openSettings" }
     static var settingsLanguage: LocalizedStringKey { "settings.language" }
     static var settingsAbout: LocalizedStringKey { "settings.about" }
     static var settingsVersion: LocalizedStringKey { "settings.version" }
