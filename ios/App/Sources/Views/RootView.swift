@@ -20,12 +20,10 @@ struct RootView: View {
                 SettingsView()
             }
         }
+        // The only presentation on the root. The plan-link sheet belongs to the Plans screen:
+        // two presentations on one view stopped the workout screen from appearing.
         .fullScreenCover(item: $model.session, onDismiss: { model.showDeferredImport() }) { session in
             WorkoutView(session: session)
-                .environment(model)
-        }
-        .sheet(item: $model.importRequest) { request in
-            PlanImportSheet(request: request)
                 .environment(model)
         }
         .onOpenURL { url in

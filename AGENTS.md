@@ -21,7 +21,7 @@ There is no design system yet. Use stock SwiftUI components and semantic styles.
 The owner's top rule: plain, standard, boring code. A clever construct needs a reason a reviewer would accept.
 
 - Use controls where Apple puts them. Actions are plain `Button`s. `ShareLink` goes directly in a toolbar or a row, **never inside a `Menu` or `.secondaryAction`** (that crashed the app).
-- One presentation per piece of state: one `.sheet(item:)` bound to it, attached to the screen that stays on screen. No two sheets bound to the same state, no custom `Binding` getters to dodge presentation conflicts.
+- One presentation per piece of state: one `.sheet(item:)` bound to it, attached to the screen it belongs to. Never two presentation modifiers (sheet, cover) on the same view, never two bound to the same state, and no custom `Binding` getters to dodge presentation conflicts (a sheet next to the workout cover on the root stopped the workout from opening).
 - No UIKit wrappers (`UIViewControllerRepresentable`) when a SwiftUI control exists.
 - Prefer plain state (`Set`, `Bool`, optional item) over tricks such as XOR-derived expansion state.
 - Fire-and-forget `Task`s that change system state (alerts, Live Activities) run in order through one queue.

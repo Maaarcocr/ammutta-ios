@@ -6,6 +6,7 @@ struct PlansView: View {
     @State private var newPlan: Plan?
 
     var body: some View {
+        @Bindable var model = model
         NavigationStack {
             List {
                 ForEach(model.plans) { plan in
@@ -56,6 +57,9 @@ struct PlansView: View {
             .sheet(item: $newPlan) { plan in
                 PlanEditorView(plan: plan, isNew: true)
             }
+        }
+        .sheet(item: $model.importRequest) { request in
+            PlanImportSheet(request: request)
         }
     }
 

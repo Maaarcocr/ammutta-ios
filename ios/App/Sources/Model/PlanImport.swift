@@ -34,6 +34,7 @@ extension AppModel {
         }
         // During a workout the workout screen covers everything: show the link after it closes.
         if session == nil {
+            selectedTab = .plans
             importRequest = ImportRequest(result: result)
         } else {
             deferredImport = ImportRequest(result: result)
@@ -44,6 +45,7 @@ extension AppModel {
     func showDeferredImport() {
         guard let deferredImport else { return }
         self.deferredImport = nil
+        selectedTab = .plans
         importRequest = deferredImport
     }
 
