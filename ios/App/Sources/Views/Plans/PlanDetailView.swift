@@ -48,7 +48,6 @@ struct PlanDetailView: View {
             } label: {
                 Label(L10n.planStart, systemImage: "play.fill")
                     .font(.headline)
-                    .foregroundStyle(Color("OnAccent"))
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
@@ -60,11 +59,13 @@ struct PlanDetailView: View {
             ToolbarItem(placement: .primaryAction) {
                 Button(L10n.edit) { editing = plan }
             }
-            ToolbarItem(placement: .secondaryAction) {
+            // The system share button, in the navigation bar (never inside a menu).
+            ToolbarItem(placement: .topBarTrailing) {
                 if let url = model.shareURL(for: plan) {
                     ShareLink(item: url) {
                         Label(L10n.planShareLink, systemImage: "square.and.arrow.up")
                     }
+                    .accessibilityIdentifier("plan.share")
                 }
             }
             ToolbarItem(placement: .secondaryAction) {

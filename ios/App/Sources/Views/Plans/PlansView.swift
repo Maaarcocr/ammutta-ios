@@ -6,6 +6,7 @@ struct PlansView: View {
     @State private var newPlan: Plan?
 
     var body: some View {
+        @Bindable var model = model
         NavigationStack {
             List {
                 ForEach(model.plans) { plan in
@@ -25,7 +26,7 @@ struct PlansView: View {
                         Button {
                             startNewPlan()
                         } label: {
-                            Text(L10n.plansNew).foregroundStyle(Color("OnAccent"))
+                            Text(L10n.plansNew)
                         }
                         .buttonStyle(.borderedProminent)
                     }
@@ -44,22 +45,21 @@ struct PlansView: View {
                     }
                     .accessibilityIdentifier("plans.add")
                 }
-                ToolbarItem(placement: .secondaryAction) {
+                ToolbarItem(placement: .primaryAction) {
                     Button {
                         model.startPasteImport()
                     } label: {
                         Label(L10n.plansImportLink, systemImage: "link")
                     }
-                }
-                ToolbarItem(placement: .secondaryAction) {
-                    ShareLink(item: model.planLinkPrompt()) {
-                        Label(L10n.plansSharePrompt, systemImage: "sparkles")
-                    }
+                    .accessibilityIdentifier("plans.importLink")
                 }
             }
             .sheet(item: $newPlan) { plan in
                 PlanEditorView(plan: plan, isNew: true)
             }
+        }
+        .sheet(item: $model.importRequest) { request in
+            PlanImportSheet(request: request)
         }
     }
 

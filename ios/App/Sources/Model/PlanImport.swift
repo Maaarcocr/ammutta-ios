@@ -32,7 +32,21 @@ extension AppModel {
         } catch {
             result = .failure(error)
         }
-        importRequest = ImportRequest(result: result)
+        // During a workout the workout screen covers everything: show the link after it closes.
+        if session == nil {
+            selectedTab = .plans
+            importRequest = ImportRequest(result: result)
+        } else {
+            deferredImport = ImportRequest(result: result)
+        }
+    }
+
+    /// Called once the workout screen has closed.
+    func showDeferredImport() {
+        guard let deferredImport else { return }
+        self.deferredImport = nil
+        selectedTab = .plans
+        importRequest = deferredImport
     }
 
     func startPasteImport() {

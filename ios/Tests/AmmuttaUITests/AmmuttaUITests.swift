@@ -116,6 +116,45 @@ final class AmmuttaUITests: XCTestCase {
         capture("14-plan-link-imported")
     }
 
+    /// Regression: sharing the AI prompt used to crash the app (it was a ShareLink inside a menu).
+    @MainActor
+    func testSharingTheAIPromptOpensTheShareSheet() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-ui-testing", "-weightUnit", "kg"]
+        app.launch()
+
+        let importLink = element(app, "plans.importLink")
+        XCTAssertTrue(importLink.waitForExistence(timeout: 30))
+        importLink.tap()
+        let share = element(app, "import.sharePrompt")
+        XCTAssertTrue(share.waitForExistence(timeout: 30))
+        share.tap()
+
+        // The share sheet appears and the app keeps running.
+        XCTAssertTrue(app.otherElements["ActivityListView"].waitForExistence(timeout: 30))
+        XCTAssertEqual(app.state, .runningForeground)
+        capture("15-share-ai-prompt")
+    }
+
+    @MainActor
+    func testSharingAPlanLinkOpensTheShareSheet() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-ui-testing", "-seed-sample-plan", "-weightUnit", "kg"]
+        app.launch()
+
+        let row = element(app, "plans.row")
+        XCTAssertTrue(row.waitForExistence(timeout: 30))
+        row.tap()
+        let share = element(app, "plan.share")
+        XCTAssertTrue(share.waitForExistence(timeout: 30))
+        share.tap()
+
+        XCTAssertTrue(app.otherElements["ActivityListView"].waitForExistence(timeout: 30))
+        XCTAssertEqual(app.state, .runningForeground)
+    }
+
     /// Every element the tests tap is a button (list rows with NavigationLink included).
     /// Querying buttons only is much cheaper than `descendants(matching: .any)`, which
     /// timed out on slow CI simulators.

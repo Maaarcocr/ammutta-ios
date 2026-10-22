@@ -8,27 +8,27 @@ struct WorkoutView: View {
     let session: WorkoutSession
     @Environment(AppModel.self) private var model
     @State private var confirmingDiscard = false
-    @State private var toggled: Set<UUID> = []
+    /// Exercises shown expanded: starts as the current one, and resets to it whenever it moves on.
+    @State private var expanded: Set<UUID>
+
+    init(session: WorkoutSession) {
+        self.session = session
+        _expanded = State(initialValue: Self.currentExercise(in: session.workout).map { Set([$0]) } ?? [])
+    }
 
     var body: some View {
-        @Bindable var model = model
-        Group {
-            if session.isFinished {
-                WorkoutSummaryView(workout: session.workout)
-            } else {
-                active
-            }
-        }
-        .sheet(item: $model.importRequest) { request in
-            PlanImportSheet(request: request)
-                .environment(model)
+        if session.isFinished {
+            WorkoutSummaryView(workout: session.workout)
+        } else {
+            active
         }
     }
 
-    private var currentExerciseID: UUID? {
-        guard let setID = session.workout.nextPendingSetID,
-              let location = session.workout.location(ofSet: setID) else { return nil }
-        return session.workout.exercises[location.exercise].id
+    private var currentExerciseID: UUID? { Self.currentExercise(in: session.workout) }
+
+    private static func currentExercise(in workout: Workout) -> UUID? {
+        guard let setID = workout.nextPendingSetID, let location = workout.location(ofSet: setID) else { return nil }
+        return workout.exercises[location.exercise].id
     }
 
     private var active: some View {
@@ -39,11 +39,10 @@ struct WorkoutView: View {
                         AlertsOffRow()
                     }
                     ForEach(session.workout.exercises) { exercise in
-                        let isCurrent = exercise.id == currentExerciseID
                         ExerciseCard(
                             exercise: exercise,
                             session: session,
-                            isExpanded: isCurrent != toggled.contains(exercise.id),
+                            isExpanded: expanded.contains(exercise.id),
                             toggle: { toggle(exercise.id) }
                         )
                     }
@@ -94,12 +93,14 @@ struct WorkoutView: View {
                 }
             }
             .sensoryFeedback(.success, trigger: session.timerEndedCount)
+            .onChange(of: currentExerciseID) { _, current in
+                expanded = current.map { Set([$0]) } ?? []
+            }
         }
     }
 
-    /// Tapping a header flips it away from its default (current = open, others = closed).
     private func toggle(_ id: UUID) {
-        if toggled.contains(id) { toggled.remove(id) } else { toggled.insert(id) }
+        if expanded.contains(id) { expanded.remove(id) } else { expanded.insert(id) }
     }
 }
 
@@ -401,7 +402,6 @@ private struct TimerBar: View {
                         session.send(.skipRest)
                     } label: {
                         Text(L10n.timerSkip)
-                            .foregroundStyle(Color("OnAccent"))
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.borderedProminent)
@@ -415,7 +415,6 @@ private struct TimerBar: View {
                     session.send(.stopWork)
                 } label: {
                     Text(L10n.workoutStopTimer)
-                        .foregroundStyle(Color("OnAccent"))
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
