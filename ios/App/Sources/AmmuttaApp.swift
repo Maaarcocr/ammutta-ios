@@ -17,7 +17,8 @@ struct AmmuttaApp: App {
         }
         // UI tests must not raise the notification permission prompt.
         let alerts: any TimerAlerting = uiTesting ? DisabledAlerting() : NotificationAlerting()
-        let model = AppModel(store: store, alerts: alerts)
+        let activityPresenter: any WorkoutActivityPresenting = uiTesting ? DisabledActivityPresenter() : LiveActivityPresenter()
+        let model = AppModel(store: store, alerts: alerts, activityPresenter: activityPresenter)
         model.load()
         if uiTesting, arguments.contains("-seed-sample-plan") {
             model.seedSamplePlan()

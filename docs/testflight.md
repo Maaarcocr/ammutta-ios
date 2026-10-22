@@ -54,6 +54,7 @@ Secrets:
 | `APPLE_DISTRIBUTION_P12_BASE64` | Base64 of the distribution `.p12` | archive, upload |
 | `APPLE_DISTRIBUTION_P12_PASSWORD` | Its export password | archive, upload |
 | `APPLE_APP_STORE_PROFILE_BASE64` | Base64 of **Ammutta's** `.mobileprovision` | archive, upload |
+| `APPLE_APP_STORE_WIDGETS_PROFILE_BASE64` | Base64 of the App Store `.mobileprovision` for the widget extension (`<bundle ID>.Widgets`), made with the same distribution certificate | archive, upload |
 | `ASC_PRIVATE_KEY_BASE64` | Base64 of the team API key `.p8` | upload |
 | `ASC_KEY_ID` | API key ID | upload |
 | `ASC_ISSUER_ID` | Issuer UUID | upload |
@@ -82,17 +83,17 @@ This repository is **public**. Anyone with write access can change workflows and
 
    External groups need Beta App Review, plus test notes in both languages.
 
-## 4. Known pipeline gap: the widget extension
+## 4. The widget extension
 
-The pipeline currently signs **one** bundle with **one** profile. The Live Activity and AlarmKit presentation live in a widget extension (see [`architecture.md`](architecture.md#7-live-activity-ammuttaliveactivity--widgets)), which has its own bundle ID and needs its own App Store profile.
+The Live Activity lives in a widget extension embedded in the app, with its own bundle ID (`<AMMUTTA_BUNDLE_ID>.Widgets`), App ID and App Store profile. The pipeline:
 
-Before adding that target, extend the pipeline:
+- decodes and validates the second profile (explicit `.Widgets` App ID, App Store type, same certificate as the app profile);
+- installs both profiles and removes both in cleanup;
+- writes both profile UUIDs to `ios/Config/Signing.local.xcconfig`, so each target signs with its own;
+- maps both bundle IDs in the export options;
+- verifies the embedded extension's signature, entitlements and profile as well as the app's.
 
-- accept a second profile secret, for example `APPLE_APP_STORE_WIDGETS_PROFILE_BASE64`, and a `AMMUTTA_WIDGETS_BUNDLE_ID` variable;
-- validate both profiles in `testflight-signing.py`;
-- map both bundle IDs in `provisioningProfiles` in the export options;
-- verify the embedded extension's signature and profile as well as the app's;
-- extend `test_testflight_ci.py` with a two-bundle fixture.
+The extension needs no capabilities. Add App Groups to both App IDs (and regenerate both profiles) only when the Live Activity gains buttons that share the workout store.
 
 ## Verification boundary
 

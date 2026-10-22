@@ -46,7 +46,8 @@ def preflight(action, build):
     except ValueError as error:
         # This existing validator emits only static, hand-written configuration diagnostics.
         raise ValidationError(str(error)) from None
-    required = ["APPLE_DISTRIBUTION_P12_BASE64", "APPLE_DISTRIBUTION_P12_PASSWORD", "APPLE_APP_STORE_PROFILE_BASE64"]
+    required = ["APPLE_DISTRIBUTION_P12_BASE64", "APPLE_DISTRIBUTION_P12_PASSWORD", "APPLE_APP_STORE_PROFILE_BASE64",
+                "APPLE_APP_STORE_WIDGETS_PROFILE_BASE64"]
     if action == "upload":
         required += ["ASC_PRIVATE_KEY_BASE64", "ASC_KEY_ID", "ASC_ISSUER_ID"]
     for name in required:
@@ -106,13 +107,22 @@ def identity(profile_path, identities_path):
     return found[0]
 
 
-def export_options(profile_path, fingerprint, destination):
+def export_options(profile_path, fingerprint, destination, *embedded):
+    """`embedded` is BUNDLE UUID pairs for app extensions, already validated by the caller."""
     profile = validate_profile(profile_path)
     require(re.fullmatch(r"[A-F0-9]{40}", fingerprint), "Invalid signing certificate fingerprint")
+    require(len(embedded) % 2 == 0, "Embedded profiles must be BUNDLE UUID pairs")
+    app_bundle = os.environ["AMMUTTA_BUNDLE_ID"]
+    profiles = {app_bundle: profile["UUID"]}
+    for bundle, uuid in zip(embedded[::2], embedded[1::2]):
+        require(bundle.startswith(app_bundle + ".") and re.fullmatch(r"[A-Za-z0-9.-]+", bundle),
+                "Extension bundle IDs must be nested under the app bundle ID")
+        require(re.fullmatch(UUID, uuid), "Invalid extension profile UUID")
+        profiles[bundle] = uuid
     options = {
         "method": "app-store-connect", "destination": "export", "signingStyle": "manual",
         "teamID": os.environ["AMMUTTA_TEAM_ID"], "signingCertificate": fingerprint,
-        "provisioningProfiles": {os.environ["AMMUTTA_BUNDLE_ID"]: profile["UUID"]},
+        "provisioningProfiles": profiles,
         "manageAppVersionAndBuildNumber": False, "stripSwiftSymbols": True, "uploadSymbols": False,
     }
     Path(destination).write_bytes(plistlib.dumps(options))
@@ -136,7 +146,7 @@ def verify_app(app_path, profile_path, entitlements_path, signature_path, build,
 
 
 def init_state(work):
-    state = {"keychain": str(work / "signing.keychain-db"), "profile": None, "original_keychains": None}
+    state = {"keychain": str(work / "signing.keychain-db"), "profiles": [], "original_keychains": None}
     (work / "state.json").write_text(json.dumps(state))
 
 
@@ -149,15 +159,18 @@ def change_state(work, key, value):
     replacement.replace(path)
 
 
-def profile_install(work, uuid):
+def profile_install(work, uuid, source_name="profile.mobileprovision"):
     require(re.fullmatch(UUID, uuid), "Invalid profile UUID")
+    require(re.fullmatch(r"[a-z]+\.mobileprovision", source_name), "Invalid profile source name")
     directory = Path.home() / "Library/Developer/Xcode/UserData/Provisioning Profiles"
     directory.mkdir(parents=True, exist_ok=True)
     target = directory / f"{work.name}-{uuid}.mobileprovision"
     require(not target.exists(), "Temporary profile path already exists")
-    change_state(work, "profile", str(target))
+    # Record the path before writing, so cleanup removes it even if the write fails.
+    installed = json.loads((work / "state.json").read_text()).get("profiles") or []
+    change_state(work, "profiles", installed + [str(target)])
     with target.open("xb") as output:
-        output.write((work / "profile.mobileprovision").read_bytes())
+        output.write((work / source_name).read_bytes())
     target.chmod(0o600)
 
 
@@ -192,9 +205,10 @@ def cleanup(work):
         keychain = work / "signing.keychain-db"
         if keychain.exists():
             ok = private_security("delete-keychain", str(keychain)) and ok
-        if state.get("profile"):
-            profile = Path(state["profile"])
-            expected = Path.home() / "Library/Developer/Xcode/UserData/Provisioning Profiles"
+        installed = list(state.get("profiles") or []) + ([state["profile"]] if state.get("profile") else [])
+        expected = Path.home() / "Library/Developer/Xcode/UserData/Provisioning Profiles"
+        for path in installed:
+            profile = Path(path)
             require(profile.parent == expected and
                     re.fullmatch(re.escape(work.name) + "-" + UUID + r"\.mobileprovision", profile.name),
                     "Refusing unexpected profile cleanup path")
@@ -228,7 +242,7 @@ def main(args):
     elif command == "init-state":
         init_state(Path(values[0]))
     elif command == "install-profile":
-        profile_install(Path(values[0]), values[1])
+        profile_install(Path(values[0]), *values[1:3])
     elif command == "save-keychains":
         save_keychains(Path(values[0]), values[1])
     elif command == "cleanup":

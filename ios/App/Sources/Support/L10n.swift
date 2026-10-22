@@ -149,6 +149,12 @@ enum L10n {
     static var alertWorkTitle: String { String(localized: "alert.work.title") }
     static func alertWorkBody(_ exercise: String) -> String { String(localized: "alert.work.body \(exercise)") }
     static var alertsOff: LocalizedStringKey { "workout.alertsOff" }
+
+    // MARK: Live Activity
+    static func activitySetOf(_ set: Int, _ total: Int) -> String { String(localized: "activity.setOf \(set) \(total)") }
+    static var activityAllDone: String { String(localized: "activity.allDone") }
+    static var timerRestText: String { String(localized: "timer.rest") }
+    static var timerWorkText: String { String(localized: "timer.work") }
     static var openSettings: LocalizedStringKey { "workout.openSettings" }
 
     // MARK: Summary

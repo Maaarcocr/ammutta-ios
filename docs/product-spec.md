@@ -168,6 +168,7 @@ Rest timers and duration-set countdowns must alert the user reliably when the ph
   - live heart rate when a sensor is connected.
 - Interactive buttons (iOS App Intents): **Log set**, **+15 s rest**, **Skip rest**. These work without unlocking the phone.
 - The Live Activity ends when the workout finishes or is discarded.
+- *Built so far:* the Live Activity with the plan name, current or next exercise and set, the rest or set countdown (or elapsed time when none runs), and the Dynamic Island. Interactive buttons and heart rate come later; buttons need an App Group so the extension can update the workout store.
 
 ### 6.6 Finishing
 
