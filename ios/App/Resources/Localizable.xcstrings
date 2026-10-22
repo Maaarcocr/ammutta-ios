@@ -31,10 +31,22 @@
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Il codice vale una sola volta, per 10 minuti." } }
       }
     },
+    "agents.copied" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Copied" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Copiato" } }
+      }
+    },
     "agents.copy" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Copy Address" } },
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Copia indirizzo" } }
+      }
+    },
+    "agents.copyCode" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Copy Code" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Copia codice" } }
       }
     },
     "agents.disconnect" : {

@@ -96,9 +96,8 @@ private struct AgentsSection: View {
                         .foregroundStyle(.secondary)
                         .textSelection(.enabled)
                 }
-                Button(L10n.agentsCopy) {
-                    UIPasteboard.general.url = url
-                }
+                CopyButton(title: L10n.agentsCopy, value: url.absoluteString)
+                    .accessibilityIdentifier("agents.copyAddress")
                 if let code = agents.pairingCode {
                     LabeledContent(L10n.agentsCode) {
                         Text(code)
@@ -106,6 +105,8 @@ private struct AgentsSection: View {
                             .textSelection(.enabled)
                             .accessibilityIdentifier("agents.code")
                     }
+                    CopyButton(title: L10n.agentsCopyCode, value: code)
+                        .accessibilityIdentifier("agents.copyCode")
                 }
                 Button(L10n.agentsGetCode) {
                     agents.requestPairingCode()
@@ -175,5 +176,26 @@ private struct ManageSubscriptionButton: View {
     var body: some View {
         Button(L10n.agentsManage) { showing = true }
             .manageSubscriptionsSheet(isPresented: $showing)
+    }
+}
+
+/// Copies a value and says so: the label turns into "Copied" with a checkmark for a moment.
+private struct CopyButton: View {
+    let title: LocalizedStringKey
+    let value: String
+    @State private var copied = false
+
+    var body: some View {
+        Button {
+            UIPasteboard.general.string = value
+            copied = true
+            Task {
+                try? await Task.sleep(for: .seconds(2))
+                copied = false
+            }
+        } label: {
+            Label(copied ? L10n.agentsCopied : title, systemImage: copied ? "checkmark" : "doc.on.doc")
+        }
+        .sensoryFeedback(.success, trigger: copied) { _, new in new }
     }
 }

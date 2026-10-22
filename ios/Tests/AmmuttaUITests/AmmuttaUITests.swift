@@ -297,6 +297,10 @@ final class AmmuttaUITests: XCTestCase {
         XCTAssertTrue(code.waitForExistence(timeout: 30))
         // The row reads as "Pairing Code, K7M2QX9P" (label and value together).
         XCTAssertTrue(code.label.contains("K7M2QX9P"), code.label)
+        let copyCode = element(app, "agents.copyCode")
+        XCTAssertTrue(copyCode.waitForExistence(timeout: 30))
+        copyCode.tap()
+        element(app, "agents.copyAddress").tap()
         capture("23-ai-agents")
     }
 

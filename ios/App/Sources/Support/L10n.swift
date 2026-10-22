@@ -189,6 +189,8 @@ enum L10n {
     static var agentsToggle: LocalizedStringKey { "agents.toggle" }
     static var agentsAddress: LocalizedStringKey { "agents.address" }
     static var agentsCopy: LocalizedStringKey { "agents.copy" }
+    static var agentsCopyCode: LocalizedStringKey { "agents.copyCode" }
+    static var agentsCopied: LocalizedStringKey { "agents.copied" }
     static var agentsCode: LocalizedStringKey { "agents.code" }
     static var agentsGetCode: LocalizedStringKey { "agents.getCode" }
     static var agentsCodeNote: LocalizedStringKey { "agents.codeNote" }
