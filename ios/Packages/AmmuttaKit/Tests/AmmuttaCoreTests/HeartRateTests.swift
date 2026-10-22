@@ -38,39 +38,41 @@ struct HeartRateMeasurementTests {
 }
 
 struct WorkoutHeartRateTests {
-    private func workout() -> Workout {
+    private func makeWorkout() -> Workout {
         Workout(planID: nil, planName: "Legs", startedAt: t0, exercises: [])
     }
 
     @Test func keepsOneReadingEveryFiveSeconds() {
-        var workout = workout()
-        #expect(workout.recordHeartRate(120, at: t0.addingTimeInterval(1)))
-        #expect(!workout.recordHeartRate(125, at: t0.addingTimeInterval(4)))
-        #expect(workout.recordHeartRate(150, at: t0.addingTimeInterval(6)))
+        var workout = makeWorkout()
+        let first = workout.recordHeartRate(120, at: t0.addingTimeInterval(1))
+        let tooSoon = workout.recordHeartRate(125, at: t0.addingTimeInterval(4))
+        let second = workout.recordHeartRate(150, at: t0.addingTimeInterval(6))
+        #expect(first && !tooSoon && second)
         #expect(workout.heartRate.map(\.bpm) == [120, 150])
     }
 
     @Test func ignoresReadingsOutsideTheWorkout() {
-        var workout = workout()
-        #expect(!workout.recordHeartRate(120, at: t0.addingTimeInterval(-10)))
-        #expect(!workout.recordHeartRate(0, at: t0.addingTimeInterval(10)))
+        var workout = makeWorkout()
+        let beforeStart = workout.recordHeartRate(120, at: t0.addingTimeInterval(-10))
+        let zero = workout.recordHeartRate(0, at: t0.addingTimeInterval(10))
         workout.endedAt = t0.addingTimeInterval(60)
-        #expect(!workout.recordHeartRate(120, at: t0.addingTimeInterval(30)))
+        let afterEnd = workout.recordHeartRate(120, at: t0.addingTimeInterval(30))
+        #expect(!beforeStart && !zero && !afterEnd)
         #expect(workout.heartRate.isEmpty)
     }
 
     @Test func summaryHasAverageAndMaximum() {
-        var workout = workout()
+        var workout = makeWorkout()
         workout.recordHeartRate(120, at: t0.addingTimeInterval(5))
         workout.recordHeartRate(151, at: t0.addingTimeInterval(10))
         let summary = WorkoutSummary(workout, now: t0.addingTimeInterval(60))
         #expect(summary.averageHeartRate == 136)
         #expect(summary.maxHeartRate == 151)
-        #expect(WorkoutSummary(self.workout(), now: t0).averageHeartRate == nil)
+        #expect(WorkoutSummary(makeWorkout(), now: t0).averageHeartRate == nil)
     }
 
     @Test func roundTripsAndReadsWorkoutsSavedBeforeHeartRate() throws {
-        var workout = workout()
+        var workout = makeWorkout()
         workout.recordHeartRate(130, at: t0.addingTimeInterval(5))
         let data = try JSONEncoder().encode(workout)
         #expect(try JSONDecoder().decode(Workout.self, from: data) == workout)
