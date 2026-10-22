@@ -68,6 +68,7 @@ struct WorkoutView: View {
                         } label: {
                             Label(L10n.workoutDiscard, systemImage: "trash")
                         }
+                        .accessibilityIdentifier("workout.discard")
                     } label: {
                         Label(L10n.more, systemImage: "ellipsis")
                     }
@@ -95,10 +96,12 @@ struct WorkoutView: View {
                     .accessibilityIdentifier("workout.finish")
                 }
             }
-            .confirmationDialog(L10n.workoutDiscardTitle, isPresented: $confirmingDiscard, titleVisibility: .visible) {
+            .alert(L10n.workoutDiscardTitle, isPresented: $confirmingDiscard) {
                 Button(L10n.workoutDiscard, role: .destructive) {
                     model.discardActiveWorkout()
                 }
+                .accessibilityIdentifier("workout.confirmDiscard")
+                Button(L10n.cancel, role: .cancel) {}
             }
             .sensoryFeedback(.success, trigger: session.timerEndedCount)
             .onChange(of: currentExerciseID) { _, current in

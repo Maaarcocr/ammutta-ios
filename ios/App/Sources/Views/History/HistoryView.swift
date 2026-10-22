@@ -37,15 +37,15 @@ struct HistoryView: View {
             .navigationDestination(for: WorkoutID.self) { id in
                 WorkoutDetailView(workoutID: id)
             }
-            .confirmationDialog(
+            .alert(
                 L10n.historyDeleteTitle,
                 isPresented: Binding(get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } }),
-                titleVisibility: .visible,
                 presenting: pendingDelete
             ) { workout in
                 Button(L10n.delete, role: .destructive) {
                     model.deleteWorkout(workout.id)
                 }
+                Button(L10n.cancel, role: .cancel) {}
             }
         }
     }
@@ -101,11 +101,12 @@ struct WorkoutDetailView: View {
                         }
                     }
                 }
-                .confirmationDialog(L10n.historyDeleteTitle, isPresented: $confirmingDelete, titleVisibility: .visible) {
+                .alert(L10n.historyDeleteTitle, isPresented: $confirmingDelete) {
                     Button(L10n.delete, role: .destructive) {
                         model.deleteWorkout(workoutID)
                         dismiss()
                     }
+                    Button(L10n.cancel, role: .cancel) {}
                 }
         }
     }

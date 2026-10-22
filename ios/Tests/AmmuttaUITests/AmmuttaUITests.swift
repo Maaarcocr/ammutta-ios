@@ -116,6 +116,35 @@ final class AmmuttaUITests: XCTestCase {
         capture("14-plan-link-imported")
     }
 
+    /// Discarding asks with a centered alert, then closes the workout.
+    @MainActor
+    func testDiscardingAWorkoutAsksFirst() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-ui-testing", "-seed-sample-plan", "-weightUnit", "kg"]
+        app.launch()
+
+        let row = element(app, "plans.row")
+        XCTAssertTrue(row.waitForExistence(timeout: 30))
+        row.tap()
+        element(app, "plan.start").tap()
+
+        let more = element(app, "workout.more")
+        XCTAssertTrue(more.waitForExistence(timeout: 30))
+        more.tap()
+        let discard = element(app, "workout.discard")
+        XCTAssertTrue(discard.waitForExistence(timeout: 30))
+        discard.tap()
+
+        let alert = app.alerts.firstMatch
+        XCTAssertTrue(alert.waitForExistence(timeout: 30))
+        capture("17-discard-alert")
+        alert.buttons.matching(identifier: "workout.confirmDiscard").firstMatch.tap()
+
+        // Back on the plan, ready to start again.
+        XCTAssertTrue(element(app, "plan.start").waitForExistence(timeout: 30))
+    }
+
     /// Big weights are typed, not reached by pressing + dozens of times.
     @MainActor
     func testTypingAWeightDuringAWorkout() throws {

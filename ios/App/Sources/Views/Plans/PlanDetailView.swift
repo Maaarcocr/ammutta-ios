@@ -86,11 +86,12 @@ struct PlanDetailView: View {
         .sheet(item: $editing) { plan in
             PlanEditorView(plan: plan, isNew: false)
         }
-        .confirmationDialog(L10n.planDeleteTitle, isPresented: $confirmingDelete, titleVisibility: .visible) {
+        .alert(L10n.planDeleteTitle, isPresented: $confirmingDelete) {
             Button(L10n.delete, role: .destructive) {
                 model.delete(plan)
                 dismiss()
             }
+            Button(L10n.cancel, role: .cancel) {}
         }
     }
 }
