@@ -56,9 +56,10 @@ struct AgentSnapshotTests {
     @Test func encodesToJSON() throws {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
-        let data = try encoder.encode(snapshot())
+        let original = snapshot()
+        let data = try encoder.encode(original)
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
-        #expect(try decoder.decode(AgentSnapshot.self, from: data) == snapshot())
+        #expect(try decoder.decode(AgentSnapshot.self, from: data) == original)
     }
 }
