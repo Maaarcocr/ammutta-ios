@@ -12,8 +12,22 @@ struct ExerciseEntry: Identifiable, Hashable {
     let kind: TrackingKind
     let name: String
     let detail: String
+    /// Extra words search matches besides the name: muscles worked and muscle group for built-ins.
+    var keywords = ""
 
     var id: ExerciseRef { ref }
+
+    init(ref: ExerciseRef, kind: TrackingKind, name: String, detail: String) {
+        self.ref = ref
+        self.kind = kind
+        self.name = name
+        self.detail = detail
+    }
+
+    init(builtIn exercise: BuiltInExercise) {
+        self.init(ref: exercise.ref, kind: exercise.kind, name: ExerciseText.name(exercise.key), detail: ExerciseText.equipment(exercise.equipment))
+        keywords = ExerciseText.muscles(exercise.key) + " " + ExerciseText.muscle(exercise.muscle)
+    }
 
     var isCustom: Bool {
         if case .custom = ref { return true }
@@ -146,22 +160,22 @@ final class AppModel {
 
     var builtInEntries: [ExerciseEntry] {
         ExerciseCatalog.all
-            .map { ExerciseEntry(ref: $0.ref, kind: $0.kind, name: ExerciseText.name($0.key), detail: ExerciseText.equipment($0.equipment)) }
+            .map(ExerciseEntry.init(builtIn:))
             .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
 
-    /// Accent- and case-insensitive search in the current language.
+    /// Accent- and case-insensitive search in the current language, by name or muscle.
     func entries(_ entries: [ExerciseEntry], matching query: String) -> [ExerciseEntry] {
         let trimmed = query.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return entries }
-        return entries.filter { $0.name.localizedStandardContains(trimmed) }
+        return entries.filter { $0.name.localizedStandardContains(trimmed) || $0.keywords.localizedStandardContains(trimmed) }
     }
 
     func entry(for ref: ExerciseRef) -> ExerciseEntry? {
         switch ref {
         case .builtIn(let key):
             guard let builtIn = ExerciseCatalog.exercise(forKey: key) else { return nil }
-            return ExerciseEntry(ref: ref, kind: builtIn.kind, name: ExerciseText.name(key), detail: ExerciseText.equipment(builtIn.equipment))
+            return ExerciseEntry(builtIn: builtIn)
         case .custom(let id):
             guard let custom = customExercises.first(where: { $0.id == id }) else { return nil }
             return ExerciseEntry(ref: ref, kind: custom.kind, name: custom.name, detail: L10n.customLabel)

@@ -112,7 +112,8 @@ enum L10n {
     static var kindRepsText: String { String(localized: "kind.reps") }
     static var kindDurationText: String { String(localized: "kind.duration") }
     static var exerciseEquipment: LocalizedStringKey { "exercise.equipment" }
-    static var exerciseMuscle: LocalizedStringKey { "exercise.muscle" }
+    static var exerciseMuscles: LocalizedStringKey { "exercise.muscles" }
+    static var exerciseTechnique: LocalizedStringKey { "exercise.technique" }
     static var exerciseLast: LocalizedStringKey { "exercise.last" }
     static var exerciseHistory: LocalizedStringKey { "exercise.history" }
     static var exerciseNoHistory: LocalizedStringKey { "exercise.noHistory" }

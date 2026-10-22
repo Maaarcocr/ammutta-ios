@@ -151,10 +151,10 @@
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Ultima volta" } }
       }
     },
-    "exercise.muscle" : {
+    "exercise.muscles" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Muscle group" } },
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Gruppo muscolare" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Muscles Worked" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Muscoli coinvolti" } }
       }
     },
     "exercise.name" : {
@@ -167,6 +167,12 @@
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Not performed yet" } },
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Non ancora eseguito" } }
+      }
+    },
+    "exercise.technique" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Technique" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Tecnica" } }
       }
     },
     "exerciseEditor.applyToAll" : {

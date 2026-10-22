@@ -20,6 +20,7 @@ struct ExercisesView: View {
                 Section(L10n.exercisesBuiltIn) {
                     ForEach(model.entries(model.builtInEntries, matching: query)) { entry in
                         NavigationLink(value: entry.ref) { ExerciseEntryRow(entry: entry) }
+                            .accessibilityIdentifier("exercises.builtIn")
                     }
                 }
             }
@@ -123,7 +124,15 @@ struct ExerciseDetailView: View {
                 }
                 if case .builtIn(let key) = ref, let builtIn = ExerciseCatalog.exercise(forKey: key) {
                     LabeledContent(L10n.exerciseEquipment, value: ExerciseText.equipment(builtIn.equipment))
-                    LabeledContent(L10n.exerciseMuscle, value: ExerciseText.muscle(builtIn.muscle))
+                }
+            }
+            if case .builtIn(let key) = ref {
+                Section(L10n.exerciseMuscles) {
+                    Text(ExerciseText.muscles(key))
+                        .accessibilityIdentifier("exercise.muscles")
+                }
+                Section(L10n.exerciseTechnique) {
+                    Text(ExerciseText.tip(key))
                 }
             }
 

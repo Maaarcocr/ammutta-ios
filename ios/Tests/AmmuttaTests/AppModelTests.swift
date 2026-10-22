@@ -237,4 +237,22 @@ struct AppModelTests {
         #expect(model.isDuplicateName(plank.uppercased(), kind: .duration, excluding: nil))
         #expect(!model.isDuplicateName(plank, kind: .reps, excluding: nil))
     }
+
+    /// Every built-in exercise has a name, a technique tip and muscles worked in the catalog.
+    @Test func everyBuiltInHasANameTipAndMuscles() {
+        for exercise in ExerciseCatalog.all {
+            #expect(ExerciseText.name(exercise.key) != "exercise." + exercise.key, "\(exercise.key) has no name")
+            #expect(ExerciseText.tip(exercise.key) != "tip." + exercise.key, "\(exercise.key) has no tip")
+            #expect(ExerciseText.muscles(exercise.key) != "muscles." + exercise.key, "\(exercise.key) has no muscles")
+        }
+    }
+
+    @Test func searchFindsExercisesByMuscle() throws {
+        let model = AppModel(store: try AmmuttaStore(inMemory: true), defaults: try makeDefaults())
+        let glutes = model.entries(model.builtInEntries, matching: ExerciseText.muscle(.glutes)).map(\.ref)
+        #expect(glutes.contains(.builtIn(key: "barbell-hip-thrust")))
+        #expect(!glutes.contains(.builtIn(key: "barbell-curl")))
+        let hamstrings = ExerciseText.muscles("leg-curl")
+        #expect(model.entries(model.builtInEntries, matching: hamstrings).map(\.ref).contains(.builtIn(key: "lying-leg-curl")))
+    }
 }

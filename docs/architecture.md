@@ -48,8 +48,7 @@ ios/
   Resources/
     Localizable.xcstrings     UI strings (en + it)
     InfoPlist.xcstrings       Permission purpose strings (en + it)
-    Exercises.xcstrings       Built-in exercise names, equipment, muscle groups (en + it)
-    ExerciseCatalog.json      Built-in exercise keys, kinds and metadata (no display names)
+    Exercises.xcstrings       Built-in exercise names, technique tips, muscles worked, equipment, muscle groups (en + it)
     PrivacyInfo.xcprivacy     No tracking, no collected data
 ```
 
@@ -93,7 +92,7 @@ enum ExerciseRef: Hashable, Codable {   // what plans and logs point at
 }
 
 struct CustomExercise { id, name, kind, equipment?, muscleGroup?, isArchived }
-struct BuiltInExercise { key, kind, equipment, muscleGroup }   // from ExerciseCatalog.json
+struct BuiltInExercise { key, kind, equipment, muscleGroup }   // ExerciseCatalog.swift
 
 enum SetTarget { case reps(count: Int, weight: Mass?), duration(Seconds) }
 
@@ -158,7 +157,7 @@ struct WorkoutEngine {
 
 | Component | Responsibility |
 | --- | --- |
-| `ExerciseCatalog` | Loads and validates `ExerciseCatalog.json`; key → kind, metadata |
+| `ExerciseCatalog` | The ~80 built-in exercises as Swift data; key → kind, equipment, muscle group. Names, tips and muscles worked are in `Exercises.xcstrings` |
 | `ProgressCalculator` | Last performance, personal bests and volume from completed workouts |
 | `PlanLink` | `Plan` ↔ readable `ammutta://plan?v=1&…` link ([`plan-links.md`](plan-links.md)) with size and range limits. Parses to a draft with unresolved names; the app resolves them against the catalog and custom exercises |
 | `PlanCSV` | Template, tolerant parser (`,`/`;` delimiters and both decimal separators), and exporter |
@@ -319,8 +318,7 @@ The first prototype implements the core loop and deliberately simplifies some of
 | Modules | `AmmuttaCore` + `AmmuttaPersistence` in the package; screens, app model and formatting live in the app target | `AmmuttaFeatures` and the service packages (§3) as features arrive |
 | Persistence | `AmmuttaStore` on the main actor; plans and workouts stored as one JSON blob per row with scalar columns for queries | Background `ModelActor` (§5) |
 | Timers | Deadlines in the engine; in-app task and haptic while open; one local notification per workout, derived purely from state (`Workout.pendingTimerAlert`) and replaced in order on every event, so the phone alerts on time when locked | AlarmKit as the primary path, Live Activity (§4.3, §6, §7) |
-| Catalog | 32 built-in exercises as Swift data in `ExerciseCatalog.swift` | ~80 exercises in `ExerciseCatalog.json` (§3) |
 | Formatting | `Format` in the app target, tested on iOS | `Formatting` in the core (§4.4) |
-| Not yet built | Live Activity, heart rate, Apple Health, QR/file/CSV sharing (plan links are built), export, personal bests, archiving exercises | §7–§9, product spec §11–§12 |
+| Not yet built | Heart rate, Apple Health, QR/file/CSV sharing (plan links are built), export, personal bests, archiving exercises | §7–§9, product spec §11–§12 |
 
 The app icon is rendered from `branding/ammutta-logo.svg`, a simplified vector redraw of the original logo (product spec §17.3).
