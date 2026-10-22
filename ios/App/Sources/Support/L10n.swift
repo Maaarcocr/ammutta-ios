@@ -87,6 +87,9 @@ enum L10n {
     static var weight: LocalizedStringKey { "set.weight" }
     static var duration: LocalizedStringKey { "set.duration" }
     static var reps: LocalizedStringKey { "set.repsLabel" }
+    static var repsText: String { String(localized: "set.repsLabel") }
+    static func weightIn(_ unit: String) -> String { String(localized: "set.weightIn \(unit)") }
+    static var secondsLabel: String { String(localized: "set.secondsLabel") }
     static func repsCount(_ count: Int) -> String { String(localized: "set.reps \(count)") }
     static func setsCount(_ count: Int) -> String { String(localized: "set.count \(count)") }
     static func repsWeight(_ count: Int, _ weight: String) -> String { String(localized: "set.repsWeight \(count) \(weight)") }

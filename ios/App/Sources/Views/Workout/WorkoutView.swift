@@ -8,6 +8,8 @@ struct WorkoutView: View {
     let session: WorkoutSession
     @Environment(AppModel.self) private var model
     @State private var confirmingDiscard = false
+    /// The reps, weight or seconds field being typed into, if any.
+    @FocusState private var focusedField: SetField?
     /// Exercises shown expanded: starts as the current one, and resets to it whenever it moves on.
     @State private var expanded: Set<UUID>
 
@@ -43,6 +45,7 @@ struct WorkoutView: View {
                             exercise: exercise,
                             session: session,
                             isExpanded: expanded.contains(exercise.id),
+                            focus: $focusedField,
                             toggle: { toggle(exercise.id) }
                         )
                     }
@@ -80,6 +83,11 @@ struct WorkoutView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button(L10n.done) { focusedField = nil }
+                        .accessibilityIdentifier("keyboard.done")
+                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(L10n.workoutFinish) {
                         session.send(.finish)
@@ -108,6 +116,7 @@ private struct ExerciseCard: View {
     let exercise: WorkoutExercise
     let session: WorkoutSession
     let isExpanded: Bool
+    let focus: FocusState<SetField?>.Binding
     let toggle: () -> Void
     @Environment(AppModel.self) private var model
 
@@ -142,7 +151,8 @@ private struct ExerciseCard: View {
                         last: last?.results[safe: setIndex],
                         isNext: set.id == session.workout.nextPendingSetID,
                         canRemove: exercise.sets.count > 1,
-                        session: session
+                        session: session,
+                        focus: focus
                     )
                 }
                 Divider()
@@ -168,6 +178,7 @@ private struct SetRow: View {
     let isNext: Bool
     let canRemove: Bool
     let session: WorkoutSession
+    let focus: FocusState<SetField?>.Binding
     @Environment(AppModel.self) private var model
     @State private var editing = false
 
@@ -208,7 +219,6 @@ private struct SetRow: View {
             }
             if showsControls {
                 controls
-                    .padding(.leading, 36)
             }
         }
         .padding(.vertical, 4)
@@ -256,6 +266,8 @@ private struct SetRow: View {
             }
         } else {
             Button {
+                // Apply a number still being typed (it is saved as soon as focus leaves).
+                focus.wrappedValue = nil
                 session.send(.logSet(set.id))
                 editing = false
             } label: {
@@ -298,24 +310,42 @@ private struct SetRow: View {
         .accessibilityLabel(L10n.more)
     }
 
+    /// Two equal, centered columns. Tap a number to type it; − and + make small changes.
     @ViewBuilder
     private var controls: some View {
         switch set.value {
         case .reps(let count, let weight):
-            HStack(spacing: 20) {
-                // Just the number: the row above already says "8 reps", and the
-                // Italian "ripetizioni" doesn't fit next to the +/- buttons.
-                ValueStepper(text: count.formatted(),
-                             decrement: { update(set.value.withReps(count - 1)) },
-                             increment: { update(set.value.withReps(count + 1)) })
-                ValueStepper(text: Format.mass(weight ?? .zero, unit: unit),
-                             decrement: { update(set.value.withWeight((weight ?? .zero).adding(-unit.increment, unit: unit))) },
-                             increment: { update(set.value.withWeight((weight ?? .zero).adding(unit.increment, unit: unit))) })
+            HStack(spacing: 12) {
+                NumberStepper(
+                    title: L10n.repsText,
+                    value: Binding(
+                        get: { Double(count) },
+                        set: { update(set.value.withReps(Int(min(max($0, 0), 999)))) }
+                    ),
+                    step: 1, fractionDigits: 0, keyboard: .numberPad,
+                    focus: focus, field: SetField(set: set.id, kind: .reps), identifier: "set.reps"
+                )
+                NumberStepper(
+                    title: L10n.weightIn(unit == .kilograms ? L10n.unitKg : L10n.unitLb),
+                    value: Binding(
+                        get: { (weight ?? .zero).value(in: unit) },
+                        // Capped before conversion; the set clamps to its real limit.
+                        set: { update(set.value.withWeight(Mass(min(max($0, 0), 2_500), unit: unit))) }
+                    ),
+                    step: unit.increment, fractionDigits: 2, keyboard: .decimalPad,
+                    focus: focus, field: SetField(set: set.id, kind: .weight), identifier: "set.weight"
+                )
             }
         case .duration(let seconds):
-            ValueStepper(text: Format.clock(seconds),
-                         decrement: { update(set.value.withSeconds(seconds - 5, range: Limits.loggedSeconds)) },
-                         increment: { update(set.value.withSeconds(seconds + 5, range: Limits.loggedSeconds)) })
+            NumberStepper(
+                title: L10n.secondsLabel,
+                value: Binding(
+                    get: { Double(seconds) },
+                    set: { update(set.value.withSeconds(Int(min(max($0, 1), 3600)), range: Limits.loggedSeconds)) }
+                ),
+                step: 5, fractionDigits: 0, keyboard: .numberPad,
+                focus: focus, field: SetField(set: set.id, kind: .seconds), identifier: "set.seconds"
+            )
         }
     }
 
@@ -345,32 +375,82 @@ private struct AlertsOffRow: View {
     }
 }
 
-/// [−] value [+] with large, one-handed tap targets.
-private struct ValueStepper: View {
-    let text: String
-    let decrement: () -> Void
-    let increment: () -> Void
+/// Which number field is being typed into: one per set and value.
+struct SetField: Hashable {
+    enum Kind: Hashable { case reps, weight, seconds }
+    let set: UUID
+    let kind: Kind
+}
+
+/// A label, then [−] typeable number [+]. Typing handles big jumps (120 kg); the buttons
+/// handle small ones. Tapping the number empties it (the old value stays as a grey hint), so
+/// typing replaces it; the value is applied when the field loses focus. Empty keeps the old value.
+private struct NumberStepper: View {
+    let title: String
+    @Binding var value: Double
+    let step: Double
+    let fractionDigits: Int
+    let keyboard: UIKeyboardType
+    let focus: FocusState<SetField?>.Binding
+    let field: SetField
+    let identifier: String
+    @State private var text = ""
+
+    private var isFocused: Bool { focus.wrappedValue == field }
+    private var formatted: String { value.formatted(.number.precision(.fractionLength(0...fractionDigits))) }
+
+    private func commit() {
+        let typed = text.trimmingCharacters(in: .whitespaces)
+        if !typed.isEmpty, let number = try? Double(typed, format: .number) {
+            value = number
+        }
+        text = formatted
+    }
 
     var body: some View {
-        HStack(spacing: 6) {
-            Button(action: decrement) {
-                Image(systemName: "minus")
-                    .frame(width: 20, height: 20)
-            }
-            .accessibilityLabel(L10n.decrease)
-            Text(text)
-                .font(.body.weight(.medium).monospacedDigit())
+        VStack(spacing: 6) {
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(.secondary)
                 .lineLimit(1)
-                .minimumScaleFactor(0.7)
-                .frame(minWidth: 64)
-            Button(action: increment) {
-                Image(systemName: "plus")
-                    .frame(width: 20, height: 20)
+            HStack(spacing: 8) {
+                Button {
+                    value = max(0, value - step)
+                } label: {
+                    Image(systemName: "minus")
+                        .frame(width: 20, height: 20)
+                }
+                .buttonStyle(.bordered)
+                .buttonBorderShape(.circle)
+                .accessibilityLabel(L10n.decrease)
+
+                TextField(title, text: $text, prompt: Text(formatted))
+                    .keyboardType(keyboard)
+                    .multilineTextAlignment(.center)
+                    .font(.title3.weight(.semibold).monospacedDigit())
+                    .frame(width: 64)
+                    .focused(focus, equals: field)
+                    .accessibilityIdentifier(identifier)
+                    .onAppear { text = formatted }
+                    .onChange(of: isFocused) { _, focused in
+                        if focused { text = "" } else { commit() }
+                    }
+                    .onChange(of: value) { _, _ in
+                        if !isFocused { text = formatted }
+                    }
+
+                Button {
+                    value += step
+                } label: {
+                    Image(systemName: "plus")
+                        .frame(width: 20, height: 20)
+                }
+                .buttonStyle(.bordered)
+                .buttonBorderShape(.circle)
+                .accessibilityLabel(L10n.increase)
             }
-            .accessibilityLabel(L10n.increase)
         }
-        .buttonStyle(.bordered)
-        .buttonBorderShape(.circle)
+        .frame(maxWidth: .infinity)
     }
 }
 
