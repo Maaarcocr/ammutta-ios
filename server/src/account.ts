@@ -26,6 +26,28 @@ export class Account extends DurableObject {
     return owner === secretHash;
   }
 
+  /**
+   * Agent tokens carry this key; replacing it cuts off every agent at once, without waiting
+   * for the OAuth grants (in eventually consistent KV) to be found and revoked.
+   */
+  async agentsKey(): Promise<string> {
+    let key = await this.ctx.storage.get<string>("agentsKey");
+    if (key === undefined) {
+      key = crypto.randomUUID();
+      await this.ctx.storage.put("agentsKey", key);
+    }
+    return key;
+  }
+
+  /** The current key, without creating one: undefined for a deleted account. */
+  async currentAgentsKey(): Promise<string | undefined> {
+    return this.ctx.storage.get<string>("agentsKey");
+  }
+
+  async rotateAgentsKey(): Promise<void> {
+    await this.ctx.storage.put("agentsKey", crypto.randomUUID());
+  }
+
   async putSnapshot(json: string): Promise<void> {
     const previous = (await this.ctx.storage.get<number>("snapshotChunks")) ?? 0;
     const count = Math.ceil(json.length / CHUNK);

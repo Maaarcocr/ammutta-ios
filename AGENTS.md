@@ -67,7 +67,7 @@ bash -n scripts/*.sh
 # Any OS with Swift 6.2 (Linux runs the core only; macOS also runs persistence tests)
 swift test --package-path ios/Packages/AmmuttaKit
 
-# Any OS with Node 22 (the agent connector)
+# Any OS with Node 22.18+ (the agent connector; deploy with `npx cf deploy`, see docs/agents.md)
 (cd server && npm ci && npm run check && npm test)
 
 # macOS, Xcode 26.6+, xcodegen

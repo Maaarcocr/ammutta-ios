@@ -1,7 +1,8 @@
 name: Deploy agent connector
-# Deploys server/ to Cloudflare Workers when it changes on main, or on demand.
+# Deploys server/ to Cloudflare Workers with the cf CLI when it changes on main, or on demand.
 # Needs repository secrets CLOUDFLARE_API_TOKEN (Workers Scripts: Edit, Workers KV Storage: Edit)
-# and CLOUDFLARE_ACCOUNT_ID. Without them the job explains what is missing and stops.
+# and CLOUDFLARE_ACCOUNT_ID. Without them the job explains what is missing and stops; deploy
+# from a computer with `npx cf deploy` instead (docs/agents.md).
 on:
   push:
     branches: [main]
@@ -17,9 +18,6 @@ jobs:
     name: Test and deploy to Cloudflare
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    defaults:
-      run:
-        working-directory: server
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -28,40 +26,22 @@ jobs:
         id: secrets
         run: |
           if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
-            echo "::notice::Set CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID to deploy the agent connector (docs/agents.md)."
+            echo "::notice::Set CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID to deploy from GitHub, or run npx cf deploy locally (docs/agents.md)."
             echo "ready=false" >> "$GITHUB_OUTPUT"
           else
             echo "ready=true" >> "$GITHUB_OUTPUT"
           fi
-        working-directory: .
       - uses: actions/checkout@v4
         if: steps.secrets.outputs.ready == 'true'
       - uses: actions/setup-node@v4
         if: steps.secrets.outputs.ready == 'true'
         with:
-          node-version: 22
-      - name: Install, type check and test
+          node-version: 24
+      - name: Install, type check, test and deploy
         if: steps.secrets.outputs.ready == 'true'
+        working-directory: server
         run: |
           npm ci
           npm run check
           npm test
-      - name: Find or create the OAuth KV namespace
-        if: steps.secrets.outputs.ready == 'true'
-        run: |
-          find_id() {
-            npx wrangler kv namespace list | node -e '
-              const list = JSON.parse(require("fs").readFileSync(0, "utf8"));
-              const match = list.find((ns) => ns.title === "ammutta-agents-oauth" || ns.title.endsWith("-ammutta-agents-oauth"));
-              if (match) console.log(match.id);'
-          }
-          id="$(find_id)"
-          if [ -z "$id" ]; then
-            npx wrangler kv namespace create ammutta-agents-oauth
-            id="$(find_id)"
-          fi
-          [ -n "$id" ] || { echo "::error::Could not find or create the KV namespace"; exit 1; }
-          sed -i "s/OAUTH_KV_ID/$id/" wrangler.jsonc
-      - name: Deploy
-        if: steps.secrets.outputs.ready == 'true'
-        run: npx wrangler deploy
+          npx cf deploy --message "GitHub ${GITHUB_SHA::7}"

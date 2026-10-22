@@ -25,7 +25,7 @@ Ammutta (iPhone) ──HTTPS, account secret──▶ Cloudflare Worker (server/
 
 - **App ↔ server.** On first use the phone makes a random account ID and a 256-bit secret, kept in the Keychain and synced by iCloud Keychain, so a new phone keeps the account. The first request claims the account: the server stores a SHA-256 of the secret, and every later request must present the same secret. There are no accounts, emails or passwords.
 - **Agent ↔ server.** Standard MCP authorization (OAuth 2.1 with PKCE, Dynamic Client Registration and Client ID Metadata Documents), via `@cloudflare/workers-oauth-provider`. The agent's sign-in page (`/authorize`) shows who is asking and asks for a **pairing code** from Settings → AI Agents → Get Pairing Code. Codes are 8 characters, single use, and valid for 10 minutes. The code ties the agent's token to that account.
-- **Disconnect All Agents** revokes every agent's grant.
+- **Disconnect All Agents** cuts off every agent at once. Each account has a random "agents key", stored in its Durable Object (strongly consistent). Every agent token carries the key it was issued with, and disconnecting replaces the key. The OAuth grants are then revoked as cleanup. Grants live in Workers KV, whose listing can lag by about a minute, so they don't decide access.
 - **Turning the setting off** deletes the account on the server (data, inbox, grants) and the secret on the phone.
 
 ## Server API for the app
@@ -43,10 +43,19 @@ All requests carry `Authorization: Bearer <secret>`.
 
 ## Deploying
 
-1. In Cloudflare, create an API token with **Workers Scripts: Edit** and **Workers KV Storage: Edit**, and note the account ID.
-2. Add them as repository secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.
-3. Run **Deploy agent connector** (`.github/workflows/server.yml`). It also runs on every change to `server/` on main. It creates the KV namespace on first run, then deploys. The log prints the Worker's address, for example `https://ammutta-agents.<subdomain>.workers.dev`.
-4. Put that host name, without `https://`, in `AMMUTTA_AGENT_SERVER_HOST` in `ios/Config/Ammutta.xcconfig`, and ship a build. While it is empty, the AI Agents setting is hidden.
+Live at **https://ammutta-agents.marcocr.workers.dev** (connector: `/mcp`). The Worker is configured in `server/cloudflare.config.ts` for Cloudflare's [`cf` CLI](https://developers.cloudflare.com/cf/), which needs Node 22.18 or newer. The KV namespace `ammutta-agents-oauth` already exists, and its ID is in the config.
+
+**From a computer:**
+
+```sh
+cd server
+npx cf auth login   # approve in the browser, once
+npx cf deploy
+```
+
+**From GitHub:** `.github/workflows/server.yml` deploys on every change to `server/` on main once the repository has the secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` (`a2047fb96c8e91b553464cd17db67b97`). Create the token in the Cloudflare dashboard with **Workers Scripts: Edit** and **Workers KV Storage: Edit**: `cf`'s own login can't create API tokens. Without the secrets, the job skips with a notice.
+
+The app reads the host from `AMMUTTA_AGENT_SERVER_HOST` in `ios/Config/Ammutta.xcconfig`. While it is empty, the AI Agents setting is hidden.
 
 ## Connecting an agent
 
@@ -60,11 +69,12 @@ All requests carry `Authorization: Bearer <secret>`.
 cd server
 npm ci
 npm run check && npm test
-npx wrangler dev --local                 # http://127.0.0.1:8787
+npx cf dev --port 8787                   # http://127.0.0.1:8787
 node test/e2e.mjs http://127.0.0.1:8787  # full flow: sync, pairing, OAuth, every tool
+node test/e2e.mjs https://ammutta-agents.marcocr.workers.dev  # same, against production
 ```
 
-CI runs all of this (`Agent connector tests` in `.github/workflows/ci.yml`).
+The end-to-end script creates a throwaway account and deletes it at the end. CI runs everything except the production run (`Agent connector tests` in `.github/workflows/ci.yml`).
 
 ## Not done yet
 

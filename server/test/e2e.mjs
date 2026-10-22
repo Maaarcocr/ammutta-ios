@@ -130,7 +130,7 @@ assert.equal(inbox[1].planId, snapshot.plans[0].id);
 for (const item of inbox) assert.equal((await app(`/inbox/${item.id}`, { method: "DELETE" })).status, 204);
 assert.deepEqual(await (await app("/inbox")).json(), []);
 
-// 6. Disconnecting agents revokes their access.
+// 6. Disconnecting agents cuts off their access immediately (the account's agents key changes).
 assert.equal((await app("/agents", { method: "DELETE" })).status, 204);
 const revoked = await fetch(`${base}/mcp`, { method: "POST", headers: { Authorization: `Bearer ${tokens.access_token}` } });
 assert.equal(revoked.status, 401);

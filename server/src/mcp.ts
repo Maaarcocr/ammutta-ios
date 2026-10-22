@@ -40,6 +40,13 @@ const NOT_SYNCED = "Ammutta hasn't shared any data yet. Ask the user to open the
 
 export async function handleMcp(request: Request, env: Env, props: Props): Promise<Response> {
   const store = account(env, props.accountId);
+  // Agents disconnected (or the account deleted) since this token was issued.
+  if (!props.agentsKey || props.agentsKey !== (await store.currentAgentsKey())) {
+    return new Response("Disconnected from Ammutta. Connect again with a new pairing code.\n", {
+      status: 401,
+      headers: { "WWW-Authenticate": 'Bearer error="invalid_token", error_description="disconnected"' },
+    });
+  }
   const loadSnapshot = async (): Promise<Snapshot | null> => {
     const json = await store.getSnapshot();
     return json ? (JSON.parse(json) as Snapshot) : null;

@@ -11,6 +11,8 @@ export interface Env {
 /** What an agent's access token carries: the account it may read and write. */
 export interface Props extends Record<string, unknown> {
   accountId: string;
+  /** The account's agents key when this agent connected; see Account.agentsKey(). */
+  agentsKey: string;
 }
 
 export function account(env: Env, accountId: string) {
@@ -21,6 +23,7 @@ export function account(env: Env, accountId: string) {
 export const pairingKey = (code: string) => `pairing:${code.trim().toUpperCase()}`;
 export const PAIRING_SECONDS = 600;
 
+/** Best-effort cleanup of OAuth grants. Access ends immediately through the agents key. */
 export async function revokeAgents(env: Env, accountId: string): Promise<void> {
   let cursor: string | undefined;
   do {

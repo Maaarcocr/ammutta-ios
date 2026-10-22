@@ -61,6 +61,7 @@ export async function handleAppRequest(request: Request, env: Env): Promise<Resp
       return Response.json({ code, expiresInSeconds: PAIRING_SECONDS });
     }
     case "DELETE /agents":
+      await store.rotateAgentsKey();
       await revokeAgents(env, accountId.toLowerCase());
       return new Response(null, { status: 204 });
     case "DELETE ":

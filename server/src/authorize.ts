@@ -1,5 +1,5 @@
 import type { ConsentDescription } from "@cloudflare/workers-oauth-provider";
-import { type Env, pairingKey } from "./env";
+import { account, type Env, pairingKey } from "./env";
 
 // The sign-in page an agent opens when it connects: it shows who is asking and asks for the
 // pairing code from Ammutta's Settings. The code proves the person connecting owns the account.
@@ -95,7 +95,7 @@ ${sameOrigin ? `<p><a href="${escape(retry)}">Try again</a></p>` : ""}`,
     userId: accountId,
     metadata: {},
     scope: approved.request.scope,
-    props: { accountId },
+    props: { accountId, agentsKey: await account(env, accountId).agentsKey() },
   });
   approved.headers.set("Location", redirectTo);
   return new Response(null, { status: 302, headers: approved.headers });
