@@ -589,6 +589,18 @@
         "it" : { "stringUnit" : { "state" : "translated", "value" : "%1$lld × %2$@" } }
       }
     },
+    "set.secondsLabel" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Seconds" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Secondi" } }
+      }
+    },
+    "set.weightIn %@" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Weight (%@)" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Peso (%@)" } }
+      }
+    },
     "set.skipped" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Skipped" } },

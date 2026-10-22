@@ -116,6 +116,29 @@ final class AmmuttaUITests: XCTestCase {
         capture("14-plan-link-imported")
     }
 
+    /// Big weights are typed, not reached by pressing + dozens of times.
+    @MainActor
+    func testTypingAWeightDuringAWorkout() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-ui-testing", "-seed-sample-plan", "-weightUnit", "kg"]
+        app.launch()
+
+        let row = element(app, "plans.row")
+        XCTAssertTrue(row.waitForExistence(timeout: 30))
+        row.tap()
+        element(app, "plan.start").tap()
+
+        let weight = app.textFields.matching(identifier: "set.weight").firstMatch
+        XCTAssertTrue(weight.waitForExistence(timeout: 30))
+        weight.tap()
+        weight.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 6) + "120")
+        element(app, "keyboard.done").tap()
+
+        XCTAssertEqual(weight.value as? String, "120")
+        capture("16-typed-weight")
+    }
+
     /// Regression: sharing the AI prompt used to crash the app (it was a ShareLink inside a menu).
     @MainActor
     func testSharingTheAIPromptOpensTheShareSheet() throws {
