@@ -61,6 +61,8 @@ final class AppModel {
     @ObservationIgnored let heartRate: any HeartRateSource
     /// The "Sync to Apple Health" setting and its queue.
     @ObservationIgnored let health: HealthSync
+    /// The "AI Agents" connector: lets AI agents read this data and write plans.
+    @ObservationIgnored let agents: AgentConnector
 
     private(set) var plans: [Plan] = []
     private(set) var customExercises: [CustomExercise] = []
@@ -91,7 +93,9 @@ final class AppModel {
         alerts: any TimerAlerting = DisabledAlerting(),
         activityPresenter: any WorkoutActivityPresenting = DisabledActivityPresenter(),
         heartRate: any HeartRateSource = FakeHeartRateSource(),
-        healthService: any HealthSyncing = FakeHealthSync()
+        healthService: any HealthSyncing = FakeHealthSync(),
+        agentServer: (any AgentServer)? = nil,
+        agentAccounts: any AgentAccountStore = MemoryAgentAccountStore()
     ) {
         self.store = store
         self.defaults = defaults
@@ -99,6 +103,7 @@ final class AppModel {
         self.activityPresenter = activityPresenter
         self.heartRate = heartRate
         health = HealthSync(service: healthService, defaults: defaults)
+        agents = AgentConnector(server: agentServer, accounts: agentAccounts, defaults: defaults)
         let localeDefault: WeightUnit = Locale.current.measurementSystem == .us ? .pounds : .kilograms
         storedWeightUnit = defaults.string(forKey: Keys.weightUnit).flatMap(WeightUnit.init(rawValue:)) ?? localeDefault
         if defaults.object(forKey: Keys.defaultRest) != nil {
@@ -113,6 +118,8 @@ final class AppModel {
         health.lookup = { [weak self] id in
             (try? self?.store.completedWorkouts())?.first { $0.id == id }
         }
+        agents.snapshot = { [weak self] in self?.agentSnapshot() }
+        agents.importPlan = { [weak self] item in self?.importAgentPlan(item) ?? false }
     }
 
     // MARK: Settings
@@ -122,6 +129,7 @@ final class AppModel {
         set {
             storedWeightUnit = newValue
             defaults.set(newValue.rawValue, forKey: Keys.weightUnit)
+            agents.dataChanged()
         }
     }
 
@@ -144,6 +152,7 @@ final class AppModel {
                 session = makeSession(active)
             }
             health.run()
+            agents.refresh()
         } catch {
             report(error)
         }
@@ -221,6 +230,7 @@ final class AppModel {
         do {
             try store.save(exercise)
             customExercises = try store.customExercises()
+            agents.dataChanged()
         } catch {
             report(error)
         }
@@ -231,6 +241,7 @@ final class AppModel {
         do {
             try store.deleteCustomExercise(exercise.id)
             customExercises = try store.customExercises()
+            agents.dataChanged()
         } catch {
             report(error)
         }
@@ -244,6 +255,7 @@ final class AppModel {
         do {
             try store.save(plan)
             plans = try sortedPlans()
+            agents.dataChanged()
         } catch {
             report(error)
         }
@@ -253,6 +265,7 @@ final class AppModel {
         do {
             try store.deletePlan(plan.id)
             plans = try sortedPlans()
+            agents.dataChanged()
         } catch {
             report(error)
         }
@@ -299,10 +312,20 @@ final class AppModel {
 
     func workout(_ id: WorkoutID) -> Workout? { history.first { $0.id == id } }
 
+    /// What AI agents see, with built-in exercises in English so agents can match names.
+    func agentSnapshot() -> AgentSnapshot? {
+        guard let workouts = try? store.completedWorkouts() else { return nil }
+        return AgentSnapshot(
+            plans: plans, workouts: workouts, customExercises: customExercises,
+            unit: weightUnit, now: .now, builtInName: ExerciseText.englishName
+        )
+    }
+
     func deleteWorkout(_ id: WorkoutID) {
         do {
             try store.deleteWorkout(id)
             health.workoutDeleted(id)
+            agents.dataChanged()
         } catch {
             report(error)
         }
@@ -397,6 +420,7 @@ final class AppModel {
             try store.save(workout)
             if workout.isFinished {
                 health.workoutFinished(workout.id)
+                agents.dataChanged()
             }
         } catch {
             report(error)

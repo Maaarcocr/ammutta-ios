@@ -30,6 +30,28 @@ jobs:
       - name: String catalogs complete in English and Italian
         if: steps.detect.outputs.has_app == 'true'
         run: python3 scripts/check-strings.py
+  server:
+    name: Agent connector tests (local Worker)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci
+      - name: Type check
+        run: npm run check
+      - name: Unit tests
+        run: npm test
+      - name: End-to-end against a local Worker (app sync, pairing, OAuth, MCP tools)
+        run: |
+          npx cf dev --port 8787 > wrangler.log 2>&1 &
+          for attempt in $(seq 1 60); do curl -s -o /dev/null http://127.0.0.1:8787/ && break; sleep 1; done
+          node test/e2e.mjs http://127.0.0.1:8787 || { tail -50 wrangler.log; exit 1; }
   core:
     name: Domain core tests (Linux)
     needs: pipeline

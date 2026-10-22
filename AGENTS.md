@@ -2,7 +2,7 @@
 
 ## Project summary
 
-Ammutta for iOS is a free, local-only workout tracker for iPhone (Swift 6, SwiftUI, iOS 26+), built from scratch. It shares a name and product idea with Ammutta for Android, but no code, data format or legacy behavior.
+Ammutta for iOS is a free workout tracker for iPhone, local-first (Swift 6, SwiftUI, iOS 26+), built from scratch. It shares a name and product idea with Ammutta for Android, but no code, data format or legacy behavior.
 
 Status: first prototype (0.1): plans and plan links, guided workouts with timers and a Live Activity, Bluetooth heart-rate sensors, Apple Health sync, an 81-exercise library, history, settings, en + it. See `docs/architecture.md` §15 for what the prototype simplifies.
 
@@ -12,6 +12,7 @@ Status: first prototype (0.1): plans and plan links, guided workouts with timers
 - `docs/architecture.md`: how the app is built. Keep it current when modules, data model, persistence, services or testing strategy change.
 - `docs/testflight.md`: release pipeline and Apple/GitHub setup.
 - `docs/plan-links.md`: the `ammutta://plan` link format. Keep it in sync with `PlanLink.swift` and the built-in exercise catalog (new built-ins go in its table and AI prompt).
+- `docs/agents.md`: the AI agents connector (`server/`, a Cloudflare Worker): data shared, auth, deploy. Keep it in sync with `server/` and `AgentSnapshot.swift`.
 - `AGENTS.md` (this file): how agents work here. Keep it current when commands, layout or conventions change.
 
 There is no design system yet. Use stock SwiftUI components and semantic styles. Do not invent a visual language or carry over the Android "Neon" design.
@@ -30,7 +31,7 @@ The owner's top rule: plain, standard, boring code. A clever construct needs a r
 
 ## Non-negotiable rules
 
-- **Local-only.** Never add networking (`URLSession`, `NWConnection`, web views, sockets), accounts, cloud sync (including iCloud/CloudKit), analytics, crash reporting, remote config or third-party SDKs. External links open in the system browser via `openURL`.
+- **Local-first.** The only networking is the opt-in AI agents connector (`AgentConnector`, talking to our own `server/` over HTTPS), off by default. Never add accounts with sign-up, analytics, crash reporting, remote config, ads or third-party SDKs to the app, and nothing that sends data without the user turning it on. External links open in the system browser via `openURL`.
 - **Free.** No StoreKit, purchases, subscriptions, ads or paywalls.
 - **Localized.** Every user-facing string goes through String Catalogs (`.xcstrings`), in **English and Italian**. This covers:
   - UI text and accessibility labels;
@@ -42,7 +43,7 @@ The owner's top rule: plain, standard, boring code. A clever construct needs a r
   Use `FormatStyle` for numbers, dates, durations and measurements, never manual formatting. No string concatenation for sentences; use plural variants.
 - **Optional capabilities stay optional.** The app must remain fully usable with Bluetooth, Apple Health, notifications or AlarmKit denied or unavailable.
 - **Heart-rate sensors** use only the standard BLE Heart Rate Service (`0x180D` / `0x2A37`). Google Fitbit Air works through that profile. Do not add vendor-specific code paths.
-- **Privacy manifest** must declare no tracking and no collected data. `scripts/verify-ios-bundle.py` enforces this on the built bundle.
+- **Privacy manifest** must declare no tracking and no collected data. `scripts/verify-ios-bundle.py` enforces this on the built bundle. Before an App Store release, declare the fitness data the AI agents connector sends (docs/agents.md).
 - No explainer, onboarding or justification copy in the UI unless the user asks for it. Confirmations only for destructive, unrecoverable actions.
 
 ## Architecture conventions
@@ -65,6 +66,9 @@ bash -n scripts/*.sh
 
 # Any OS with Swift 6.2 (Linux runs the core only; macOS also runs persistence tests)
 swift test --package-path ios/Packages/AmmuttaKit
+
+# Any OS with Node 22.18+ (the agent connector; deploy with `npx cf deploy`, see docs/agents.md)
+(cd server && npm ci && npm run check && npm test)
 
 # macOS, Xcode 26.6+, xcodegen
 (cd ios && xcodegen generate)

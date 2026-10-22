@@ -13,6 +13,54 @@
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Serie %1$lld di %2$lld" } }
       }
     },
+    "agents.address" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Connector Address" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Indirizzo del connettore" } }
+      }
+    },
+    "agents.code" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Pairing Code" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Codice di abbinamento" } }
+      }
+    },
+    "agents.codeNote" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The code works once, for 10 minutes." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Il codice vale una sola volta, per 10 minuti." } }
+      }
+    },
+    "agents.copy" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Copy Address" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Copia indirizzo" } }
+      }
+    },
+    "agents.disconnect" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Disconnect All Agents" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Scollega tutti gli agenti" } }
+      }
+    },
+    "agents.getCode" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Get Pairing Code" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Ottieni codice di abbinamento" } }
+      }
+    },
+    "agents.offline" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Couldn't reach the connector. Ammutta will try again." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Impossibile raggiungere il connettore. Ammutta riproverà." } }
+      }
+    },
+    "agents.toggle" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Connect AI Agents" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Collega agenti IA" } }
+      }
+    },
     "alert.rest.body" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Time for the next set." } },
@@ -739,6 +787,12 @@
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Informazioni" } }
       }
     },
+    "settings.agents" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "AI Agents" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Agenti IA" } }
+      }
+    },
     "settings.defaultRest" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Default rest" } },
@@ -779,6 +833,12 @@
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Free. No ads. No accounts. Your data stays on this iPhone." } },
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Gratis. Niente pubblicità. Nessun account. I tuoi dati restano su questo iPhone." } }
+      }
+    },
+    "settings.taglineConnected" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Free. No ads. No account." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Gratis. Niente pubblicità. Nessun account." } }
       }
     },
     "settings.version" : {

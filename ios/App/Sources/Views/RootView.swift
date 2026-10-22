@@ -33,6 +33,7 @@ struct RootView: View {
             if phase == .active {
                 model.session?.refresh()
                 model.health.run()
+                model.agents.refresh()
             }
         }
         .alert(L10n.errorTitle, isPresented: $model.showingError) {

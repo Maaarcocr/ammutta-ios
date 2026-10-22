@@ -8,16 +8,17 @@ Ammutta ("push!" in Sicilian) is a focused strength and conditioning tracker for
 
 These are constraints, not preferences. A feature that conflicts with one of them is out of scope.
 
-### 1.1 Local-only
+### 1.1 Local-first
 
 - All data lives on the user's iPhone, inside the app's own container.
-- **There is no Ammutta server, account, login, cloud sync, analytics, crash-reporting SDK or remote configuration.** The app contains no networking code at all.
+- **There is no sign-up, login, cloud sync, analytics, crash-reporting SDK or remote configuration.** The only networking is the opt-in AI agents connector (§11.1), off by default.
 - Data leaves the app only when the user explicitly asks it to:
+  - **connecting AI agents**, which sends plans and workout history to Ammutta's own connector server so agents the user connects can read them and write plans;
   - writing completed workouts to **Apple Health**, on device, after opt-in;
   - **sharing a plan** as a link, QR code or file;
   - **exporting** their data to a file they choose where to save.
 - Heart rate is read directly from a Bluetooth sensor over the air. Nothing is relayed through any service.
-- The App Store privacy label is **"Data Not Collected"**, and the privacy manifest declares no collected data types and no tracking. CI checks the built bundle for this (see `scripts/verify-ios-bundle.py`).
+- The App Store privacy label is **"Data Not Collected"**, and the privacy manifest declares no collected data types and no tracking. CI checks the built bundle for this (see `scripts/verify-ios-bundle.py`). Before an App Store release with the AI agents connector, the label and manifest must declare the fitness data it sends (see [agents.md](agents.md)).
 
 ### 1.2 Free
 
@@ -281,6 +282,14 @@ Rest timers and duration-set countdowns must alert the user reliably when the ph
 - Sets in a link carry no rest when the author leaves it out; the user's default rest is used.
 - **Validation**: strict limits on decoded size, set counts and value ranges, with clear localized errors. Malformed input never crashes or partially imports.
 - **CSV**: a documented template, available from the import screen to share or save, with one row per set. The parser tolerates `,` and `;` delimiters and both decimal separators, because Italian spreadsheet exports use `;` and `,`.
+
+### 11.1 AI agents
+
+- **Settings → AI Agents → Connect AI Agents** (off by default) lets cloud agents such as Claude Duet, ChatGPT dots or Meta Muse, or any client with remote MCP connectors, read the user's plans, workout history and exercises, and create or update plans.
+- The app sends its data to Ammutta's connector whenever it changes, and imports plans agents wrote whenever it opens, without a preview.
+- Connecting an agent: copy the connector address into the agent, then type a pairing code from Settings on the agent's sign-in page. Codes work once, for 10 minutes.
+- **Disconnect All Agents** revokes every agent. Turning the setting off deletes everything on the server.
+- Details: [agents.md](agents.md).
 
 ## 12. Your data
 

@@ -25,7 +25,14 @@ struct AmmuttaApp: App {
             BluetoothHeartRateSource()
         }
         let health: any HealthSyncing = uiTesting ? FakeHealthSync() : HealthKitSync()
-        let model = AppModel(store: store, alerts: alerts, activityPresenter: activityPresenter, heartRate: heartRate, healthService: health)
+        // The agent connector's address comes from the build (AMMUTTA_AGENT_SERVER_HOST); empty hides the feature.
+        let agentHost = Bundle.main.object(forInfoDictionaryKey: "AmmuttaAgentServerHost") as? String ?? ""
+        let agentServer: (any AgentServer)? = uiTesting ? FakeAgentServer() : (agentHost.isEmpty ? nil : HTTPAgentServer(host: agentHost))
+        let agentAccounts: any AgentAccountStore = uiTesting ? MemoryAgentAccountStore() : KeychainAgentAccountStore()
+        let model = AppModel(
+            store: store, alerts: alerts, activityPresenter: activityPresenter, heartRate: heartRate,
+            healthService: health, agentServer: agentServer, agentAccounts: agentAccounts
+        )
         model.load()
         if uiTesting, arguments.contains("-seed-sample-plan") {
             model.seedSamplePlan()
