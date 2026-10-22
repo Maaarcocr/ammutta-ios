@@ -44,6 +44,8 @@
 	<true/>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>Ammutta connects to your heart rate sensor during workouts.</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>Ammutta checks which workouts it already saved to Health, so none is saved twice.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Ammutta saves your finished workouts and their heart rate to Health.</string>
 	<key>NSSupportsLiveActivities</key>

@@ -214,8 +214,15 @@ if [[ "$ACTION" == upload ]]; then
   fi
   STAGE='uploading the explicitly requested IPA to App Store Connect'
   # The private_keys directory is a documented altool lookup location relative to cwd.
-  (cd "$WORK" && quiet xcrun altool --upload-app -f "${IPAS[0]}" "$PLATFORM_FLAG" ios \
-    "${AUTH_FLAGS[@]}" --output-format json)
+  if (cd "$WORK" && xcrun altool --upload-app -f "${IPAS[0]}" "$PLATFORM_FLAG" ios \
+    "${AUTH_FLAGS[@]}" --output-format json > "$WORK/private-upload.log" 2>&1); then
+    :
+  else
+    status=$?
+    # Prints Apple's ITMS error codes and fixed diagnostic codes only, never log text.
+    python3 "$ROOT/scripts/archive-diagnostics.py" --upload "$WORK/private-upload.log" || true
+    exit "$status"
+  fi
   printf 'IPA upload command succeeded. Apple processing, TestFlight access, and iPhone acceptance testing remain separate.\n'
 else
   printf 'Signed archive and exported IPA verified. Archive mode performed no upload; temporary products will now be deleted.\n'
