@@ -208,6 +208,22 @@ final class AmmuttaUITests: XCTestCase {
         XCTAssertEqual(app.state, .runningForeground)
     }
 
+    @MainActor
+    func testBuiltInExerciseShowsMusclesAndTechnique() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-ui-testing", "-weightUnit", "kg"]
+        app.launch()
+
+        app.tabBars.buttons.element(boundBy: 1).tap()
+        let exercise = element(app, "exercises.builtIn")
+        XCTAssertTrue(exercise.waitForExistence(timeout: 30))
+        exercise.tap()
+
+        XCTAssertTrue(app.staticTexts.matching(identifier: "exercise.muscles").firstMatch.waitForExistence(timeout: 30))
+        capture("18-exercise-detail")
+    }
+
     /// Every element the tests tap is a button (list rows with NavigationLink included).
     /// Querying buttons only is much cheaper than `descendants(matching: .any)`, which
     /// timed out on slow CI simulators.

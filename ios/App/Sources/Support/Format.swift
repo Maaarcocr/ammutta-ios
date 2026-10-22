@@ -64,6 +64,8 @@ enum ExerciseText {
 
     private static let englishBundle: Bundle? =
         Bundle.main.path(forResource: "en", ofType: "lproj").flatMap(Bundle.init(path:))
+    static func tip(_ key: String) -> String { lookup("tip." + key) }
+    static func muscles(_ key: String) -> String { lookup("muscles." + key) }
     static func equipment(_ equipment: Equipment) -> String { lookup("equipment." + equipment.rawValue) }
     static func muscle(_ muscle: MuscleGroup) -> String { lookup("muscle." + muscle.rawValue) }
 

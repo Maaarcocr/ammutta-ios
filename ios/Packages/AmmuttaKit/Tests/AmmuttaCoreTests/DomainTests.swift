@@ -82,7 +82,17 @@ struct ExerciseTests {
     @Test func catalogKeysAreUniqueAndStable() {
         let keys = ExerciseCatalog.all.map(\.key)
         #expect(Set(keys).count == keys.count)
-        #expect(keys.count >= 25)
+        #expect(keys.count >= 80)
+        // Keys from the first release must never disappear: saved plans and shared links use them.
+        let original = [
+            "barbell-bench-press", "barbell-back-squat", "barbell-deadlift", "barbell-overhead-press", "barbell-row",
+            "barbell-romanian-deadlift", "barbell-hip-thrust", "dumbbell-bench-press", "dumbbell-shoulder-press",
+            "dumbbell-row", "dumbbell-curl", "dumbbell-lateral-raise", "dumbbell-lunge", "kettlebell-goblet-squat",
+            "kettlebell-swing", "pull-up", "chin-up", "push-up", "dip", "bodyweight-squat", "lat-pulldown",
+            "seated-cable-row", "triceps-pushdown", "leg-press", "leg-curl", "crunch", "hanging-leg-raise",
+            "plank", "side-plank", "wall-sit", "dead-hang", "jump-rope",
+        ]
+        #expect(original.allSatisfy { ExerciseCatalog.exercise(forKey: $0) != nil })
         #expect(ExerciseCatalog.exercise(forKey: "plank")?.kind == .duration)
         #expect(keys.allSatisfy { $0.allSatisfy { $0.isLowercase || $0 == "-" } })
     }

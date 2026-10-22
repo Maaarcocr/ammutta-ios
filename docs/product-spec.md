@@ -75,7 +75,8 @@ iOS 26 as the floor gives us AlarmKit, mature SwiftData and current ActivityKit 
   - cable and machine
   - core
   - timed holds and conditioning, such as plank, wall sit, dead hang, jump rope and rowing intervals.
-- Each built-in exercise has a **stable key** (for example `barbell-bench-press`) and a tracking kind. It may also have metadata: equipment and primary muscle group, used for filtering and display.
+- Each built-in exercise has a **stable key** (for example `barbell-bench-press`), a tracking kind, equipment and a primary muscle group. Its detail screen shows the **muscles worked** and a one-sentence **technique tip**, both localized.
+- Exercise search matches the name, the muscles worked and the muscle group (for example "glutes").
 - **Names are localized**: the catalog stores keys, and names come from the String Catalog. The same plan therefore reads "Panca piana con bilanciere" on an Italian phone and "Barbell Bench Press" on an English one.
 - The catalog is read-only and versioned with the app. Updating the catalog never rewrites user data.
 - Users can **hide** built-in exercises they don't use.

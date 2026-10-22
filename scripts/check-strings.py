@@ -3,7 +3,8 @@
 
 - Every key used in ios/App/Sources/Support/L10n.swift exists in Localizable.xcstrings,
   translated into every shipped language, and no catalog key is unused.
-- Every built-in exercise, equipment and muscle group has a name in Exercises.xcstrings.
+- Every built-in exercise has a name, technique tip and muscles worked, and every
+  equipment and muscle group a name, in Exercises.xcstrings.
 - Views never pass raw string literals to SwiftUI text APIs; they go through L10n.
 """
 from pathlib import Path
@@ -67,7 +68,11 @@ def main():
     check_catalog(APP / 'Resources' / 'Localizable.xcstrings', code_keys, errors)
 
     catalog_source = (CORE / 'ExerciseCatalog.swift').read_text(encoding='utf-8')
-    exercise_keys = {f'exercise.{key}' for key in re.findall(r'\.init\("([a-z0-9-]+)"', catalog_source)}
+    exercise_keys = {
+        f'{prefix}.{key}'
+        for key in re.findall(r'\.init\("([a-z0-9-]+)"', catalog_source)
+        for prefix in ('exercise', 'tip', 'muscles')
+    }
     exercise_source = (CORE / 'Exercise.swift').read_text(encoding='utf-8')
     for enum_name, prefix in (('Equipment', 'equipment'), ('MuscleGroup', 'muscle')):
         body = re.search(r'enum %s\b[^{]*\{(.*?)\}' % enum_name, exercise_source, re.DOTALL).group(1)
