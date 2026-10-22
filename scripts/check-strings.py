@@ -5,6 +5,7 @@
   translated into every shipped language, and no catalog key is unused.
 - Every built-in exercise has a name, technique tip and muscles worked, and every
   equipment and muscle group a name, in Exercises.xcstrings.
+- Every permission purpose string in Info.plist is translated in each InfoPlist.strings.
 - Views never pass raw string literals to SwiftUI text APIs; they go through L10n.
 """
 from pathlib import Path
@@ -79,6 +80,13 @@ def main():
         for case_line in re.findall(r'case ([^\n]+)', body):
             exercise_keys.update(f'{prefix}.{name.strip()}' for name in case_line.split(','))
     check_catalog(APP / 'Resources' / 'Exercises.xcstrings', exercise_keys, errors)
+
+    info = (APP / 'Info.plist').read_text(encoding='utf-8')
+    for key in re.findall(r'<key>(NS\w+UsageDescription)</key>', info):
+        for language in LANGUAGES:
+            strings = APP / 'Resources' / f'{language}.lproj' / 'InfoPlist.strings'
+            if f'"{key}" = "' not in strings.read_text(encoding='utf-8'):
+                errors.append(f'{strings.relative_to(ROOT)}: missing permission string {key}')
 
     for source in sorted((APP / 'Sources').rglob('*.swift')):
         if source.name == 'L10n.swift':

@@ -18,7 +18,13 @@ struct AmmuttaApp: App {
         // UI tests must not raise the notification permission prompt.
         let alerts: any TimerAlerting = uiTesting ? DisabledAlerting() : NotificationAlerting()
         let activityPresenter: any WorkoutActivityPresenting = uiTesting ? DisabledActivityPresenter() : LiveActivityPresenter()
-        let model = AppModel(store: store, alerts: alerts, activityPresenter: activityPresenter)
+        // UI tests never touch Bluetooth; -fake-heart-rate shows a connected sensor.
+        let heartRate: any HeartRateSource = if uiTesting {
+            arguments.contains("-fake-heart-rate") ? FakeHeartRateSource(sensorName: "Fitbit Air", readingOnStart: 128) : FakeHeartRateSource()
+        } else {
+            BluetoothHeartRateSource()
+        }
+        let model = AppModel(store: store, alerts: alerts, activityPresenter: activityPresenter, heartRate: heartRate)
         model.load()
         if uiTesting, arguments.contains("-seed-sample-plan") {
             model.seedSamplePlan()

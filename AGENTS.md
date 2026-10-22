@@ -4,7 +4,7 @@
 
 Ammutta for iOS is a free, local-only workout tracker for iPhone (Swift 6, SwiftUI, iOS 26+), built from scratch. It shares a name and product idea with Ammutta for Android, but no code, data format or legacy behavior.
 
-Status: first prototype (0.1): plans, guided workouts with in-app timers, history, settings, en + it. See `docs/architecture.md` §15 for what the prototype simplifies.
+Status: first prototype (0.1): plans and plan links, guided workouts with timers and a Live Activity, Bluetooth heart-rate sensors, an 81-exercise library, history, settings, en + it. See `docs/architecture.md` §15 for what the prototype simplifies.
 
 ## Source-of-truth documents
 

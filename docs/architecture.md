@@ -40,7 +40,7 @@ ios/
       AmmuttaCore/            Pure domain: models, rules, workout engine, codecs, formatting
       AmmuttaPersistence/     SwiftData schema, migrations, repositories
       AmmuttaTimers/          AlarmKit + notification fallback behind TimerAlerting
-      AmmuttaHeartRate/       CoreBluetooth sensor service behind HeartRateSource
+      AmmuttaHeartRate/       CoreBluetooth sensor service behind HeartRateSource (prototype: app target)
       AmmuttaHealth/          HealthKit writer + durable sync queue behind HealthSyncing
       AmmuttaLiveActivity/    ActivityKit attributes and controller (shared with Widgets)
       AmmuttaFeatures/        SwiftUI screens and their @Observable models
@@ -208,24 +208,31 @@ protocol TimerAlerting: Sendable {
 - Interactive buttons are `LiveActivityIntent`s (`LogSetIntent`, `AdjustRestIntent`, `SkipRestIntent`). They load the active workout from the shared store, reduce the event through the same `WorkoutEngine`, persist, and run effects. This needs the store in an **App Group** container shared by the app and the extension.
 - The widget extension is a second bundle (`<bundle>.Widgets`). It needs its own App ID with the App Group, and its own App Store provisioning profile. **The current release pipeline signs a single bundle and must be extended to handle two profiles before the extension lands** (see [`testflight.md`](testflight.md)).
 
-## 8. Heart rate (`AmmuttaHeartRate`)
+## 8. Heart rate
 
 ```swift
-protocol HeartRateSource: Sendable {
-  var events: AsyncStream<HeartRateEvent> { get }   // .state(ConnectionState), .sample(HeartRateSample), .discovered([Sensor])
-  func startScan() async
-  func stopScan() async
-  func connect(_ sensor: Sensor.ID) async
-  func forget() async
+@MainActor protocol HeartRateSource: AnyObject {
+  var status: HeartRateStatus { get }        // idle, searching, connected, bluetoothOff, denied, unsupported
+  var bpm: Int? { get }                      // latest valid reading
+  var sensorID: UUID? { get }                // the remembered sensor
+  var sensorName: String? { get }
+  var discovered: [DiscoveredSensor] { get } // while scanning
+  var onReading: ((Int, Date) -> Void)? { get set }
+  func startScanning(); func stopScanning()
+  func connect(_ sensor: DiscoveredSensor); func forget()
+  func setWorkoutActive(_ active: Bool)
 }
 ```
 
-- `CoreBluetoothHeartRateSource` wraps `CBCentralManager` in an actor-isolated delegate bridge:
-  - scans with a service filter of `0x180D` only;
-  - subscribes to notifications on `0x2A37`;
-  - parses data with the core `HeartRateMeasurementParser`.
-- `CBCentralManagerOptionRestoreIdentifierKey` state restoration plus the `bluetooth-central` background mode keep an in-workout connection alive while the phone is locked. The remembered sensor is stored by peripheral identifier.
-- The session model batches samples, at most one persisted batch every few seconds, into `WorkoutEvent.heartRate`.
+- `BluetoothHeartRateSource` (app target, `Model/HeartRateSource.swift`) is an `@Observable` main-actor class that owns a `CBCentralManager` on the main queue. Delegate callbacks are `nonisolated` and hop onto the main actor with `MainActor.assumeIsolated`.
+  - The manager is created only when Bluetooth is needed (sensor screen open, or a workout with a remembered sensor), so permission is never asked at launch.
+  - It scans with a service filter of `0x180D` only, subscribes to `0x2A37`, and parses with the core `HeartRateMeasurement.bpm(from:)`.
+  - The remembered sensor is stored by peripheral identifier in `UserDefaults` and reconnected with `retrievePeripherals` + `connect`. A pending connection never times out, so after a disconnect iOS reconnects when the sensor is back in range.
+  - The `bluetooth-central` background mode keeps readings arriving while the phone is locked during a workout.
+- `AppModel` calls `setWorkoutActive` when the session appears or goes away, and forwards `onReading` to `WorkoutSession.recordHeartRate`.
+- `Workout.recordHeartRate` (core) keeps at most one `HeartRateSample` every 5 seconds and ignores readings outside the workout. The session saves the workout every 6 stored readings; the rest are saved with the next set or at the end. `WorkoutSummary` derives average and maximum.
+- Old saved workouts without `heartRate` decode with an empty list (custom `init(from:)`), so no schema change was needed: workouts are stored as JSON payloads.
+- `FakeHeartRateSource` serves unit tests, UI tests (`-fake-heart-rate` shows a connected "Fitbit Air") and the default when nothing is injected.
 - Encrypted characteristics trigger the iOS pairing prompt automatically. There is no custom pairing code.
 - **Google Fitbit Air** (with "Share heart rate" enabled in Google Health) is just another `0x180D` peripheral. No vendor-specific code paths exist.
 
@@ -319,6 +326,6 @@ The first prototype implements the core loop and deliberately simplifies some of
 | Persistence | `AmmuttaStore` on the main actor; plans and workouts stored as one JSON blob per row with scalar columns for queries | Background `ModelActor` (§5) |
 | Timers | Deadlines in the engine; in-app task and haptic while open; one local notification per workout, derived purely from state (`Workout.pendingTimerAlert`) and replaced in order on every event, so the phone alerts on time when locked | AlarmKit as the primary path, Live Activity (§4.3, §6, §7) |
 | Formatting | `Format` in the app target, tested on iOS | `Formatting` in the core (§4.4) |
-| Not yet built | Heart rate, Apple Health, QR/file/CSV sharing (plan links are built), export, personal bests, archiving exercises | §7–§9, product spec §11–§12 |
+| Not yet built | Apple Health, QR/file/CSV sharing (plan links are built), export, personal bests, archiving exercises | §7–§9, product spec §11–§12 |
 
 The app icon is rendered from `branding/ammutta-logo.svg`, a simplified vector redraw of the original logo (product spec §17.3).

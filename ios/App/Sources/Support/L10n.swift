@@ -166,13 +166,37 @@ enum L10n {
     static var summaryDuration: LocalizedStringKey { "summary.duration" }
     static var summarySets: LocalizedStringKey { "summary.sets" }
     static var summaryVolume: LocalizedStringKey { "summary.volume" }
+    static var summaryHeartRate: LocalizedStringKey { "summary.heartRate" }
+    static var summaryHeartRateAverage: LocalizedStringKey { "summary.heartRateAverage" }
+    static var summaryHeartRateMax: LocalizedStringKey { "summary.heartRateMax" }
+    static var chartTime: String { String(localized: "chart.time") }
+    static var chartHeartRate: String { String(localized: "chart.heartRate") }
 
     // MARK: Settings
     static var settingsWorkout: LocalizedStringKey { "settings.workout" }
     static var settingsWeightUnit: LocalizedStringKey { "settings.weightUnit" }
     static var settingsDefaultRest: LocalizedStringKey { "settings.defaultRest" }
+    static var settingsHeartRate: LocalizedStringKey { "settings.heartRate" }
+    static var settingsSensor: LocalizedStringKey { "settings.sensor" }
     static var settingsLanguage: LocalizedStringKey { "settings.language" }
     static var settingsAbout: LocalizedStringKey { "settings.about" }
     static var settingsVersion: LocalizedStringKey { "settings.version" }
     static var settingsTagline: LocalizedStringKey { "settings.tagline" }
+
+    // MARK: Heart rate
+    static func bpm(_ value: Int) -> String { String(localized: "heartRate.bpm \(value)") }
+    static func heartRateValue(_ value: Int) -> String { String(localized: "heartRate.value \(value)") }
+    static var heartRateUnavailable: String { String(localized: "heartRate.unavailable") }
+    static var sensorTitle: LocalizedStringKey { "sensor.title" }
+    static var sensorMine: LocalizedStringKey { "sensor.mine" }
+    static var sensorNearby: LocalizedStringKey { "sensor.nearby" }
+    static var sensorForget: LocalizedStringKey { "sensor.forget" }
+    static var sensorBluetoothOff: LocalizedStringKey { "sensor.bluetoothOff" }
+    static var sensorDenied: LocalizedStringKey { "sensor.denied" }
+    static var sensorOpenSettings: LocalizedStringKey { "sensor.openSettings" }
+    static var sensorUnsupported: LocalizedStringKey { "sensor.unsupported" }
+    static var sensorConnected: String { String(localized: "sensor.connected") }
+    static var sensorSearching: String { String(localized: "sensor.searching") }
+    static var sensorNone: String { String(localized: "sensor.none") }
+    static var sensorUnnamed: String { String(localized: "sensor.unnamed") }
 }

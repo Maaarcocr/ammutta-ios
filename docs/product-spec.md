@@ -204,17 +204,17 @@ Rest timers and duration-set countdowns must alert the user reliably when the ph
 
 ### 8.2 Experience
 
-- **Pairing UI** (from Settings, or from the workout screen's heart-rate chip):
+- **Pairing UI** (Settings → Heart Rate → Sensor):
   - scans only for devices advertising `0x180D`;
   - lists them by name with signal strength;
   - connects on tap.
   - Bluetooth permission is requested only at this moment, never at launch.
 - If the sensor requires an encrypted link, iOS shows its standard pairing prompt. Ammutta does not implement any pairing protocol of its own.
 - The connected sensor is **remembered**. When a workout starts, Ammutta reconnects to it automatically if it is nearby, without scanning UI.
-- **During a workout**: a live BPM chip, plus a connection state of searching, connected or signal lost.
+- **During a workout**: the live BPM next to the elapsed time, or a crossed-out heart while searching or out of range.
 - **Background**: with the `bluetooth-central` background mode, readings keep arriving while the phone is locked or the app is in the background during an active workout. Scanning and connection stop when no workout is active and the pairing screen is closed.
-- **Disconnects**: the app retries quietly with backoff. Gaps in samples are expected and shown as gaps, not interpolated.
-- Samples are stored with the workout and summarized in history (average, maximum, chart).
+- **Disconnects**: the app reconnects quietly when the sensor is back in range (a pending iOS connection, no polling). No readings are invented for the gap.
+- One reading every 5 seconds is stored with the workout and summarized in the summary and history: average, maximum and a chart.
 
 ### 8.3 Parsing requirements
 
