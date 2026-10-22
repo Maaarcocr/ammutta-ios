@@ -263,8 +263,9 @@ final class AmmuttaUITests: XCTestCase {
         app.tabBars.buttons.element(boundBy: 3).tap()
         let toggle = app.switches.matching(identifier: "settings.healthSync").firstMatch
         XCTAssertTrue(toggle.waitForExistence(timeout: 30))
-        // Tap the switch itself, at the trailing edge of the row.
-        toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5)).tap()
+        // The row contains the actual switch control; tapping the row's label does nothing.
+        let control = toggle.switches.firstMatch
+        (control.exists ? control : toggle).tap()
         XCTAssertEqual(toggle.value as? String, "1")
         capture("22-apple-health")
     }
