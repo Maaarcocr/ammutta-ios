@@ -95,6 +95,7 @@ final class AppModel {
         heartRate: any HeartRateSource = FakeHeartRateSource(),
         healthService: any HealthSyncing = FakeHealthSync(),
         agentServer: (any AgentServer)? = nil,
+        agentStore: any AgentStore = FakeAgentStore(),
         agentAccounts: any AgentAccountStore = MemoryAgentAccountStore()
     ) {
         self.store = store
@@ -103,7 +104,7 @@ final class AppModel {
         self.activityPresenter = activityPresenter
         self.heartRate = heartRate
         health = HealthSync(service: healthService, defaults: defaults)
-        agents = AgentConnector(server: agentServer, accounts: agentAccounts, defaults: defaults)
+        agents = AgentConnector(server: agentServer, store: agentStore, accounts: agentAccounts, defaults: defaults)
         let localeDefault: WeightUnit = Locale.current.measurementSystem == .us ? .pounds : .kilograms
         storedWeightUnit = defaults.string(forKey: Keys.weightUnit).flatMap(WeightUnit.init(rawValue:)) ?? localeDefault
         if defaults.object(forKey: Keys.defaultRest) != nil {

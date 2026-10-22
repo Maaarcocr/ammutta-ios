@@ -1,7 +1,8 @@
 import type { OAuthHelpers } from "@cloudflare/workers-oauth-provider";
 import type { Account } from "./account";
+import type { SubscriptionEnv } from "./subscription";
 
-export interface Env {
+export interface Env extends SubscriptionEnv {
   OAUTH_KV: KVNamespace;
   ACCOUNTS: DurableObjectNamespace<Account>;
   /** Injected by OAuthProvider into the default handler. */
@@ -22,6 +23,9 @@ export function account(env: Env, accountId: string) {
 /** Pairing codes shown in the app; an agent's sign-in page asks for one. */
 export const pairingKey = (code: string) => `pairing:${code.trim().toUpperCase()}`;
 export const PAIRING_SECONDS = 600;
+
+/** Which account an App Store subscription (by original transaction ID) belongs to. */
+export const subscriptionKey = (originalTransactionId: string) => `subscription:${originalTransactionId}`;
 
 /** Best-effort cleanup of OAuth grants. Access ends immediately through the agents key. */
 export async function revokeAgents(env: Env, accountId: string): Promise<void> {

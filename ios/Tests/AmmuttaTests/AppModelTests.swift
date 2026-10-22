@@ -354,10 +354,12 @@ struct AppModelTests {
         #expect(relaunched.health.queue.jobs.isEmpty)
     }
 
-    private func agentModel(_ server: FakeAgentServer, accounts: MemoryAgentAccountStore = MemoryAgentAccountStore()) throws -> AppModel {
+    private func agentModel(
+        _ server: FakeAgentServer, store: FakeAgentStore = FakeAgentStore(), accounts: MemoryAgentAccountStore = MemoryAgentAccountStore()
+    ) throws -> AppModel {
         let model = AppModel(
             store: try AmmuttaStore(inMemory: true), defaults: try makeDefaults(),
-            agentServer: server, agentAccounts: accounts
+            agentServer: server, agentStore: store, agentAccounts: accounts
         )
         model.load()
         return model
@@ -442,5 +444,40 @@ struct AppModelTests {
         await model.agents.settled()
         #expect(!model.agents.isOffline)
         #expect(model.plans.map(\.name) == ["Later"])
+    }
+
+    @Test func withoutASubscriptionNothingIsSent() async throws {
+        let server = FakeAgentServer()
+        server.active = false
+        let appStore = FakeAgentStore()
+        let model = try agentModel(server, store: appStore)
+        model.save(legDay())
+        model.agents.isEnabled = true
+        await model.agents.settled()
+        #expect(!model.agents.isSubscribed)
+        #expect(server.snapshots.isEmpty)
+
+        model.save(Plan(name: "Arms", exercises: [.make(exercise: .builtIn(key: "dumbbell-curl"), kind: .reps, restSeconds: 60)], createdAt: .now))
+        await model.agents.settled()
+        #expect(server.snapshots.isEmpty, "changes aren't sent either")
+
+        // A purchase, renewal or redeemed offer code arrives from the App Store.
+        appStore.deliver("signed-transaction")
+        await model.agents.settled()
+        #expect(server.uploadedTransactions == ["signed-transaction"])
+        #expect(model.agents.isSubscribed)
+        #expect(server.snapshots.count == 1)
+    }
+
+    @Test func refreshSendsTheCurrentAppStoreTransaction() async throws {
+        let server = FakeAgentServer()
+        let appStore = FakeAgentStore()
+        appStore.transaction = "current-transaction"
+        let model = try agentModel(server, store: appStore)
+        model.agents.isEnabled = true
+        await model.agents.settled()
+        #expect(server.uploadedTransactions == ["current-transaction"])
+        #expect(model.agents.isSubscribed)
+        #expect(model.agents.accountToken != nil)
     }
 }

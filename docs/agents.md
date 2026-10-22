@@ -28,14 +28,36 @@ Ammutta (iPhone) ──HTTPS, account secret──▶ Cloudflare Worker (server/
 - **Disconnect All Agents** cuts off every agent at once. Each account has a random "agents key", stored in its Durable Object (strongly consistent). Every agent token carries the key it was issued with, and disconnecting replaces the key. The OAuth grants are then revoked as cleanup. Grants live in Workers KV, whose listing can lag by about a minute, so they don't decide access.
 - **Turning the setting off** deletes the account on the server (data, inbox, grants) and the secret on the phone.
 
+## Subscription
+
+The connector is a paid add-on that covers the server's cost: one auto-renewable App Store subscription, `com.rudilosso.ammutta.agents.monthly` (about $0.99/month). The rest of the app never needs it.
+
+- **The app** (`AgentStore`, Settings → AI Agents):
+  - **Subscribe** opens StoreKit's standard subscription screen, with Restore. Purchases carry `appAccountToken` = the connector account ID.
+  - **Redeem Code** opens Apple's offer-code sheet.
+  - **Manage Subscription** opens the system sheet.
+  - The app sends every signed transaction StoreKit gives it (current entitlement on refresh, plus `Transaction.updates`) to `POST /v1/accounts/:id/subscription`.
+  - It sends no data and can't pair agents until the server says the subscription is active.
+- **The server never trusts the app's word** (`server/src/subscription.ts`, `billing.ts`):
+  - It accepts only JWS signed by Apple, checked with Apple's own `@apple/app-store-server-library` against Apple Root CA G3: signature, chain, bundle ID, environment, our product ID, and that the token, if present, names this account.
+  - It stores "paid until" (and refunds) in the account's Durable Object.
+  - **One subscription unlocks one account**: the newest account to present it takes it over.
+- **App Store Server Notifications V2** at `POST /apple/notifications` keep it current without the app: renewals, expiries, refunds and revocations, matched by `appAccountToken` or the original transaction ID.
+- **Without an active subscription:** snapshot uploads and pairing codes return 402, and every agent tool answers that the subscription isn't active.
+- **Free months: Apple offer codes.** Create them in App Store Connect (subscription → Offer Codes): a free or discounted period of up to a year, as one-time codes or a custom code. App Review doesn't allow unlocking paid features with our own codes. Testers on TestFlight subscribe in the sandbox for free.
+- `APP_APPLE_ID` in `subscription.ts` is the app's Apple ID in App Store Connect (6825521505). Apple requires it to verify production purchases.
+- **Testing:** `cf dev --mode test` additionally trusts the test-only chain in `server/test/apple-test-ca`, and `test/apple-signer.mjs` signs fake transactions and notifications with it. Deployed Workers trust Apple only. Verification of Apple's real certificate chain was also checked inside the Workers runtime.
+
 ## Server API for the app
 
 | Method and path | Purpose |
 | --- | --- |
-| `PUT /v1/accounts/:id/snapshot` | Latest data (JSON, ≤ 10 MB) |
+| `PUT /v1/accounts/:id/snapshot` | Latest data (JSON, ≤ 10 MB; 402 without a subscription) |
 | `GET /v1/accounts/:id/inbox` | Plans waiting to be imported |
 | `DELETE /v1/accounts/:id/inbox/:item` | Imported or unusable |
-| `POST /v1/accounts/:id/pairing` | New pairing code |
+| `GET /v1/accounts/:id/subscription` | `{ active, expiresAt }` |
+| `POST /v1/accounts/:id/subscription` | `{ transaction: <JWS> }` from StoreKit; returns the status |
+| `POST /v1/accounts/:id/pairing` | New pairing code (402 without a subscription) |
 | `DELETE /v1/accounts/:id/agents` | Disconnect all agents |
 | `DELETE /v1/accounts/:id` | Delete everything |
 
@@ -43,7 +65,7 @@ All requests carry `Authorization: Bearer <secret>`.
 
 ## Deploying
 
-Live at **https://ammutta-agents.marcocr.workers.dev** (connector: `/mcp`). The Worker is configured in `server/cloudflare.config.ts` for Cloudflare's [`cf` CLI](https://developers.cloudflare.com/cf/), which needs Node 22.18 or newer. The KV namespace `ammutta-agents-oauth` already exists, and its ID is in the config.
+Live at **https://agents.ammutta.com** (connector: `https://agents.ammutta.com/mcp`). The old `https://ammutta-agents.marcocr.workers.dev` still works for builds that use it, but it sits behind a Cloudflare browser check that blocks agents with script User-Agents (error 1010). The `ammutta.com` zone has that check turned off (Security → Settings → Browser Integrity Check). The Worker is configured in `server/cloudflare.config.ts` for Cloudflare's [`cf` CLI](https://developers.cloudflare.com/cf/), which needs Node 22.18 or newer. The KV namespace `ammutta-agents-oauth` already exists, and its ID is in the config.
 
 **From a computer:**
 
@@ -59,7 +81,7 @@ The app reads the host from `AMMUTTA_AGENT_SERVER_HOST` in `ios/Config/Ammutta.x
 
 ## Connecting an agent
 
-1. In Ammutta: Settings → AI Agents → Connect AI Agents, then Copy Address.
+1. In Ammutta: Settings → AI Agents → Connect AI Agents, then Subscribe (or Redeem Code), then Copy Address.
 2. In the agent, add a custom connector with that address (it ends in `/mcp`).
 3. When the agent opens the sign-in page, tap Get Pairing Code in Ammutta and type the code.
 
@@ -69,12 +91,11 @@ The app reads the host from `AMMUTTA_AGENT_SERVER_HOST` in `ios/Config/Ammutta.x
 cd server
 npm ci
 npm run check && npm test
-npx cf dev --port 8787                   # http://127.0.0.1:8787
-node test/e2e.mjs http://127.0.0.1:8787  # full flow: sync, pairing, OAuth, every tool
-node test/e2e.mjs https://ammutta-agents.marcocr.workers.dev  # same, against production
+npx cf dev --mode test --port 8787       # trusts the test App Store chain
+node test/e2e.mjs http://127.0.0.1:8787  # subscription, sync, pairing, OAuth, every tool, refunds
 ```
 
-The end-to-end script creates a throwaway account and deletes it at the end. CI runs everything except the production run (`Agent connector tests` in `.github/workflows/ci.yml`).
+The end-to-end script needs test mode: it subscribes with fake App Store data that only `--mode test` accepts. CI runs all of it (`Agent connector tests` in `.github/workflows/ci.yml`).
 
 ## Not done yet
 

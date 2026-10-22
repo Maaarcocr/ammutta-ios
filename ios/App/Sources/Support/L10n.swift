@@ -185,17 +185,20 @@ enum L10n {
     static var settingsLanguage: LocalizedStringKey { "settings.language" }
     static var settingsAbout: LocalizedStringKey { "settings.about" }
     static var settingsVersion: LocalizedStringKey { "settings.version" }
-    static var settingsTagline: LocalizedStringKey { "settings.tagline" }
-    static var settingsTaglineConnected: LocalizedStringKey { "settings.taglineConnected" }
     static var settingsAgents: LocalizedStringKey { "settings.agents" }
     static var agentsToggle: LocalizedStringKey { "agents.toggle" }
     static var agentsAddress: LocalizedStringKey { "agents.address" }
     static var agentsCopy: LocalizedStringKey { "agents.copy" }
+    static var agentsCopyCode: LocalizedStringKey { "agents.copyCode" }
+    static var agentsCopied: LocalizedStringKey { "agents.copied" }
     static var agentsCode: LocalizedStringKey { "agents.code" }
     static var agentsGetCode: LocalizedStringKey { "agents.getCode" }
     static var agentsCodeNote: LocalizedStringKey { "agents.codeNote" }
     static var agentsDisconnect: LocalizedStringKey { "agents.disconnect" }
     static var agentsOffline: LocalizedStringKey { "agents.offline" }
+    static var agentsSubscribe: LocalizedStringKey { "agents.subscribe" }
+    static var agentsRedeem: LocalizedStringKey { "agents.redeem" }
+    static var agentsManage: LocalizedStringKey { "agents.manage" }
 
     // MARK: Heart rate
     static func bpm(_ value: Int) -> String { String(localized: "heartRate.bpm \(value)") }

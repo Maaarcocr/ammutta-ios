@@ -20,10 +20,11 @@ These are constraints, not preferences. A feature that conflicts with one of the
 - Heart rate is read directly from a Bluetooth sensor over the air. Nothing is relayed through any service.
 - The App Store privacy label is **"Data Not Collected"**, and the privacy manifest declares no collected data types and no tracking. CI checks the built bundle for this (see `scripts/verify-ios-bundle.py`). Before an App Store release with the AI agents connector, the label and manifest must declare the fitness data it sends (see [agents.md](agents.md)).
 
-### 1.2 Free
+### 1.2 Free to use
 
-- Ammutta is free to download and free to use, with every feature available to everyone.
-- **No in-app purchases, subscriptions, tips, ads, paywalls, upsells or "pro" tier.**
+- Ammutta is free to download, and **everything that runs on the phone is free**: plans, workouts, timers, heart rate, Apple Health, history, exercises and plan links. The app is fully usable without ever paying.
+- **Paid add-ons only cover server costs.** A feature that needs Ammutta's servers may be a small subscription through the App Store, priced to pay for the compute (the AI agents connector, §11.1, about $0.99 a month). Nothing on-device is ever locked behind it.
+- **Ads, if there are ever any, must never degrade the experience**: nothing during a workout, nothing that blocks or interrupts a screen, no tracking.
 - No third-party SDKs of any kind. This keeps the privacy promise auditable and the binary small.
 
 ### 1.3 Multilingual by default
@@ -285,6 +286,7 @@ Rest timers and duration-set countdowns must alert the user reliably when the ph
 
 ### 11.1 AI agents
 
+- **A paid add-on** (about $0.99/month, App Store subscription) that covers the connector's server costs. Subscribe, restore, redeem offer codes and manage the subscription from Settings → AI Agents. Without it, nothing is sent and no agent can connect. Everything else in the app works without it.
 - **Settings → AI Agents → Connect AI Agents** (off by default) lets cloud agents such as Claude Duet, ChatGPT dots or Meta Muse, or any client with remote MCP connectors, read the user's plans, workout history and exercises, and create or update plans.
 - The app sends its data to Ammutta's connector whenever it changes, and imports plans agents wrote whenever it opens, without a preview.
 - Connecting an agent: copy the connector address into the agent, then type a pairing code from Settings on the agent's sign-in page. Codes work once, for 10 minutes.
@@ -306,7 +308,7 @@ Rest timers and duration-set countdowns must alert the user reliably when the ph
 - Apple Health: on/off, status, and pending-sync count with a retry action
 - Language, which links to the system per-app language setting
 - Your data: export, import and delete all
-- About: version, "Free. No ads. No accounts. Your data stays on this iPhone.", privacy policy and source code links. These are opened in the system browser, so the app itself still makes no network requests
+- About: version, privacy policy and source code links, opened in the system browser
 
 ## 14. Accessibility
 

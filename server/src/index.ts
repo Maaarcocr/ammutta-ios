@@ -1,5 +1,6 @@
 import { OAuthProvider } from "@cloudflare/workers-oauth-provider";
 import { handleAppRequest } from "./app-api";
+import { handleAppleNotification } from "./billing";
 import { handleAuthorize } from "./authorize";
 import type { Env, Props } from "./env";
 import { handleMcp } from "./mcp";
@@ -14,6 +15,7 @@ const defaultHandler = {
     const { pathname } = new URL(request.url);
     if (pathname === "/authorize") return handleAuthorize(request, env);
     if (pathname.startsWith("/v1/")) return handleAppRequest(request, env);
+    if (pathname === "/apple/notifications" && request.method === "POST") return handleAppleNotification(request, env);
     if (pathname === "/") return new Response("Ammutta agent connector. Add /mcp to your AI agent as a custom connector.\n");
     return new Response("Not found\n", { status: 404 });
   },

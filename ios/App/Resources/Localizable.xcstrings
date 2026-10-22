@@ -31,10 +31,22 @@
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Il codice vale una sola volta, per 10 minuti." } }
       }
     },
+    "agents.copied" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Copied" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Copiato" } }
+      }
+    },
     "agents.copy" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Copy Address" } },
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Copia indirizzo" } }
+      }
+    },
+    "agents.copyCode" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Copy Code" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Copia codice" } }
       }
     },
     "agents.disconnect" : {
@@ -49,10 +61,28 @@
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Ottieni codice di abbinamento" } }
       }
     },
+    "agents.manage" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Manage Subscription" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Gestisci abbonamento" } }
+      }
+    },
     "agents.offline" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Couldn't reach the connector. Ammutta will try again." } },
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Impossibile raggiungere il connettore. Ammutta riproverà." } }
+      }
+    },
+    "agents.redeem" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Redeem Code" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Riscatta codice" } }
+      }
+    },
+    "agents.subscribe" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Subscribe" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Abbonati" } }
       }
     },
     "agents.toggle" : {
@@ -827,18 +857,6 @@
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Sensor" } },
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Sensore" } }
-      }
-    },
-    "settings.tagline" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Free. No ads. No accounts. Your data stays on this iPhone." } },
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Gratis. Niente pubblicità. Nessun account. I tuoi dati restano su questo iPhone." } }
-      }
-    },
-    "settings.taglineConnected" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Free. No ads. No account." } },
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Gratis. Niente pubblicità. Nessun account." } }
       }
     },
     "settings.version" : {

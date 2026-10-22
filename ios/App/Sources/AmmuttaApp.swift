@@ -29,9 +29,10 @@ struct AmmuttaApp: App {
         let agentHost = Bundle.main.object(forInfoDictionaryKey: "AmmuttaAgentServerHost") as? String ?? ""
         let agentServer: (any AgentServer)? = uiTesting ? FakeAgentServer() : (agentHost.isEmpty ? nil : HTTPAgentServer(host: agentHost))
         let agentAccounts: any AgentAccountStore = uiTesting ? MemoryAgentAccountStore() : KeychainAgentAccountStore()
+        let agentStore: any AgentStore = uiTesting ? FakeAgentStore() : StoreKitAgentStore()
         let model = AppModel(
             store: store, alerts: alerts, activityPresenter: activityPresenter, heartRate: heartRate,
-            healthService: health, agentServer: agentServer, agentAccounts: agentAccounts
+            healthService: health, agentServer: agentServer, agentStore: agentStore, agentAccounts: agentAccounts
         )
         model.load()
         if uiTesting, arguments.contains("-seed-sample-plan") {

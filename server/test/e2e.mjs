@@ -1,8 +1,10 @@
-// End-to-end check against a running server (`npx wrangler dev`):
+// End-to-end check against a local server started with `npx cf dev --mode test` (which trusts the
+// test certificate authority used to sign fake App Store data):
 //   node test/e2e.mjs [base URL, default http://localhost:8787]
-// Walks the app sync, pairing, an agent's OAuth sign-in and every MCP tool.
+// Walks the subscription, app sync, pairing, an agent's OAuth sign-in, every MCP tool and refunds.
 import assert from "node:assert/strict";
-import { createHash, randomBytes, randomUUID } from "node:crypto";
+import { createHash, generateKeyPairSync, randomBytes, randomUUID } from "node:crypto";
+import { notification, signJWS, transaction } from "./apple-signer.mjs";
 
 const base = process.argv[2] ?? "http://localhost:8787";
 const accountId = randomUUID();
@@ -28,10 +30,25 @@ const snapshot = {
   ],
 };
 
-// 1. The app claims its account and syncs.
-assert.equal((await app("/snapshot", { method: "PUT", body: JSON.stringify(snapshot) })).status, 204);
+// 1. The app claims its account. Nothing syncs until the AI Agents subscription is active.
+const json = (value) => ({ method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(value) });
+const putSnapshot = () => app("/snapshot", { method: "PUT", body: JSON.stringify(snapshot) });
+assert.equal((await putSnapshot()).status, 402, "no subscription, no sync");
+assert.deepEqual(await (await app("/subscription")).json(), { active: false, expiresAt: null });
 const intruder = await fetch(`${base}/v1/accounts/${accountId}/inbox`, { headers: { Authorization: `Bearer ${"x".repeat(64)}` } });
 assert.equal(intruder.status, 401, "another secret is refused");
+
+// 1b. Subscribing: only Apple-signed transactions for this app's product and account count.
+const original = String(Date.now());
+assert.equal((await app("/subscription", json({ transaction: "not.a.jws" }))).status, 400);
+const forged = signJWS({ productId: "com.rudilosso.ammutta.agents.monthly" }, generateKeyPairSync("ec", { namedCurve: "P-256" }).privateKey);
+assert.equal((await app("/subscription", json({ transaction: forged }))).status, 400, "a forged signature is refused");
+assert.equal((await app("/subscription", json({ transaction: transaction({ productId: "com.other" }) }))).status, 400);
+assert.equal((await app("/subscription", json({ transaction: transaction({ appAccountToken: randomUUID() }) }))).status, 403);
+const subscribed = await app("/subscription", json({ transaction: transaction({ originalTransactionId: original, appAccountToken: accountId }) }));
+assert.equal(subscribed.status, 200, await subscribed.clone().text());
+assert.equal((await subscribed.json()).active, true);
+assert.equal((await putSnapshot()).status, 204);
 
 // 2. The app asks for a pairing code.
 const { code } = await (await app("/pairing", { method: "POST" })).json();
@@ -129,6 +146,29 @@ assert.equal(inbox[0].link, "ammutta://plan?v=1&name=Pull%20Day&e=Band%20Pull-Ap
 assert.equal(inbox[1].planId, snapshot.plans[0].id);
 for (const item of inbox) assert.equal((await app(`/inbox/${item.id}`, { method: "DELETE" })).status, 204);
 assert.deepEqual(await (await app("/inbox")).json(), []);
+
+// 5b. Apple's server notifications keep the subscription current without the app.
+const notify = (signedPayload) => fetch(`${base}/apple/notifications`, json({ signedPayload }));
+const forgedNotice = signJWS({ notificationType: "DID_RENEW" }, generateKeyPairSync("ec", { namedCurve: "P-256" }).privateKey);
+assert.equal((await notify(forgedNotice)).status, 400, "unsigned notifications are refused");
+const refund = transaction({ originalTransactionId: original, appAccountToken: accountId, revocationDate: Date.now() });
+assert.equal((await notify(notification("REFUND", refund))).status, 200);
+assert.match(await call("list_workouts"), /subscription isn't active/);
+assert.equal((await app("/pairing", { method: "POST" })).status, 402);
+const renewal = transaction({ originalTransactionId: original, appAccountToken: accountId });
+assert.equal((await notify(notification("DID_RENEW", renewal))).status, 200);
+assert.equal(JSON.parse(await call("list_workouts")).workouts.length, 2);
+
+// 5c. One subscription unlocks one account: the newest account to present it takes it over.
+const otherId = randomUUID();
+const otherSecret = randomBytes(32).toString("hex");
+const other = await fetch(`${base}/v1/accounts/${otherId}/subscription`, {
+  ...json({ transaction: transaction({ originalTransactionId: original }) }),
+  headers: { "Content-Type": "application/json", Authorization: `Bearer ${otherSecret}` },
+});
+assert.equal((await other.json()).active, true);
+assert.equal((await (await app("/subscription")).json()).active, false);
+assert.match(await call("list_plans"), /subscription isn't active/);
 
 // 6. Disconnecting agents cuts off their access immediately (the account's agents key changes).
 assert.equal((await app("/agents", { method: "DELETE" })).status, 204);

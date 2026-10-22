@@ -1,4 +1,5 @@
 import AmmuttaCore
+import StoreKit
 import SwiftUI
 import UIKit
 
@@ -46,8 +47,6 @@ struct SettingsView: View {
                 }
                 Section(L10n.settingsAbout) {
                     LabeledContent(L10n.settingsVersion, value: version)
-                    Text(model.agents.isEnabled ? L10n.settingsTaglineConnected : L10n.settingsTagline)
-                        .foregroundStyle(.secondary)
                 }
             }
             .navigationTitle(L10n.tabSettings)
@@ -85,7 +84,11 @@ private struct AgentsSection: View {
         Section {
             Toggle(L10n.agentsToggle, isOn: $agents.isEnabled)
                 .accessibilityIdentifier("settings.agents")
-            if agents.isEnabled, let url = agents.connectorURL {
+            if agents.isEnabled, !agents.isSubscribed {
+                SubscribeButton(agents: agents)
+                RedeemCodeButton(agents: agents)
+            }
+            if agents.isEnabled, agents.isSubscribed, let url = agents.connectorURL {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(L10n.agentsAddress)
                     Text(url.absoluteString)
@@ -93,9 +96,8 @@ private struct AgentsSection: View {
                         .foregroundStyle(.secondary)
                         .textSelection(.enabled)
                 }
-                Button(L10n.agentsCopy) {
-                    UIPasteboard.general.url = url
-                }
+                CopyButton(title: L10n.agentsCopy, value: url.absoluteString)
+                    .accessibilityIdentifier("agents.copyAddress")
                 if let code = agents.pairingCode {
                     LabeledContent(L10n.agentsCode) {
                         Text(code)
@@ -103,6 +105,8 @@ private struct AgentsSection: View {
                             .textSelection(.enabled)
                             .accessibilityIdentifier("agents.code")
                     }
+                    CopyButton(title: L10n.agentsCopyCode, value: code)
+                        .accessibilityIdentifier("agents.copyCode")
                 }
                 Button(L10n.agentsGetCode) {
                     agents.requestPairingCode()
@@ -111,6 +115,7 @@ private struct AgentsSection: View {
                 Button(L10n.agentsDisconnect, role: .destructive) {
                     agents.disconnectAgents()
                 }
+                ManageSubscriptionButton()
             }
         } header: {
             Text(L10n.settingsAgents)
@@ -121,5 +126,76 @@ private struct AgentsSection: View {
                 Text(L10n.agentsCodeNote)
             }
         }
+    }
+}
+
+/// Opens the App Store subscription screen. Purchases carry this phone's connector account, so
+/// the server can tell whose subscription it is.
+private struct SubscribeButton: View {
+    let agents: AgentConnector
+    @State private var showing = false
+
+    var body: some View {
+        Button(L10n.agentsSubscribe) { showing = true }
+            .accessibilityIdentifier("agents.subscribe")
+            .sheet(isPresented: $showing) {
+                SubscriptionStoreView(productIDs: [AgentSubscription.productID])
+                    .storeButton(.visible, for: .restorePurchases)
+                    .inAppPurchaseOptions { _ in
+                        guard let token = agents.accountToken else { return [] }
+                        return [.appAccountToken(token)]
+                    }
+                    .onInAppPurchaseCompletion { _, result in
+                        if case .success(.success(let verification)) = result {
+                            agents.transactionArrived(verification.jwsRepresentation)
+                            if case .verified(let transaction) = verification { await transaction.finish() }
+                            showing = false
+                        }
+                    }
+                    .onDisappear { agents.refresh() }
+            }
+    }
+}
+
+/// Apple's offer-code sheet: codes from App Store Connect can give free or discounted months.
+private struct RedeemCodeButton: View {
+    let agents: AgentConnector
+    @State private var showing = false
+
+    var body: some View {
+        Button(L10n.agentsRedeem) { showing = true }
+            .offerCodeRedemption(isPresented: $showing) { _ in
+                agents.refresh()
+            }
+    }
+}
+
+private struct ManageSubscriptionButton: View {
+    @State private var showing = false
+
+    var body: some View {
+        Button(L10n.agentsManage) { showing = true }
+            .manageSubscriptionsSheet(isPresented: $showing)
+    }
+}
+
+/// Copies a value and says so: the label turns into "Copied" with a checkmark for a moment.
+private struct CopyButton: View {
+    let title: LocalizedStringKey
+    let value: String
+    @State private var copied = false
+
+    var body: some View {
+        Button {
+            UIPasteboard.general.string = value
+            copied = true
+            Task {
+                try? await Task.sleep(for: .seconds(2))
+                copied = false
+            }
+        } label: {
+            Label(copied ? L10n.agentsCopied : title, systemImage: copied ? "checkmark" : "doc.on.doc")
+        }
+        .sensoryFeedback(.success, trigger: copied) { _, new in new }
     }
 }

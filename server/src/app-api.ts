@@ -1,9 +1,13 @@
+import { handleSubscriptionUpload, subscriptionStatus } from "./billing";
 import { account, type Env, PAIRING_SECONDS, pairingKey, revokeAgents } from "./env";
 
 // The Ammutta app's API. Each phone makes up a random account ID and a long random secret;
 // the first request claims the account, and every later one must carry the same secret.
+// Sending data and connecting agents need an active subscription (402 otherwise).
 //
 //   PUT    /v1/accounts/:id/snapshot     the app's latest data (JSON)
+//   GET    /v1/accounts/:id/subscription whether the AI Agents subscription is active
+//   POST   /v1/accounts/:id/subscription an Apple-signed transaction from StoreKit
 //   GET    /v1/accounts/:id/inbox        plans agents wrote, waiting to be imported
 //   DELETE /v1/accounts/:id/inbox/:item  imported (or unusable): remove it
 //   POST   /v1/accounts/:id/pairing      a one-time code for connecting an agent
@@ -38,8 +42,14 @@ export async function handleAppRequest(request: Request, env: Env): Promise<Resp
   if (!(await store.claim(await sha256(secret)))) return error(401, "wrong secret");
 
   const route = `${request.method} ${resource}${itemId ? "/:item" : ""}`;
+  const subscribed = async () => (await subscriptionStatus(env, accountId.toLowerCase())).active;
   switch (route) {
+    case "GET /subscription":
+      return Response.json(await subscriptionStatus(env, accountId.toLowerCase()));
+    case "POST /subscription":
+      return handleSubscriptionUpload(request, env, accountId.toLowerCase());
     case "PUT /snapshot": {
+      if (!(await subscribed())) return error(402, "subscription inactive");
       const body = await request.text();
       if (body.length > MAX_SNAPSHOT_BYTES) return error(413, "snapshot too large");
       try {
@@ -56,6 +66,7 @@ export async function handleAppRequest(request: Request, env: Env): Promise<Resp
       await store.removeFromInbox(itemId);
       return new Response(null, { status: 204 });
     case "POST /pairing": {
+      if (!(await subscribed())) return error(402, "subscription inactive");
       const code = pairingCode();
       await env.OAUTH_KV.put(pairingKey(code), accountId.toLowerCase(), { expirationTtl: PAIRING_SECONDS });
       return Response.json({ code, expiresInSeconds: PAIRING_SECONDS });
