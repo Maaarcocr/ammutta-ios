@@ -10,12 +10,15 @@ protocol WorkoutActivityPresenting: AnyObject, Sendable {
     func end()
 }
 
-/// Keeps only the activity's ID on the main actor. `Activity` is not Sendable, so updates and
-/// endings look the activity up again inside a background function instead of passing it there.
+/// Updates and endings run one after another in the order they were requested, so a quick
+/// "log set, skip rest" can never leave a stale countdown on the Lock Screen.
+///
+/// `Activity` is not Sendable, so only its ID is kept here; the background steps look it up.
 @MainActor
 final class LiveActivityPresenter: WorkoutActivityPresenting {
     private var activityID: String?
     private var lastState: WorkoutActivityAttributes.ContentState?
+    private var queue: Task<Void, Never>?
 
     func show(_ attributes: WorkoutActivityAttributes, _ state: WorkoutActivityAttributes.ContentState) {
         // After a relaunch, reattach to the activity the previous process started.
@@ -24,8 +27,8 @@ final class LiveActivityPresenter: WorkoutActivityPresenting {
         }
         guard state != lastState else { return }
         lastState = state
-        if let activityID {
-            Task { await Self.update(id: activityID, state: state) }
+        if let id = activityID {
+            enqueue { await Self.update(id: id, state: state) }
             return
         }
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
@@ -38,10 +41,19 @@ final class LiveActivityPresenter: WorkoutActivityPresenting {
     }
 
     func end() {
+        // End exactly the activities that exist now, so a workout started right after is untouched.
+        let ids = Activity<WorkoutActivityAttributes>.activities.map(\.id)
         activityID = nil
         lastState = nil
-        // End every Ammutta activity, including any left over from an earlier launch.
-        Task { await Self.endAll() }
+        enqueue { await Self.end(ids: ids) }
+    }
+
+    private func enqueue(_ step: @escaping @Sendable () async -> Void) {
+        let previous = queue
+        queue = Task {
+            await previous?.value
+            await step()
+        }
     }
 
     @concurrent
@@ -51,8 +63,8 @@ final class LiveActivityPresenter: WorkoutActivityPresenting {
     }
 
     @concurrent
-    private nonisolated static func endAll() async {
-        for activity in Activity<WorkoutActivityAttributes>.activities {
+    private nonisolated static func end(ids: [String]) async {
+        for activity in Activity<WorkoutActivityAttributes>.activities where ids.contains(activity.id) {
             await activity.end(nil, dismissalPolicy: .immediate)
         }
     }

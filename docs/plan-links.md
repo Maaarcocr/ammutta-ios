@@ -136,15 +136,15 @@ ammutta://plan?v=1&name=Mobility&e=Cat%20Cow:2x10:30&e=Couch%20Stretch:2x1m:30&e
 ## Using a link
 
 - **Tap it** in Notes, Messages, Mail, Safari or a chat app that makes links tappable. iOS opens Ammutta (it may ask to confirm "Open in Ammutta?").
-- **Paste it**: in Ammutta, go to Plans → **⋯** → **Import Plan Link**, paste, then **Preview**.
-- **Share one**: open a plan → **⋯** → **Share Link** produces a link in this format.
-- **Ask an AI for one**: Plans → **⋯** → **Share AI Prompt** (see below).
+- **Paste it**: in Ammutta, tap the link button (🔗) in Plans, paste, then **Preview**.
+- **Share one**: open a plan and tap the share button; it shares a link in this format.
+- **Ask an AI for one**: Plans → link button (🔗) → **Share AI Prompt** (see below).
 
 Nothing is saved until **Add Plan** is tapped in the preview. Links contain plan structure only, never history or personal data.
 
 ## Prompt for AI assistants
 
-**In the app:** Plans → **⋯** → **Share AI Prompt** generates this prompt for you. It lists every built-in key *and the exercises you added yourself*, and uses your weight unit. Send it to an AI app or copy it, then describe the plan you want.
+**In the app:** Plans → link button (🔗) → **Share AI Prompt** generates this prompt for you. It lists every built-in key *and the exercises you added yourself*, and uses your weight unit. Send it to an AI app or copy it, then describe the plan you want.
 
 Without the app at hand, paste this into an AI chat, followed by what you want:
 

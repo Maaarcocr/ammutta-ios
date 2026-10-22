@@ -67,6 +67,11 @@ struct PlanImportSheet: View {
             } label: {
                 Label(L10n.importPaste, systemImage: "doc.on.clipboard")
             }
+            // Ask an AI assistant to write a link: the prompt lists every built-in and your own exercises.
+            ShareLink(item: model.planLinkPrompt()) {
+                Label(L10n.plansSharePrompt, systemImage: "sparkles")
+            }
+            .accessibilityIdentifier("import.sharePrompt")
         } footer: {
             if case .failure(let error) = result {
                 Text(L10n.importError(error))

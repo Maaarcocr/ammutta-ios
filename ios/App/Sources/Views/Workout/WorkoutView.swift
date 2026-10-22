@@ -8,20 +8,14 @@ struct WorkoutView: View {
     let session: WorkoutSession
     @Environment(AppModel.self) private var model
     @State private var confirmingDiscard = false
-    @State private var toggled: Set<UUID> = []
+    /// Exercises shown expanded. Reset to just the current one whenever it moves on.
+    @State private var expanded: Set<UUID> = []
 
     var body: some View {
-        @Bindable var model = model
-        Group {
-            if session.isFinished {
-                WorkoutSummaryView(workout: session.workout)
-            } else {
-                active
-            }
-        }
-        .sheet(item: $model.importRequest) { request in
-            PlanImportSheet(request: request)
-                .environment(model)
+        if session.isFinished {
+            WorkoutSummaryView(workout: session.workout)
+        } else {
+            active
         }
     }
 
@@ -39,11 +33,10 @@ struct WorkoutView: View {
                         AlertsOffRow()
                     }
                     ForEach(session.workout.exercises) { exercise in
-                        let isCurrent = exercise.id == currentExerciseID
                         ExerciseCard(
                             exercise: exercise,
                             session: session,
-                            isExpanded: isCurrent != toggled.contains(exercise.id),
+                            isExpanded: expanded.contains(exercise.id),
                             toggle: { toggle(exercise.id) }
                         )
                     }
@@ -94,12 +87,14 @@ struct WorkoutView: View {
                 }
             }
             .sensoryFeedback(.success, trigger: session.timerEndedCount)
+            .onChange(of: currentExerciseID, initial: true) { _, current in
+                expanded = current.map { Set([$0]) } ?? []
+            }
         }
     }
 
-    /// Tapping a header flips it away from its default (current = open, others = closed).
     private func toggle(_ id: UUID) {
-        if toggled.contains(id) { toggled.remove(id) } else { toggled.insert(id) }
+        if expanded.contains(id) { expanded.remove(id) } else { expanded.insert(id) }
     }
 }
 
@@ -401,7 +396,6 @@ private struct TimerBar: View {
                         session.send(.skipRest)
                     } label: {
                         Text(L10n.timerSkip)
-                            .foregroundStyle(Color("OnAccent"))
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.borderedProminent)
@@ -415,7 +409,6 @@ private struct TimerBar: View {
                     session.send(.stopWork)
                 } label: {
                     Text(L10n.workoutStopTimer)
-                        .foregroundStyle(Color("OnAccent"))
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)

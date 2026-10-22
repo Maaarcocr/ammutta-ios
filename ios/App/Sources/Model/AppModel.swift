@@ -54,6 +54,8 @@ final class AppModel {
     var selectedTab: AppTab = .plans
     /// A plan link being previewed (opened from a link, or pasted).
     var importRequest: ImportRequest?
+    /// A link opened during a workout, shown when the workout screen closes.
+    var deferredImport: ImportRequest?
 
     private var storedWeightUnit: WeightUnit
     private var storedDefaultRest: Int

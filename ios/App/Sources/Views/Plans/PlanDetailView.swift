@@ -7,7 +7,6 @@ struct PlanDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var editing: Plan?
     @State private var confirmingDelete = false
-    @State private var sharing: ShareItem?
 
     var body: some View {
         if let plan = model.plan(planID) {
@@ -49,7 +48,6 @@ struct PlanDetailView: View {
             } label: {
                 Label(L10n.planStart, systemImage: "play.fill")
                     .font(.headline)
-                    .foregroundStyle(Color("OnAccent"))
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
@@ -61,11 +59,13 @@ struct PlanDetailView: View {
             ToolbarItem(placement: .primaryAction) {
                 Button(L10n.edit) { editing = plan }
             }
-            ToolbarItem(placement: .secondaryAction) {
-                Button {
-                    if let url = model.shareURL(for: plan) { sharing = ShareItem(content: url) }
-                } label: {
-                    Label(L10n.planShareLink, systemImage: "square.and.arrow.up")
+            // The system share button, in the navigation bar (never inside a menu).
+            ToolbarItem(placement: .topBarTrailing) {
+                if let url = model.shareURL(for: plan) {
+                    ShareLink(item: url) {
+                        Label(L10n.planShareLink, systemImage: "square.and.arrow.up")
+                    }
+                    .accessibilityIdentifier("plan.share")
                 }
             }
             ToolbarItem(placement: .secondaryAction) {
@@ -86,7 +86,6 @@ struct PlanDetailView: View {
         .sheet(item: $editing) { plan in
             PlanEditorView(plan: plan, isNew: false)
         }
-        .shareSheet(item: $sharing)
         .confirmationDialog(L10n.planDeleteTitle, isPresented: $confirmingDelete, titleVisibility: .visible) {
             Button(L10n.delete, role: .destructive) {
                 model.delete(plan)

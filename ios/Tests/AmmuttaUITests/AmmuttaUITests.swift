@@ -116,7 +116,7 @@ final class AmmuttaUITests: XCTestCase {
         capture("14-plan-link-imported")
     }
 
-    /// Regression: sharing the AI prompt from the Plans menu used to crash the app.
+    /// Regression: sharing the AI prompt used to crash the app (it was a ShareLink inside a menu).
     @MainActor
     func testSharingTheAIPromptOpensTheShareSheet() throws {
         continueAfterFailure = false
@@ -124,10 +124,10 @@ final class AmmuttaUITests: XCTestCase {
         app.launchArguments = ["-ui-testing", "-weightUnit", "kg"]
         app.launch()
 
-        let menu = element(app, "plans.menu")
-        XCTAssertTrue(menu.waitForExistence(timeout: 30))
-        menu.tap()
-        let share = element(app, "plans.sharePrompt")
+        let importLink = element(app, "plans.importLink")
+        XCTAssertTrue(importLink.waitForExistence(timeout: 30))
+        importLink.tap()
+        let share = element(app, "import.sharePrompt")
         XCTAssertTrue(share.waitForExistence(timeout: 30))
         share.tap()
 
@@ -135,6 +135,24 @@ final class AmmuttaUITests: XCTestCase {
         XCTAssertTrue(app.otherElements["ActivityListView"].waitForExistence(timeout: 30))
         XCTAssertEqual(app.state, .runningForeground)
         capture("15-share-ai-prompt")
+    }
+
+    @MainActor
+    func testSharingAPlanLinkOpensTheShareSheet() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-ui-testing", "-seed-sample-plan", "-weightUnit", "kg"]
+        app.launch()
+
+        let row = element(app, "plans.row")
+        XCTAssertTrue(row.waitForExistence(timeout: 30))
+        row.tap()
+        let share = element(app, "plan.share")
+        XCTAssertTrue(share.waitForExistence(timeout: 30))
+        share.tap()
+
+        XCTAssertTrue(app.otherElements["ActivityListView"].waitForExistence(timeout: 30))
+        XCTAssertEqual(app.state, .runningForeground)
     }
 
     /// Every element the tests tap is a button (list rows with NavigationLink included).
