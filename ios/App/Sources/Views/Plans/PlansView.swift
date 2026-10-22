@@ -4,6 +4,7 @@ import SwiftUI
 struct PlansView: View {
     @Environment(AppModel.self) private var model
     @State private var newPlan: Plan?
+    @State private var sharing: ShareItem?
 
     var body: some View {
         NavigationStack {
@@ -44,22 +45,30 @@ struct PlansView: View {
                     }
                     .accessibilityIdentifier("plans.add")
                 }
-                ToolbarItem(placement: .secondaryAction) {
-                    Button {
-                        model.startPasteImport()
+                ToolbarItem(placement: .topBarLeading) {
+                    Menu {
+                        Button {
+                            model.startPasteImport()
+                        } label: {
+                            Label(L10n.plansImportLink, systemImage: "link")
+                        }
+                        .accessibilityIdentifier("plans.importLink")
+                        Button {
+                            sharing = ShareItem(content: model.planLinkPrompt())
+                        } label: {
+                            Label(L10n.plansSharePrompt, systemImage: "sparkles")
+                        }
+                        .accessibilityIdentifier("plans.sharePrompt")
                     } label: {
-                        Label(L10n.plansImportLink, systemImage: "link")
+                        Label(L10n.more, systemImage: "ellipsis")
                     }
-                }
-                ToolbarItem(placement: .secondaryAction) {
-                    ShareLink(item: model.planLinkPrompt()) {
-                        Label(L10n.plansSharePrompt, systemImage: "sparkles")
-                    }
+                    .accessibilityIdentifier("plans.menu")
                 }
             }
             .sheet(item: $newPlan) { plan in
                 PlanEditorView(plan: plan, isNew: true)
             }
+            .shareSheet(item: $sharing)
         }
     }
 

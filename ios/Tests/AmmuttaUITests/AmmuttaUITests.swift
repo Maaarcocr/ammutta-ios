@@ -116,6 +116,27 @@ final class AmmuttaUITests: XCTestCase {
         capture("14-plan-link-imported")
     }
 
+    /// Regression: sharing the AI prompt from the Plans menu used to crash the app.
+    @MainActor
+    func testSharingTheAIPromptOpensTheShareSheet() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-ui-testing", "-weightUnit", "kg"]
+        app.launch()
+
+        let menu = element(app, "plans.menu")
+        XCTAssertTrue(menu.waitForExistence(timeout: 30))
+        menu.tap()
+        let share = element(app, "plans.sharePrompt")
+        XCTAssertTrue(share.waitForExistence(timeout: 30))
+        share.tap()
+
+        // The share sheet appears and the app keeps running.
+        XCTAssertTrue(app.otherElements["ActivityListView"].waitForExistence(timeout: 30))
+        XCTAssertEqual(app.state, .runningForeground)
+        capture("15-share-ai-prompt")
+    }
+
     /// Every element the tests tap is a button (list rows with NavigationLink included).
     /// Querying buttons only is much cheaper than `descendants(matching: .any)`, which
     /// timed out on slow CI simulators.

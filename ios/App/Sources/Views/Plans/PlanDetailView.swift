@@ -7,6 +7,7 @@ struct PlanDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var editing: Plan?
     @State private var confirmingDelete = false
+    @State private var sharing: ShareItem?
 
     var body: some View {
         if let plan = model.plan(planID) {
@@ -61,10 +62,10 @@ struct PlanDetailView: View {
                 Button(L10n.edit) { editing = plan }
             }
             ToolbarItem(placement: .secondaryAction) {
-                if let url = model.shareURL(for: plan) {
-                    ShareLink(item: url) {
-                        Label(L10n.planShareLink, systemImage: "square.and.arrow.up")
-                    }
+                Button {
+                    if let url = model.shareURL(for: plan) { sharing = ShareItem(content: url) }
+                } label: {
+                    Label(L10n.planShareLink, systemImage: "square.and.arrow.up")
                 }
             }
             ToolbarItem(placement: .secondaryAction) {
@@ -85,6 +86,7 @@ struct PlanDetailView: View {
         .sheet(item: $editing) { plan in
             PlanEditorView(plan: plan, isNew: false)
         }
+        .shareSheet(item: $sharing)
         .confirmationDialog(L10n.planDeleteTitle, isPresented: $confirmingDelete, titleVisibility: .visible) {
             Button(L10n.delete, role: .destructive) {
                 model.delete(plan)
