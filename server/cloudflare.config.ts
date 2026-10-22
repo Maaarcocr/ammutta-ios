@@ -14,7 +14,8 @@ export default defineConfig(({ mode }) => ({
     // Our own domain: workers.dev runs a browser check we can't turn off, which blocked agents
     // using script User-Agents (403 / error 1010). The ammutta.com zone has it off. workers.dev
     // stays on for builds that still use that address.
-    domains: ["agents.ammutta.com"],
+    // Not in local test mode: the dev server would rewrite requests to http://agents.ammutta.com.
+    domains: mode === "test" ? [] : ["agents.ammutta.com"],
     workersDev: true,
     previewUrls: false,
     observability: {
