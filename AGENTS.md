@@ -23,6 +23,7 @@ The owner's top rule: plain, standard, boring code. A clever construct needs a r
 - Use controls where Apple puts them. Actions are plain `Button`s. `ShareLink` goes directly in a toolbar or a row, **never inside a `Menu` or `.secondaryAction`** (that crashed the app).
 - One presentation per piece of state: one `.sheet(item:)` bound to it, attached to the screen it belongs to. Never two presentation modifiers (sheet, cover) on the same view, never two bound to the same state, and no custom `Binding` getters to dodge presentation conflicts (a sheet next to the workout cover on the root stopped the workout from opening).
 - No UIKit wrappers (`UIViewControllerRepresentable`) when a SwiftUI control exists.
+- "Are you sure?" confirmations use `.alert` with a destructive button and Cancel. Not `confirmationDialog`: on iOS 26 it is a popover pointing at whatever view it is attached to.
 - Prefer plain state (`Set`, `Bool`, optional item) over tricks such as XOR-derived expansion state.
 - Fire-and-forget `Task`s that change system state (alerts, Live Activities) run in order through one queue.
 - New user-facing actions get a UI test that taps them at least once in CI.

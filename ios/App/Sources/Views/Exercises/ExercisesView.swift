@@ -172,13 +172,14 @@ struct ExerciseDetailView: View {
         .sheet(item: $editing) { custom in
             CustomExerciseEditor(existing: custom) { _ in }
         }
-        .confirmationDialog(L10n.exerciseDeleteTitle, isPresented: $confirmingDelete, titleVisibility: .visible) {
+        .alert(L10n.exerciseDeleteTitle, isPresented: $confirmingDelete) {
             Button(L10n.delete, role: .destructive) {
                 if case .custom(let id) = ref, let custom = model.customExercise(id) {
                     model.delete(custom)
                 }
                 dismiss()
             }
+            Button(L10n.cancel, role: .cancel) {}
         }
     }
 }
