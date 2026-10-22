@@ -266,6 +266,8 @@ private struct SetRow: View {
             }
         } else {
             Button {
+                // Apply a number still being typed (it is saved as soon as focus leaves).
+                focus.wrappedValue = nil
                 session.send(.logSet(set.id))
                 editing = false
             } label: {
@@ -381,7 +383,8 @@ struct SetField: Hashable {
 }
 
 /// A label, then [−] typeable number [+]. Typing handles big jumps (120 kg); the buttons
-/// handle small ones. The value is applied when the field loses focus (Done on the keyboard).
+/// handle small ones. Tapping the number empties it (the old value stays as a grey hint), so
+/// typing replaces it; the value is applied when the field loses focus. Empty keeps the old value.
 private struct NumberStepper: View {
     let title: String
     @Binding var value: Double
@@ -391,6 +394,18 @@ private struct NumberStepper: View {
     let focus: FocusState<SetField?>.Binding
     let field: SetField
     let identifier: String
+    @State private var text = ""
+
+    private var isFocused: Bool { focus.wrappedValue == field }
+    private var formatted: String { value.formatted(.number.precision(.fractionLength(0...fractionDigits))) }
+
+    private func commit() {
+        let typed = text.trimmingCharacters(in: .whitespaces)
+        if !typed.isEmpty, let number = try? Double(typed, format: .number) {
+            value = number
+        }
+        text = formatted
+    }
 
     var body: some View {
         VStack(spacing: 6) {
@@ -409,13 +424,20 @@ private struct NumberStepper: View {
                 .buttonBorderShape(.circle)
                 .accessibilityLabel(L10n.decrease)
 
-                TextField(title, value: $value, format: .number.precision(.fractionLength(0...fractionDigits)))
+                TextField(title, text: $text, prompt: Text(formatted))
                     .keyboardType(keyboard)
                     .multilineTextAlignment(.center)
                     .font(.title3.weight(.semibold).monospacedDigit())
                     .frame(width: 64)
                     .focused(focus, equals: field)
                     .accessibilityIdentifier(identifier)
+                    .onAppear { text = formatted }
+                    .onChange(of: isFocused) { _, focused in
+                        if focused { text = "" } else { commit() }
+                    }
+                    .onChange(of: value) { _, _ in
+                        if !isFocused { text = formatted }
+                    }
 
                 Button {
                     value += step

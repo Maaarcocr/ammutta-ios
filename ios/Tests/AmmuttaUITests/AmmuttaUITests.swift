@@ -132,7 +132,8 @@ final class AmmuttaUITests: XCTestCase {
         let weight = app.textFields.matching(identifier: "set.weight").firstMatch
         XCTAssertTrue(weight.waitForExistence(timeout: 30))
         weight.tap()
-        weight.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 6) + "120")
+        // Tapping empties the field, so typing replaces the old 60 kg.
+        weight.typeText("120")
         element(app, "keyboard.done").tap()
 
         XCTAssertEqual(weight.value as? String, "120")
