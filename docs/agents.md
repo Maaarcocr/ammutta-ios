@@ -45,7 +45,7 @@ The connector is a paid add-on that covers the server's cost: one auto-renewable
 - **App Store Server Notifications V2** at `POST /apple/notifications` keep it current without the app: renewals, expiries, refunds and revocations, matched by `appAccountToken` or the original transaction ID.
 - **Without an active subscription:** snapshot uploads and pairing codes return 402, and every agent tool answers that the subscription isn't active.
 - **Free months: Apple offer codes.** Create them in App Store Connect (subscription → Offer Codes): a free or discounted period of up to a year, as one-time codes or a custom code. App Review doesn't allow unlocking paid features with our own codes. Testers on TestFlight subscribe in the sandbox for free.
-- **Production needs** `APP_APPLE_ID` (the app's Apple ID in App Store Connect) set in `subscription.ts`. Until then, only sandbox (TestFlight) purchases verify.
+- `APP_APPLE_ID` in `subscription.ts` is the app's Apple ID in App Store Connect (6825521505). Apple requires it to verify production purchases.
 - **Testing:** `cf dev --mode test` additionally trusts the test-only chain in `server/test/apple-test-ca`, and `test/apple-signer.mjs` signs fake transactions and notifications with it. Deployed Workers trust Apple only. Verification of Apple's real certificate chain was also checked inside the Workers runtime.
 
 ## Server API for the app

@@ -11,7 +11,7 @@ import type {
 export const BUNDLE_ID = "com.rudilosso.ammutta";
 export const PRODUCT_ID = "com.rudilosso.ammutta.agents.monthly";
 /** The app's Apple ID in App Store Connect; Apple requires it to verify production data. */
-export const APP_APPLE_ID: number | undefined = undefined;
+export const APP_APPLE_ID: number | undefined = 6825521505;
 
 // https://www.apple.com/certificateauthority/AppleRootCA-G3.cer
 // SHA-256 63:34:3A:BF:B8:9A:6A:03:EB:B5:7E:9B:3F:5F:A7:BE:7C:4F:5C:75:6F:30:17:B3:A8:C4:88:C3:65:3E:91:79
