@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
-"""Classify a private archive log using fixed allowlisted codes only.
+"""Classify a private archive or upload log using fixed allowlisted codes only.
 
 Never print raw lines, matched substrings, target names, paths, credentials, or
-exceptions. Codes are diagnostic hints, not a claim that a root cause is proven.
+exceptions. The one exception is Apple's public ITMS error codes from an upload
+(for example ITMS-90683), printed only as the matched `ITMS-<digits>` token.
+Codes are diagnostic hints, not a claim that a root cause is proven.
 The original log remains private and is deleted by the signing cleanup trap.
 """
 
 from pathlib import Path
+import re
 import sys
 
 # All printed values are literals defined here, never derived from tool output.
@@ -22,6 +25,15 @@ RULES = (
     ("ARCHIVE_LINK", ("linker command failed", "undefined symbols for architecture", "duplicate symbols for architecture")),
     ("ARCHIVE_PACKAGE_RESOLUTION", ("could not resolve package dependencies", "failed downloading", "failed to clone repository")),
 )
+
+
+UPLOAD_RULES = (
+    ("UPLOAD_AUTH", ("not authorized", "unable to authenticate", "authentication failed")),
+    ("UPLOAD_DUPLICATE_BUILD", ("bundle version must be higher", "has already been used", "redundant binary upload")),
+    ("UPLOAD_MISSING_PURPOSE_STRING", ("missing purpose string",)),
+    ("UPLOAD_INVALID_BINARY", ("invalid binary", "invalid bundle", "invalid signature", "invalid provisioning profile")),
+)
+ITMS_CODE = re.compile(r"\bITMS-\d{4,5}\b")
 
 
 def classify(path):
@@ -41,9 +53,19 @@ def classify(path):
     return [code for code, _ in RULES if code in found] or ["ARCHIVE_UNCLASSIFIED"]
 
 
+def classify_upload(path):
+    """Apple ITMS codes in order of appearance, then fixed codes for known failures."""
+    text = Path(path).read_text(errors="replace")
+    itms = list(dict.fromkeys(ITMS_CODE.findall(text)))
+    lower = text.lower()
+    fixed = [code for code, patterns in UPLOAD_RULES if any(pattern in lower for pattern in patterns)]
+    return itms + fixed or ["UPLOAD_UNCLASSIFIED"]
+
+
 def main(args):
     try:
-        codes = classify(args[0]) if len(args) == 1 else ["ARCHIVE_DIAGNOSTICS_UNAVAILABLE"]
+        codes = (classify_upload(args[1]) if len(args) == 2 and args[0] == "--upload"
+                 else classify(args[0]) if len(args) == 1 else ["ARCHIVE_DIAGNOSTICS_UNAVAILABLE"])
     except Exception:
         codes = ["ARCHIVE_DIAGNOSTICS_UNAVAILABLE"]
     for code in codes:

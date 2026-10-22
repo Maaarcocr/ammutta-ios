@@ -208,6 +208,10 @@ elif name == "xcrun":
                "unsupported": "--unrecognized-cli"}[style])
     else:
         assert args[:2] == ["altool", "--upload-app"]
+        if os.environ.get("FAKE_ALTOOL_ERROR"):
+            print(json.dumps({"product-errors": [{"message": "ERROR ITMS-90683: Missing purpose string in Info.plist "
+                                                         + marker}]}))
+            sys.exit(1)
         key_flag = "--api-key" if os.environ.get("FAKE_ALTOOL_STYLE") == "current" else "--apiKey"
         key = pathlib.Path("private_keys") / ("AuthKey_" + value(key_flag) + ".p8")
         assert key.read_bytes() == b"FAKE-API-PRIVATE-KEY-NOT-A-KEY"
@@ -550,6 +554,20 @@ class ArchiveDiagnosticsTests(unittest.TestCase):
         self.assertNotIn("REVIEW_SECRET_MARKER", result.stdout + result.stderr)
 
 
+    def classify_upload(self, text):
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        log = Path(temp.name) / "upload.log"
+        log.write_text(text)
+        return archive_diagnostics.classify_upload(log)
+
+    def test_upload_errors_print_apple_codes_and_fixed_codes_only(self):
+        codes = self.classify_upload('{"product-errors": [{"message": "ITMS-90683: Missing purpose string REVIEW_SECRET_MARKER"},'
+                                     ' {"message": "ITMS-90683 again, then ITMS-90046"}]}')
+        self.assertEqual(codes, ["ITMS-90683", "ITMS-90046", "UPLOAD_MISSING_PURPOSE_STRING"])
+        self.assertEqual(self.classify_upload("something unexpected REVIEW_SECRET_MARKER"), ["UPLOAD_UNCLASSIFIED"])
+
+
 class SigningOrchestrationTests(unittest.TestCase):
     def make_runner(self):
         temp = tempfile.TemporaryDirectory()
@@ -693,6 +711,18 @@ class SigningOrchestrationTests(unittest.TestCase):
                     self.assertIn(flag, uploads[0])
                 self.assert_private_output(runner, result)
                 self.assert_clean(runner)
+
+    def test_upload_failure_prints_only_apple_error_codes(self):
+        runner = self.make_runner()
+        runner.add_upload_secrets()
+        runner.env["FAKE_ALTOOL_ERROR"] = "1"
+        result = runner.run("upload", "17")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual([line for line in result.stdout.splitlines() if line.startswith(("ITMS-", "UPLOAD_"))],
+                         ["ITMS-90683", "UPLOAD_MISSING_PURPOSE_STRING"])
+        self.assertIn("Manual signing failed while", result.stderr)
+        self.assert_private_output(runner, result)
+        self.assert_clean(runner)
 
     def test_unsupported_uploader_stops_without_upload_and_cleans_up(self):
         runner = self.make_runner()
