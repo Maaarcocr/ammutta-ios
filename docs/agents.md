@@ -65,7 +65,7 @@ All requests carry `Authorization: Bearer <secret>`.
 
 ## Deploying
 
-Live at **https://ammutta-agents.marcocr.workers.dev** (connector: `/mcp`). The Worker is configured in `server/cloudflare.config.ts` for Cloudflare's [`cf` CLI](https://developers.cloudflare.com/cf/), which needs Node 22.18 or newer. The KV namespace `ammutta-agents-oauth` already exists, and its ID is in the config.
+Live at **https://agents.ammutta.com** (connector: `https://agents.ammutta.com/mcp`). The old `https://ammutta-agents.marcocr.workers.dev` still works for builds that use it, but it sits behind a Cloudflare browser check that blocks agents with script User-Agents (error 1010). The `ammutta.com` zone has that check turned off (Security → Settings → Browser Integrity Check). The Worker is configured in `server/cloudflare.config.ts` for Cloudflare's [`cf` CLI](https://developers.cloudflare.com/cf/), which needs Node 22.18 or newer. The KV namespace `ammutta-agents-oauth` already exists, and its ID is in the config.
 
 **From a computer:**
 

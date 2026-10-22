@@ -11,6 +11,12 @@ export default defineConfig(({ mode }) => ({
     // global_fetch_strictly_public: required by the OAuth library for Client ID Metadata Documents.
     compatibilityFlags: ["nodejs_compat", "global_fetch_strictly_public"],
     entrypoint: "src/index.ts",
+    // Our own domain: workers.dev runs a browser check we can't turn off, which blocked agents
+    // using script User-Agents (403 / error 1010). The ammutta.com zone has it off. workers.dev
+    // stays on for builds that still use that address.
+    domains: ["agents.ammutta.com"],
+    workersDev: true,
+    previewUrls: false,
     observability: {
       enabled: true,
     },
