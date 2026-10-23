@@ -104,7 +104,7 @@ iOS 26 as the floor gives us AlarmKit, mature SwiftData and current ActivityKit 
 
 ### 5.0 Start Workout screen
 
-The first tab, **Start Workout**, shows your plans as cards in two columns: the name, the exercises (a localized list) and when the plan was last done. Tapping a card opens the plan, which has **Start workout**. Each card's **…** menu offers Edit, Duplicate and Delete (with confirmation). The navigation bar has **▶︎** to start an empty workout (after a confirmation) and **+** for a new plan.
+The tab bar shows icons only, so every tab is the same size; VoiceOver reads each tab's name. The first tab, **Start Workout**, shows your plans as cards in two columns: the name, the exercises (a localized list) and when the plan was last done. Tapping a card opens the plan, which has **Start workout**. Each card's **…** menu offers Edit, Duplicate and Delete (with confirmation). The navigation bar has **▶︎** to start an empty workout (after a confirmation) and **+** for a new plan.
 
 ### 5.1 Creating and editing
 

@@ -7,17 +7,26 @@ struct RootView: View {
     var body: some View {
         @Bindable var model = model
         TabView(selection: $model.selectedTab) {
-            Tab(L10n.tabStart, systemImage: "figure.strengthtraining.traditional", value: AppTab.plans) {
+            // Icons only, so every tab is the same size; VoiceOver still reads each name.
+            Tab(value: AppTab.plans) {
                 PlansView()
+            } label: {
+                TabIcon(title: L10n.tabStart, systemImage: "list.bullet.clipboard")
             }
-            Tab(L10n.tabExercises, systemImage: "dumbbell", value: AppTab.exercises) {
+            Tab(value: AppTab.exercises) {
                 ExercisesView()
+            } label: {
+                TabIcon(title: L10n.tabExercises, systemImage: "dumbbell")
             }
-            Tab(L10n.tabHistory, systemImage: "clock.arrow.circlepath", value: AppTab.history) {
+            Tab(value: AppTab.history) {
                 HistoryView()
+            } label: {
+                TabIcon(title: L10n.tabHistory, systemImage: "clock.arrow.circlepath")
             }
-            Tab(L10n.tabSettings, systemImage: "gearshape", value: AppTab.settings) {
+            Tab(value: AppTab.settings) {
                 SettingsView()
+            } label: {
+                TabIcon(title: L10n.tabSettings, systemImage: "gearshape")
             }
         }
         // The only presentation on the root. The plan-link sheet belongs to the Start Workout screen:
@@ -41,5 +50,16 @@ struct RootView: View {
         } message: {
             Text(L10n.errorMessage)
         }
+    }
+}
+
+/// A tab bar icon without a visible title; the title is its VoiceOver label.
+private struct TabIcon: View {
+    let title: LocalizedStringKey
+    let systemImage: String
+
+    var body: some View {
+        Image(systemName: systemImage)
+            .accessibilityLabel(title)
     }
 }
