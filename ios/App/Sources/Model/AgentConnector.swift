@@ -207,8 +207,8 @@ final class HTTPAgentServer: AgentServer {
     }
 }
 
-/// A server for tests and UI tests: keeps everything in memory. A code counts as used on the
-/// second status check, so UI tests see the code and then the "connected" screen.
+/// A server for tests and UI tests: keeps everything in memory. A code counts as used after a
+/// few status checks (two seconds apart), so UI tests see the code and then the "connected" screen.
 @MainActor
 final class FakeAgentServer: AgentServer {
     var connectorURL: URL { URL(string: "https://agents.example/mcp")! }
@@ -224,6 +224,11 @@ final class FakeAgentServer: AgentServer {
     /// The agent that signs in with the next code; nil keeps codes waiting.
     var agentSigningIn: String? = "Claude"
     private var statusChecks = 0
+    private let checksBeforeSignIn: Int
+
+    init(checksBeforeSignIn: Int = 2) {
+        self.checksBeforeSignIn = checksBeforeSignIn
+    }
 
     private func check() throws {
         if failing { throw AgentServerError(status: 503) }
@@ -252,7 +257,7 @@ final class FakeAgentServer: AgentServer {
     func pairingStatus(_ code: String, account: AgentAccount) async throws -> AgentPairingStatus {
         try check()
         statusChecks += 1
-        guard let agent = agentSigningIn, statusChecks >= 2 else { return .waiting }
+        guard let agent = agentSigningIn, statusChecks >= checksBeforeSignIn else { return .waiting }
         if !connected.contains(where: { $0.name == agent }) {
             connected.append(ConnectedAgent(name: agent, connectedAt: .now))
         }

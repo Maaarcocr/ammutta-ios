@@ -300,9 +300,9 @@ final class AmmuttaUITests: XCTestCase {
         element(app, "agents.copyCode").tap()
         element(app, "agents.copyAddress").tap()
 
-        // The fake connector reports the code as used a couple of seconds later.
+        // The fake connector reports the code as used about 18 seconds after showing it.
         let done = element(app, "agents.done")
-        XCTAssertTrue(done.waitForExistence(timeout: 30))
+        XCTAssertTrue(done.waitForExistence(timeout: 60))
         capture("26-agent-connected")
         done.tap()
 
