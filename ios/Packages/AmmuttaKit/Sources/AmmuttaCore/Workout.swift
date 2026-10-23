@@ -50,6 +50,20 @@ public struct WorkoutExercise: Hashable, Codable, Sendable, Identifiable {
     }
 
     public var loggedCount: Int { sets.count(where: { $0.status.isLogged }) }
+
+    /// An exercise added during a workout. It repeats last time's sets when there are any (so the
+    /// weights are already filled in), otherwise it starts with three default sets.
+    public static func added(exercise: ExerciseRef, kind: TrackingKind, nameSnapshot: String?, restSeconds: Int, previous: [SetValue]) -> WorkoutExercise {
+        let reusable = previous.filter { $0.kind == kind && $0.isValidTarget }.prefix(Limits.setsPerExercise.upperBound)
+        let targets = reusable.isEmpty ? Array(repeating: SetValue.defaultValue(for: kind), count: 3) : Array(reusable)
+        return WorkoutExercise(
+            exercise: exercise,
+            kind: kind,
+            nameSnapshot: nameSnapshot,
+            restSeconds: min(max(restSeconds, Limits.restSeconds.lowerBound), Limits.restSeconds.upperBound),
+            sets: targets.map { WorkoutSet(target: $0) }
+        )
+    }
 }
 
 /// A running countdown, stored as absolute times so it survives backgrounding and relaunch.
@@ -116,6 +130,26 @@ public struct Workout: Hashable, Codable, Sendable, Identifiable {
     }
 
     public var isFinished: Bool { endedAt != nil }
+
+    /// The workout as plan exercises, for saving it as a plan: what was logged, or the target for
+    /// sets that weren't (or whose logged value isn't a valid target, such as 0 reps).
+    public var planExercises: [PlanExercise] {
+        exercises.map { exercise in
+            PlanExercise(
+                exercise: exercise.exercise,
+                kind: exercise.kind,
+                restSeconds: exercise.restSeconds,
+                sets: exercise.sets.map { set in
+                    set.status.isLogged && set.value.isValidTarget ? set.value : set.target
+                }
+            )
+        }
+    }
+
+    /// True when the workout's exercises, or their order, differ from the plan's.
+    public func changesExercises(of plan: Plan) -> Bool {
+        exercises.map(\.exercise) != plan.exercises.map(\.exercise)
+    }
 
     /// The first set still to do, in plan order.
     public var nextPendingSetID: UUID? {

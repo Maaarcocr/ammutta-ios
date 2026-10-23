@@ -113,10 +113,17 @@ struct WorkoutDetailView: View {
     }
 }
 
-/// The summary numbers plus every set of a workout. Shared by the finish screen and history.
-struct WorkoutResultsList: View {
+/// The summary numbers plus every set of a workout. Shared by the finish screen (which adds its
+/// actions below the numbers) and history.
+struct WorkoutResultsList<Actions: View>: View {
     @Environment(AppModel.self) private var model
     let workout: Workout
+    let actions: Actions
+
+    init(workout: Workout, @ViewBuilder actions: () -> Actions) {
+        self.workout = workout
+        self.actions = actions()
+    }
 
     var body: some View {
         let summary = WorkoutSummary(workout)
@@ -134,6 +141,7 @@ struct WorkoutResultsList: View {
             } header: {
                 Text(workout.startedAt, format: .dateTime.weekday(.wide).day().month().hour().minute())
             }
+            actions
             if workout.heartRate.count > 1 {
                 Section(L10n.summaryHeartRate) {
                     HeartRateChart(samples: workout.heartRate)
@@ -164,6 +172,12 @@ struct WorkoutResultsList: View {
                 }
             }
         }
+    }
+}
+
+extension WorkoutResultsList where Actions == EmptyView {
+    init(workout: Workout) {
+        self.init(workout: workout) { EmptyView() }
     }
 }
 

@@ -127,7 +127,8 @@ This is the heart of the app and must be excellent.
 ### 6.1 Starting
 
 - Start from a plan's detail screen. The plan's exercises and targets are **copied into the workout**, so the workout is independent of later plan edits.
-- Only **one active workout** exists at a time. If one is active, starting another offers to **resume** the active one or **discard it and start the new one**. Discard needs confirmation.
+- Or **Start Empty Workout** from Plans: a workout named "Workout" with no exercises, built up as you go.
+- Only **one active workout** exists at a time. The workout screen covers the app while it runs, so another can't be started until it is finished or discarded.
 
 ### 6.2 The workout screen
 
@@ -140,6 +141,10 @@ This is the heart of the app and must be excellent.
   - add an extra set to an exercise, copying the previous set's values;
   - skip a set, which is recorded as skipped rather than silently missing;
   - remove an unlogged set.
+- **Changing the exercises** while the workout runs:
+  - **Add Exercise** at the bottom opens the exercise picker. The new exercise repeats the sets of the last time it was logged (so weights are filled in), or starts with three default sets, with the default rest.
+  - Each exercise's **…** menu offers **Replace Exercise** and **Remove Exercise** while none of its sets is logged, so logged sets are never rewritten or lost. Replacing keeps the number of sets; it keeps their values too when both exercises are tracked the same way (reps or timed), and otherwise starts each set from the default.
+  - **Reorder Exercises** (top-left **…** menu, with two or more exercises) opens a list with drag handles. The order decides which set is next.
 - An **elapsed workout time** is always visible.
 
 ### 6.3 Rest timer
@@ -182,6 +187,11 @@ Rest timers and duration-set countdowns must alert the user reliably when the ph
   - per-exercise results;
   - heart-rate average and maximum if available.
 - The summary also offers a **save to Apple Health** status line when Health is enabled. The workout is saved to history.
+- **Keeping changes as a plan**: after an empty workout, or when the workout's exercises or their order differ from its plan, the summary offers:
+  - **Save as New Plan**: opens the plan editor with the workout's exercises (to name and adjust), each set at what was logged or its target;
+  - **Update "plan name"**: writes the same exercises and sets into the plan the workout started from, if it still exists.
+
+  Neither touches history, and both turn into a checkmark label once done.
 - **Discard** deletes the active workout after confirmation.
 - An active workout survives app termination, device restart and OS updates. On next launch the app returns straight to it.
 

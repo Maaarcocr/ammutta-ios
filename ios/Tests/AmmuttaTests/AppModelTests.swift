@@ -123,6 +123,61 @@ struct AppModelTests {
         #expect(model.lastPerformance(of: .builtIn(key: "barbell-back-squat"))?.results.count == 1)
     }
 
+    @Test func anEmptyWorkoutIsBuiltUpAndBecomesAPlanDraft() throws {
+        let model = AppModel(store: try AmmuttaStore(inMemory: true), defaults: try makeDefaults())
+        model.load()
+        model.startEmptyWorkout()
+        let session = try #require(model.session)
+        #expect(session.workout.planID == nil)
+        #expect(session.workout.exercises.isEmpty)
+        #expect(session.workout.planName == L10n.workoutEmptyName)
+
+        let squat = ExerciseRef.builtIn(key: "barbell-back-squat")
+        session.send(.addExercise(model.exerciseToAdd(squat, kind: .reps)))
+        session.send(.logSet(try #require(session.workout.nextPendingSetID)))
+        session.send(.finish)
+        let draft = model.planDraft(from: session.workout)
+        #expect(draft.name.isEmpty, "the editor asks for a name")
+        #expect(draft.exercises.map(\.exercise) == [squat])
+        #expect(draft.exercises[0].sets.count == 3)
+
+        model.closeFinishedSession()
+        #expect(model.history.count == 1)
+    }
+
+    @Test func addedExercisesRepeatLastTimeAndChangesUpdateThePlan() throws {
+        let model = AppModel(store: try AmmuttaStore(inMemory: true), defaults: try makeDefaults())
+        model.load()
+        let plan = legDay()
+        model.save(plan)
+        let squat = ExerciseRef.builtIn(key: "barbell-back-squat")
+        let plank = ExerciseRef.builtIn(key: "plank")
+
+        model.startWorkout(from: plan)
+        let first = try #require(model.session)
+        let firstSet = try #require(first.workout.nextPendingSetID)
+        first.send(.setValue(firstSet, .reps(count: 5, weight: .kilograms(100))))
+        first.send(.logSet(firstSet))
+        first.send(.finish)
+        model.closeFinishedSession()
+
+        #expect(model.exerciseToAdd(squat, kind: .reps).sets.map(\.target) == [.reps(count: 5, weight: .kilograms(100))])
+        #expect(model.exerciseToAdd(plank, kind: .duration).restSeconds == model.defaultRestSeconds)
+
+        model.startWorkout(from: plan)
+        let second = try #require(model.session)
+        second.send(.addExercise(model.exerciseToAdd(plank, kind: .duration)))
+        second.send(.finish)
+        #expect(second.workout.changesExercises(of: plan))
+        #expect(model.planDraft(from: second.workout).name == L10n.copyName("Legs"))
+
+        model.updatePlan(plan, from: second.workout)
+        let updated = try #require(model.plan(plan.id))
+        #expect(updated.exercises.map(\.exercise) == [squat, plank])
+        #expect(updated.name == "Legs")
+        #expect(!second.workout.changesExercises(of: updated))
+    }
+
     @Test func activeWorkoutIsRestoredOnRelaunch() throws {
         let store = try AmmuttaStore(inMemory: true)
         let defaults = try makeDefaults()

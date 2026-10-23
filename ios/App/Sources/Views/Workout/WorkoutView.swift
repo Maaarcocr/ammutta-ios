@@ -8,6 +8,7 @@ struct WorkoutView: View {
     let session: WorkoutSession
     @Environment(AppModel.self) private var model
     @State private var confirmingDiscard = false
+    @State private var sheet: WorkoutSheet?
     /// The reps, weight or seconds field being typed into, if any.
     @FocusState private var focusedField: SetField?
     /// Exercises shown expanded: starts as the current one, and resets to it whenever it moves on.
@@ -40,15 +41,28 @@ struct WorkoutView: View {
                     if session.alertsOff {
                         AlertsOffRow()
                     }
+                    if session.workout.exercises.isEmpty {
+                        ContentUnavailableView(L10n.workoutNoExercises, systemImage: "dumbbell")
+                    }
                     ForEach(session.workout.exercises) { exercise in
                         ExerciseCard(
                             exercise: exercise,
                             session: session,
                             isExpanded: expanded.contains(exercise.id),
                             focus: $focusedField,
-                            toggle: { toggle(exercise.id) }
+                            toggle: { toggle(exercise.id) },
+                            replace: { sheet = .replace(exercise: exercise.id) }
                         )
                     }
+                    Button {
+                        sheet = .addExercise
+                    } label: {
+                        Label(L10n.planEditorAddExercise, systemImage: "plus")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.large)
+                    .accessibilityIdentifier("workout.addExercise")
                 }
                 .padding()
             }
@@ -63,6 +77,14 @@ struct WorkoutView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Menu {
+                        if session.workout.exercises.count > 1 {
+                            Button {
+                                sheet = .reorder
+                            } label: {
+                                Label(L10n.workoutReorder, systemImage: "arrow.up.arrow.down")
+                            }
+                            .accessibilityIdentifier("workout.reorder")
+                        }
                         Button(role: .destructive) {
                             confirmingDiscard = true
                         } label: {
@@ -108,6 +130,20 @@ struct WorkoutView: View {
                 .accessibilityIdentifier("workout.confirmDiscard")
                 Button(L10n.cancel, role: .cancel) {}
             }
+            .sheet(item: $sheet) { sheet in
+                switch sheet {
+                case .addExercise:
+                    ExercisePickerView { ref, kind in
+                        session.send(.addExercise(model.exerciseToAdd(ref, kind: kind)))
+                    }
+                case .replace(let exerciseID):
+                    ExercisePickerView { ref, kind in
+                        session.send(.replaceExercise(exerciseID, with: ref, kind: kind, nameSnapshot: model.nameSnapshot(for: ref)))
+                    }
+                case .reorder:
+                    ReorderExercisesSheet(session: session)
+                }
+            }
             .sensoryFeedback(.success, trigger: session.timerEndedCount)
             .onChange(of: currentExerciseID) { _, current in
                 expanded = current.map { Set([$0]) } ?? []
@@ -120,33 +156,92 @@ struct WorkoutView: View {
     }
 }
 
+/// The one sheet the workout screen shows at a time.
+private enum WorkoutSheet: Identifiable {
+    case addExercise
+    case replace(exercise: UUID)
+    case reorder
+
+    var id: String {
+        switch self {
+        case .addExercise: "add"
+        case .replace(let exercise): "replace-\(exercise)"
+        case .reorder: "reorder"
+        }
+    }
+}
+
+/// Drag handles to change the order of the workout's exercises.
+private struct ReorderExercisesSheet: View {
+    let session: WorkoutSession
+    @Environment(AppModel.self) private var model
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            List {
+                ForEach(session.workout.exercises) { exercise in
+                    HStack {
+                        Text(model.name(of: exercise.exercise, snapshot: exercise.nameSnapshot))
+                        Spacer()
+                        Text(L10n.fraction(exercise.loggedCount, exercise.sets.count))
+                            .monospacedDigit()
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .onMove { source, destination in
+                    guard let from = source.first else { return }
+                    let id = session.workout.exercises[from].id
+                    session.send(.moveExercise(id, to: destination > from ? destination - 1 : destination))
+                }
+            }
+            .environment(\.editMode, .constant(.active))
+            .navigationTitle(L10n.workoutReorder)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(L10n.done) { dismiss() }
+                        .accessibilityIdentifier("reorder.done")
+                }
+            }
+        }
+    }
+}
+
 private struct ExerciseCard: View {
     let exercise: WorkoutExercise
     let session: WorkoutSession
     let isExpanded: Bool
     let focus: FocusState<SetField?>.Binding
     let toggle: () -> Void
+    let replace: () -> Void
     @Environment(AppModel.self) private var model
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Button(action: toggle) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(model.name(of: exercise.exercise, snapshot: exercise.nameSnapshot))
-                            .font(.title3.weight(.semibold))
-                            .multilineTextAlignment(.leading)
-                        Text(L10n.fraction(exercise.loggedCount, exercise.sets.count))
-                            .font(.subheadline.monospacedDigit())
-                            .foregroundStyle(.secondary)
+            HStack(spacing: 4) {
+                header
+                // Replacing or removing never touches logged sets.
+                if exercise.loggedCount == 0 {
+                    Menu {
+                        Button(action: replace) {
+                            Label(L10n.workoutReplaceExercise, systemImage: "arrow.triangle.2.circlepath")
+                        }
+                        .accessibilityIdentifier("workout.replaceExercise")
+                        Button(role: .destructive) {
+                            session.send(.removeExercise(exercise.id))
+                        } label: {
+                            Label(L10n.workoutRemoveExercise, systemImage: "trash")
+                        }
+                        .accessibilityIdentifier("workout.removeExercise")
+                    } label: {
+                        Label(L10n.workoutExerciseOptions, systemImage: "ellipsis")
+                            .labelStyle(.iconOnly)
+                            .frame(minWidth: 44, minHeight: 44)
                     }
-                    Spacer()
-                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                        .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("workout.exerciseMenu")
                 }
-                .contentShape(.rect)
             }
-            .buttonStyle(.plain)
 
             if isExpanded {
                 let last = model.lastPerformance(of: exercise.exercise)
@@ -175,6 +270,27 @@ private struct ExerciseCard: View {
         }
         .padding()
         .background(.background.secondary, in: .rect(cornerRadius: 20))
+    }
+
+    /// The name and progress; tapping it expands or collapses the sets.
+    private var header: some View {
+        Button(action: toggle) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(model.name(of: exercise.exercise, snapshot: exercise.nameSnapshot))
+                        .font(.title3.weight(.semibold))
+                        .multilineTextAlignment(.leading)
+                    Text(L10n.fraction(exercise.loggedCount, exercise.sets.count))
+                        .font(.subheadline.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                    .foregroundStyle(.secondary)
+            }
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
     }
 }
 
@@ -517,17 +633,58 @@ private struct TimerBar: View {
 struct WorkoutSummaryView: View {
     let workout: Workout
     @Environment(AppModel.self) private var model
+    /// The new plan being named in the plan editor.
+    @State private var draft: Plan?
+    /// The plan made from this workout; it exists once the editor saved it.
+    @State private var draftID: PlanID?
+    @State private var updatedPlan = false
 
     var body: some View {
         NavigationStack {
-            WorkoutResultsList(workout: workout)
-                .navigationTitle(L10n.summaryTitle)
-                .toolbar {
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button(L10n.done) { model.closeFinishedSession() }
-                            .accessibilityIdentifier("summary.done")
+            WorkoutResultsList(workout: workout) {
+                planActions
+            }
+            .navigationTitle(L10n.summaryTitle)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(L10n.done) { model.closeFinishedSession() }
+                        .accessibilityIdentifier("summary.done")
+                }
+            }
+            .sheet(item: $draft) { draft in
+                PlanEditorView(plan: draft, isNew: true)
+            }
+        }
+    }
+
+    /// Offered after an empty workout, or when the exercises or their order changed.
+    @ViewBuilder private var planActions: some View {
+        let plan = workout.planID.flatMap { model.plan($0) }
+        let changed = plan.map { workout.changesExercises(of: $0) } ?? true
+        if !workout.exercises.isEmpty, changed || updatedPlan {
+            Section {
+                if let plan {
+                    if updatedPlan {
+                        Label(L10n.summaryPlanUpdated, systemImage: "checkmark")
+                    } else {
+                        Button(L10n.summaryUpdatePlan(plan.name)) {
+                            model.updatePlan(plan, from: workout)
+                            updatedPlan = true
+                        }
+                        .accessibilityIdentifier("summary.updatePlan")
                     }
                 }
+                if let draftID, model.plan(draftID) != nil {
+                    Label(L10n.summarySavedAsPlan, systemImage: "checkmark")
+                } else {
+                    Button(L10n.summarySaveAsPlan) {
+                        let new = model.planDraft(from: workout)
+                        draftID = new.id
+                        draft = new
+                    }
+                    .accessibilityIdentifier("summary.saveAsPlan")
+                }
+            }
         }
     }
 }

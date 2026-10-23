@@ -713,6 +713,12 @@
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Nuova scheda" } }
       }
     },
+    "plans.startEmpty" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Start Empty Workout" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Inizia allenamento libero" } }
+      }
+    },
     "sensor.bluetoothOff" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Bluetooth is off." } },
@@ -981,6 +987,30 @@
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Volume" } }
       }
     },
+    "summary.saveAsPlan" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Save as New Plan" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Salva come nuova scheda" } }
+      }
+    },
+    "summary.savedAsPlan" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Saved as Plan" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Salvato come scheda" } }
+      }
+    },
+    "summary.updatePlan %@" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Update “%@”" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Aggiorna “%@”" } }
+      }
+    },
+    "summary.planUpdated" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Plan Updated" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Scheda aggiornata" } }
+      }
+    },
     "tab.exercises" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Exercises" } },
@@ -1135,6 +1165,42 @@
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Start timer" } },
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Avvia timer" } }
+      }
+    },
+    "workout.emptyName" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Workout" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Allenamento" } }
+      }
+    },
+    "workout.replaceExercise" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Replace Exercise" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Sostituisci esercizio" } }
+      }
+    },
+    "workout.removeExercise" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Remove Exercise" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Rimuovi esercizio" } }
+      }
+    },
+    "workout.reorder" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Reorder Exercises" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Riordina esercizi" } }
+      }
+    },
+    "workout.noExercises" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No Exercises Yet" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Ancora nessun esercizio" } }
+      }
+    },
+    "workout.exerciseOptions" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Exercise Options" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Opzioni esercizio" } }
       }
     },
     "workout.stopTimer" : {

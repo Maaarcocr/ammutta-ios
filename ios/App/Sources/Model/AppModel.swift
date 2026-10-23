@@ -294,6 +294,47 @@ final class AppModel {
         }
     }
 
+    /// A workout without a plan: exercises are added as you go.
+    func startEmptyWorkout() {
+        guard session == nil else { return }
+        let workout = Workout(planID: nil, planName: L10n.workoutEmptyName, startedAt: .now, exercises: [])
+        do {
+            try store.save(workout)
+            session = makeSession(workout)
+        } catch {
+            report(error)
+        }
+    }
+
+    /// An exercise to add to the active workout: last time's sets when there are any, otherwise defaults.
+    func exerciseToAdd(_ ref: ExerciseRef, kind: TrackingKind) -> WorkoutExercise {
+        WorkoutExercise.added(
+            exercise: ref, kind: kind, nameSnapshot: nameSnapshot(for: ref),
+            restSeconds: defaultRestSeconds, previous: lastPerformance(of: ref)?.results ?? []
+        )
+    }
+
+    /// A custom exercise's name, kept with the workout in case the exercise is deleted later.
+    func nameSnapshot(for ref: ExerciseRef) -> String? {
+        guard case .custom(let id) = ref else { return nil }
+        return customExercise(id)?.name
+    }
+
+    /// A new plan from a finished workout, for the plan editor to name and save. Workouts that
+    /// came from a plan suggest a copy of its name.
+    func planDraft(from workout: Workout) -> Plan {
+        let name = workout.planID == nil ? "" : L10n.copyName(workout.planName)
+        return Plan(name: name, exercises: workout.planExercises, createdAt: .now)
+    }
+
+    /// Writes a finished workout's exercises and sets back into the plan it started from.
+    func updatePlan(_ plan: Plan, from workout: Workout) {
+        var updated = plan
+        updated.exercises = workout.planExercises
+        updated.updatedAt = .now
+        save(updated)
+    }
+
     func discardActiveWorkout() {
         guard let session else { return }
         session.close()
@@ -381,7 +422,9 @@ final class AppModel {
     /// What the Live Activity shows: the exercise to do now or next, its set, and any countdown.
     func activityContent(for workout: Workout) -> (WorkoutActivityAttributes, WorkoutActivityAttributes.ContentState) {
         let attributes = WorkoutActivityAttributes(planName: workout.planName, startedAt: workout.startedAt)
-        var state = WorkoutActivityAttributes.ContentState(exercise: workout.planName, detail: L10n.activityAllDone)
+        // An empty workout has nothing done yet, so it shows only its name.
+        let detail = workout.exercises.isEmpty ? "" : L10n.activityAllDone
+        var state = WorkoutActivityAttributes.ContentState(exercise: workout.planName, detail: detail)
         let focusSet = workout.timer?.workSetID ?? workout.nextPendingSetID
         if let focusSet, let location = workout.location(ofSet: focusSet) {
             let exercise = workout.exercises[location.exercise]

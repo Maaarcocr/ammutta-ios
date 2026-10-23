@@ -9,6 +9,16 @@ struct PlansView: View {
         @Bindable var model = model
         NavigationStack {
             List {
+                if !model.plans.isEmpty {
+                    Section {
+                        Button {
+                            model.startEmptyWorkout()
+                        } label: {
+                            Label(L10n.plansStartEmpty, systemImage: "play")
+                        }
+                        .accessibilityIdentifier("plans.startEmpty")
+                    }
+                }
                 ForEach(model.plans) { plan in
                     NavigationLink(value: plan.id) {
                         PlanRow(plan: plan)
@@ -29,6 +39,13 @@ struct PlansView: View {
                             Text(L10n.plansNew)
                         }
                         .buttonStyle(.borderedProminent)
+                        Button {
+                            model.startEmptyWorkout()
+                        } label: {
+                            Text(L10n.plansStartEmpty)
+                        }
+                        .buttonStyle(.bordered)
+                        .accessibilityIdentifier("plans.startEmpty")
                     }
                 }
             }
