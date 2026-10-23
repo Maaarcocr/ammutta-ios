@@ -11,7 +11,7 @@ struct RootView: View {
             Tab(value: AppTab.plans) {
                 PlansView()
             } label: {
-                TabIcon(title: L10n.tabStart, systemImage: "list.bullet.clipboard")
+                TabIcon(title: L10n.tabStart, systemImage: "figure.strengthtraining.traditional")
             }
             Tab(value: AppTab.exercises) {
                 ExercisesView()
