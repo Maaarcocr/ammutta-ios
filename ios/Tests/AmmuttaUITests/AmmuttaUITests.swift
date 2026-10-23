@@ -290,6 +290,103 @@ final class AmmuttaUITests: XCTestCase {
         capture("27-agents-list")
     }
 
+    /// An empty workout: add an exercise, log a set, then keep it as a new plan.
+    @MainActor
+    func testStartingAnEmptyWorkoutAndSavingItAsAPlan() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-ui-testing", "-weightUnit", "kg"]
+        app.launch()
+
+        let startEmpty = element(app, "plans.startEmpty")
+        XCTAssertTrue(startEmpty.waitForExistence(timeout: 30))
+        startEmpty.tap()
+
+        let add = element(app, "workout.addExercise")
+        XCTAssertTrue(add.waitForExistence(timeout: 30))
+        capture("28-empty-workout")
+        add.tap()
+        let firstExercise = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "picker.")).firstMatch
+        XCTAssertTrue(firstExercise.waitForExistence(timeout: 30))
+        firstExercise.tap()
+
+        XCTAssertTrue(element(app, "workout.exerciseMenu").waitForExistence(timeout: 30))
+        element(app, "workout.finish").tap()
+
+        let save = element(app, "summary.saveAsPlan")
+        XCTAssertTrue(save.waitForExistence(timeout: 30))
+        capture("29-summary-save-as-plan")
+        save.tap()
+        let name = app.textFields["planEditor.name"]
+        XCTAssertTrue(name.waitForExistence(timeout: 30))
+        name.tap()
+        name.typeText("Legs\n")
+        element(app, "planEditor.save").tap()
+
+        let done = element(app, "summary.done")
+        XCTAssertTrue(done.waitForExistence(timeout: 30))
+        XCTAssertTrue(save.waitForNonExistence(timeout: 30), "the button turns into a saved label")
+        done.tap()
+        XCTAssertTrue(element(app, "plans.row").waitForExistence(timeout: 30))
+    }
+
+    /// Changing a plan's workout: replace, remove, add and reorder exercises, then update the plan.
+    @MainActor
+    func testChangingExercisesDuringAWorkoutAndUpdatingThePlan() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-ui-testing", "-seed-sample-plan", "-weightUnit", "kg"]
+        app.launch()
+
+        let row = element(app, "plans.row")
+        XCTAssertTrue(row.waitForExistence(timeout: 30))
+        row.tap()
+        element(app, "plan.start").tap()
+
+        let firstExercise = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "picker.")).firstMatch
+        let menu = element(app, "workout.exerciseMenu")
+        XCTAssertTrue(menu.waitForExistence(timeout: 30))
+        menu.tap()
+        let replace = element(app, "workout.replaceExercise")
+        XCTAssertTrue(replace.waitForExistence(timeout: 30))
+        capture("30-exercise-menu")
+        replace.tap()
+        XCTAssertTrue(firstExercise.waitForExistence(timeout: 30))
+        firstExercise.tap()
+
+        XCTAssertTrue(menu.waitForExistence(timeout: 30))
+        menu.tap()
+        let remove = element(app, "workout.removeExercise")
+        XCTAssertTrue(remove.waitForExistence(timeout: 30))
+        remove.tap()
+
+        let add = element(app, "workout.addExercise")
+        XCTAssertTrue(add.waitForExistence(timeout: 30))
+        add.tap()
+        XCTAssertTrue(firstExercise.waitForExistence(timeout: 30))
+        firstExercise.tap()
+
+        let more = element(app, "workout.more")
+        XCTAssertTrue(more.waitForExistence(timeout: 30))
+        more.tap()
+        let reorder = element(app, "workout.reorder")
+        XCTAssertTrue(reorder.waitForExistence(timeout: 30))
+        reorder.tap()
+        let reorderDone = element(app, "reorder.done")
+        XCTAssertTrue(reorderDone.waitForExistence(timeout: 30))
+        capture("31-reorder-exercises")
+        reorderDone.tap()
+
+        element(app, "workout.finish").tap()
+        let update = element(app, "summary.updatePlan")
+        XCTAssertTrue(update.waitForExistence(timeout: 30))
+        update.tap()
+        XCTAssertTrue(update.waitForNonExistence(timeout: 30), "the button turns into an updated label")
+        capture("32-plan-updated")
+        element(app, "summary.done").tap()
+        XCTAssertTrue(element(app, "plans.row").waitForExistence(timeout: 30))
+    }
+
     /// Every element the tests tap is a button (list rows with NavigationLink included).
     /// Querying buttons only is much cheaper than `descendants(matching: .any)`, which
     /// timed out on slow CI simulators.

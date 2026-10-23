@@ -25,6 +25,7 @@ enum L10n {
 
     // MARK: Plans
     static var plansNew: LocalizedStringKey { "plans.new" }
+    static var plansStartEmpty: LocalizedStringKey { "plans.startEmpty" }
     static var plansEmptyTitle: LocalizedStringKey { "plans.empty.title" }
     static var plansEmptyMessage: LocalizedStringKey { "plans.empty.message" }
     static func exerciseCount(_ count: Int) -> String { String(localized: "plan.exerciseCount \(count)") }
@@ -115,6 +116,12 @@ enum L10n {
 
     // MARK: Workout
     static var workoutFinish: LocalizedStringKey { "workout.finish" }
+    static var workoutEmptyName: String { String(localized: "workout.emptyName") }
+    static var workoutReplaceExercise: LocalizedStringKey { "workout.replaceExercise" }
+    static var workoutRemoveExercise: LocalizedStringKey { "workout.removeExercise" }
+    static var workoutReorder: LocalizedStringKey { "workout.reorder" }
+    static var workoutNoExercises: LocalizedStringKey { "workout.noExercises" }
+    static var workoutExerciseOptions: LocalizedStringKey { "workout.exerciseOptions" }
     static var workoutDiscard: LocalizedStringKey { "workout.discard" }
     static var workoutDiscardTitle: LocalizedStringKey { "workout.discard.title" }
     static var workoutSkipSet: LocalizedStringKey { "workout.skipSet" }
@@ -149,6 +156,10 @@ enum L10n {
 
     // MARK: Summary
     static var summaryTitle: LocalizedStringKey { "summary.title" }
+    static var summarySaveAsPlan: LocalizedStringKey { "summary.saveAsPlan" }
+    static var summarySavedAsPlan: LocalizedStringKey { "summary.savedAsPlan" }
+    static var summaryPlanUpdated: LocalizedStringKey { "summary.planUpdated" }
+    static func summaryUpdatePlan(_ name: String) -> String { String(localized: "summary.updatePlan \(name)") }
     static var summaryDuration: LocalizedStringKey { "summary.duration" }
     static var summarySets: LocalizedStringKey { "summary.sets" }
     static var summaryVolume: LocalizedStringKey { "summary.volume" }

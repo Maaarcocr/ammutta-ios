@@ -63,6 +63,10 @@ public enum SetValue: Hashable, Codable, Sendable {
     }
 
     /// Plan targets must be inside the ranges from the product spec.
+    public var isValidTarget: Bool {
+        do { try validateAsTarget(); return true } catch { return false }
+    }
+
     public func validateAsTarget() throws(ValidationError) {
         switch self {
         case .reps(let count, let weight):

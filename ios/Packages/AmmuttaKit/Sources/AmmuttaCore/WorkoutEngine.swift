@@ -11,6 +11,15 @@ public enum WorkoutEvent: Hashable, Sendable {
     case addSet(exercise: UUID, newSetID: UUID)
     /// Remove a set that hasn't been logged.
     case removeSet(UUID)
+    /// Append an exercise whose sets are all pending, valid targets.
+    case addExercise(WorkoutExercise)
+    /// Swap an exercise with nothing logged for another. Sets of the same kind keep their values;
+    /// otherwise each set starts from the default for the new kind.
+    case replaceExercise(UUID, with: ExerciseRef, kind: TrackingKind, nameSnapshot: String?)
+    /// Remove an exercise with nothing logged.
+    case removeExercise(UUID)
+    /// Move an exercise to a position in the list (its index once moved).
+    case moveExercise(UUID, to: Int)
     /// Start the countdown of a pending duration set.
     case startWork(UUID)
     /// Stop the running countdown early and log the elapsed time.
@@ -75,6 +84,45 @@ public enum WorkoutEngine {
             w.exercises[e].sets.remove(at: s)
             if w.timer?.workSetID == id { w.timer = nil }
 
+        case .addExercise(let exercise):
+            let setIDs = Set(w.exercises.flatMap { $0.sets.map(\.id) })
+            guard !w.exercises.contains(where: { $0.id == exercise.id }),
+                  !exercise.sets.contains(where: { setIDs.contains($0.id) }),
+                  Limits.setsPerExercise.contains(exercise.sets.count),
+                  Limits.restSeconds.contains(exercise.restSeconds)
+            else { throw .notAllowed }
+            for set in exercise.sets {
+                guard set.status.isPending, set.target.kind == exercise.kind, set.value.kind == exercise.kind,
+                      set.target.isValidTarget, set.value.isValidTarget
+                else { throw .invalidValue }
+            }
+            w.exercises.append(exercise)
+
+        case .replaceExercise(let id, let ref, let kind, let nameSnapshot):
+            let e = try locateExercise(id, in: w)
+            guard !w.exercises[e].sets.contains(where: { $0.status.isLogged }) else { throw .notAllowed }
+            stopCountdown(&w, inExercise: e)
+            let sameKind = w.exercises[e].kind == kind
+            w.exercises[e].exercise = ref
+            w.exercises[e].kind = kind
+            w.exercises[e].nameSnapshot = nameSnapshot
+            w.exercises[e].sets = w.exercises[e].sets.map { set in
+                let target = sameKind ? set.target : .defaultValue(for: kind)
+                return WorkoutSet(id: set.id, target: target, value: sameKind ? set.value : target)
+            }
+
+        case .removeExercise(let id):
+            let e = try locateExercise(id, in: w)
+            guard !w.exercises[e].sets.contains(where: { $0.status.isLogged }) else { throw .notAllowed }
+            stopCountdown(&w, inExercise: e)
+            w.exercises.remove(at: e)
+
+        case .moveExercise(let id, let index):
+            let from = try locateExercise(id, in: w)
+            guard w.exercises.indices.contains(index) else { throw .notAllowed }
+            let moved = w.exercises.remove(at: from)
+            w.exercises.insert(moved, at: index)
+
         case .startWork(let id):
             let (e, s) = try locate(id, in: w)
             let set = w.exercises[e].sets[s]
@@ -105,6 +153,17 @@ public enum WorkoutEngine {
             w.endedAt = now
         }
         return w
+    }
+
+    private static func locateExercise(_ id: UUID, in workout: Workout) throws(WorkoutError) -> Int {
+        guard let index = workout.exercises.firstIndex(where: { $0.id == id }) else { throw .unknownExercise }
+        return index
+    }
+
+    /// A countdown running on one of this exercise's sets stops, because the set is changing or going away.
+    private static func stopCountdown(_ w: inout Workout, inExercise e: Int) {
+        guard let id = w.timer?.workSetID, w.exercises[e].sets.contains(where: { $0.id == id }) else { return }
+        w.timer = nil
     }
 
     private static func locate(_ id: UUID, in workout: Workout) throws(WorkoutError) -> (Int, Int) {

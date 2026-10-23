@@ -126,6 +126,8 @@ enum WorkoutEvent {
   case editSet(exercise: Int, set: Int, SetResult)
   case skipSet(exercise: Int, set: Int)
   case addSet(exercise: Int), removeSet(exercise: Int, set: Int)
+  case addExercise(WorkoutExercise), replaceExercise(exercise: Int, with: ExerciseRef)
+  case removeExercise(exercise: Int), moveExercise(exercise: Int, to: Int)
   case startWork(exercise: Int, set: Int), stopWork
   case adjustRest(by: Seconds), skipRest
   case timerElapsed
@@ -144,6 +146,7 @@ struct WorkoutEngine {
   - logging the last set starts no rest;
   - a finished workout rejects further events;
   - work timers log the actual elapsed time when stopped early;
+  - exercises with logged sets can't be replaced or removed, and a countdown on an exercise being replaced or removed stops;
   - and so on.
 - **Side effects are derived, not performed.** After each reduction, an `Effects.diff(old, new)` function returns intents such as `scheduleAlert(id, at)`, `cancelAlert(id)` and `updateLiveActivity(state)`. A coordinator in `AmmuttaFeatures` executes them. This makes "stale alarms never fire" a testable property of a pure function.
 - `WorkoutSessionModel`, an `@Observable` `@MainActor` class, owns the current `Workout`. For each user action it:

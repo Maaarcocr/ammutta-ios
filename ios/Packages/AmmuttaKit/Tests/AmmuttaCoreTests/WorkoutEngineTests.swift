@@ -208,6 +208,96 @@ struct EditingTests {
     }
 }
 
+struct ChangingExercisesTests {
+    private let row = ExerciseRef.builtIn(key: "barbell-row")
+
+    @Test func anEmptyWorkoutGetsExercisesAdded() throws {
+        let w0 = Workout(planID: nil, planName: "Workout", startedAt: t0, exercises: [])
+        #expect(w0.nextPendingSetID == nil)
+        let added = WorkoutExercise.added(exercise: row, kind: .reps, nameSnapshot: nil, restSeconds: 90, previous: [])
+        let w = try WorkoutEngine.reduce(w0, .addExercise(added), now: t0)
+        #expect(w.exercises.map(\.exercise) == [row])
+        #expect(w.exercises[0].sets.count == 3)
+        #expect(w.nextPendingSetID == added.sets[0].id)
+        #expect(throws: WorkoutError.notAllowed) { try WorkoutEngine.reduce(w, .addExercise(added), now: t0) }
+    }
+
+    @Test func anAddedExerciseRepeatsLastTimeOrStartsWithDefaults() {
+        let last: [SetValue] = [.reps(count: 5, weight: .kilograms(70)), .reps(count: 0, weight: .kilograms(70)), .duration(seconds: 30)]
+        let added = WorkoutExercise.added(exercise: row, kind: .reps, nameSnapshot: nil, restSeconds: 900, previous: last)
+        #expect(added.sets.map(\.target) == [.reps(count: 5, weight: .kilograms(70))], "only valid targets of the same kind")
+        #expect(added.restSeconds == Limits.restSeconds.upperBound)
+        let fresh = WorkoutExercise.added(exercise: .builtIn(key: "plank"), kind: .duration, nameSnapshot: nil, restSeconds: 60, previous: [])
+        #expect(fresh.sets.map(\.target) == Array(repeating: .duration(seconds: 30), count: 3))
+    }
+
+    @Test func addedExercisesMustBePendingAndValid() throws {
+        let w0 = Workout.start(from: makePlan(), now: t0)
+        var logged = WorkoutExercise.added(exercise: row, kind: .reps, nameSnapshot: nil, restSeconds: 90, previous: [])
+        logged.sets[0].status = .logged(at: t0)
+        #expect(throws: WorkoutError.invalidValue) { try WorkoutEngine.reduce(w0, .addExercise(logged), now: t0) }
+        var mixed = WorkoutExercise.added(exercise: row, kind: .reps, nameSnapshot: nil, restSeconds: 90, previous: [])
+        mixed.sets[0] = WorkoutSet(target: .duration(seconds: 30))
+        #expect(throws: WorkoutError.invalidValue) { try WorkoutEngine.reduce(w0, .addExercise(mixed), now: t0) }
+    }
+
+    @Test func replacingKeepsSetsOfTheSameKindAndResetsOtherKinds() throws {
+        let w0 = Workout.start(from: makePlan(), now: t0)
+        let bench = w0.exercises[0]
+        let sameKind = try WorkoutEngine.reduce(w0, .replaceExercise(bench.id, with: row, kind: .reps, nameSnapshot: nil), now: t0)
+        #expect(sameKind.exercises[0].exercise == row)
+        #expect(sameKind.exercises[0].sets.map(\.target) == bench.sets.map(\.target))
+        #expect(sameKind.exercises[0].sets.map(\.id) == bench.sets.map(\.id))
+
+        let plank = ExerciseRef.builtIn(key: "plank")
+        let otherKind = try WorkoutEngine.reduce(w0, .replaceExercise(bench.id, with: plank, kind: .duration, nameSnapshot: nil), now: t0)
+        #expect(otherKind.exercises[0].kind == .duration)
+        #expect(otherKind.exercises[0].sets.map(\.value) == [.duration(seconds: 30), .duration(seconds: 30)])
+    }
+
+    @Test func exercisesWithLoggedSetsCannotBeReplacedOrRemoved() throws {
+        let w0 = Workout.start(from: makePlan(), now: t0)
+        let bench = w0.exercises[0]
+        let logged = try WorkoutEngine.reduce(w0, .logSet(bench.sets[0].id), now: t0)
+        #expect(throws: WorkoutError.notAllowed) { try WorkoutEngine.reduce(logged, .replaceExercise(bench.id, with: row, kind: .reps, nameSnapshot: nil), now: t0) }
+        #expect(throws: WorkoutError.notAllowed) { try WorkoutEngine.reduce(logged, .removeExercise(bench.id), now: t0) }
+        #expect(throws: WorkoutError.unknownExercise) { try WorkoutEngine.reduce(logged, .removeExercise(UUID()), now: t0) }
+    }
+
+    @Test func removingAnExerciseStopsItsCountdown() throws {
+        let w0 = Workout.start(from: makePlan(), now: t0)
+        let plank = w0.exercises[1]
+        let running = try WorkoutEngine.reduce(w0, .startWork(plank.sets[0].id), now: t0)
+        #expect(running.timer?.workSetID == plank.sets[0].id)
+        let removed = try WorkoutEngine.reduce(running, .removeExercise(plank.id), now: t0.addingTimeInterval(5))
+        #expect(removed.timer == nil)
+        #expect(removed.exercises.count == 1)
+    }
+
+    @Test func movingChangesTheOrderAndTheNextSet() throws {
+        let w0 = Workout.start(from: makePlan(), now: t0)
+        let plank = w0.exercises[1]
+        let moved = try WorkoutEngine.reduce(w0, .moveExercise(plank.id, to: 0), now: t0)
+        #expect(moved.exercises.map(\.id) == [plank.id, w0.exercises[0].id])
+        #expect(moved.nextPendingSetID == plank.sets[0].id)
+        #expect(throws: WorkoutError.notAllowed) { try WorkoutEngine.reduce(w0, .moveExercise(plank.id, to: 2), now: t0) }
+    }
+
+    @Test func aWorkoutBecomesPlanExercisesFromWhatWasLogged() throws {
+        let plan = makePlan()
+        let w0 = Workout.start(from: plan, now: t0)
+        let first = w0.exercises[0].sets[0].id
+        let heavier = try WorkoutEngine.reduce(w0, .setValue(first, .reps(count: 6, weight: .kilograms(65))), now: t0)
+        let w = try WorkoutEngine.reduce(heavier, .logSet(first), now: t0)
+        #expect(w.planExercises[0].sets == [.reps(count: 6, weight: .kilograms(65)), .reps(count: 8, weight: .kilograms(60))])
+        #expect(w.planExercises[1].sets == [.duration(seconds: 45)])
+        #expect(!w.changesExercises(of: plan), "different weights aren't a change of exercises")
+
+        let reordered = try WorkoutEngine.reduce(w, .moveExercise(w.exercises[1].id, to: 0), now: t0)
+        #expect(reordered.changesExercises(of: plan))
+    }
+}
+
 struct FinishTests {
     @Test func finishingStopsTimersAndLocksTheWorkout() throws {
         let w0 = Workout.start(from: makePlan(), now: t0)
