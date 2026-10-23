@@ -29,10 +29,8 @@ export async function handleSubscriptionUpload(request: Request, env: Env, accou
   const jws = typeof body?.transaction === "string" ? body.transaction : "";
   const transaction = jws ? await verifyTransaction(env, jws) : null;
   if (!transaction) return Response.json({ error: "transaction not signed by Apple for this app" }, { status: 400 });
-  // Purchases made in the app name their account; codes redeemed elsewhere name none.
-  if (transaction.appAccountToken && transaction.appAccountToken.toLowerCase() !== accountId) {
-    return Response.json({ error: "transaction belongs to another account" }, { status: 403 });
-  }
+  // The purchase may name an older account of the same phone (turned off and on again): Apple's
+  // signature proves the subscription is real, and it moves to this account.
   const problem = await apply(env, accountId, transaction);
   if (problem) return Response.json({ error: problem }, { status: 400 });
   return Response.json(await subscriptionStatus(env, accountId));
@@ -51,8 +49,9 @@ export async function handleAppleNotification(request: Request, env: Env): Promi
   const signedTransaction = notificationTransaction(notification);
   const transaction = signedTransaction ? await verifyTransaction(env, signedTransaction) : null;
   if (!transaction?.originalTransactionId) return new Response(null, { status: 200 });
+  // The account that holds the subscription now; the purchase's own token may name an older one.
   const accountId =
-    transaction.appAccountToken?.toLowerCase() ?? (await env.OAUTH_KV.get(subscriptionKey(transaction.originalTransactionId)));
+    (await env.OAUTH_KV.get(subscriptionKey(transaction.originalTransactionId))) ?? transaction.appAccountToken?.toLowerCase();
   if (accountId) await apply(env, accountId, transaction);
   // Unknown subscriptions are acknowledged too, or Apple keeps retrying.
   return new Response(null, { status: 200 });

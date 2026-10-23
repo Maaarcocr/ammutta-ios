@@ -39,10 +39,10 @@ The connector is a paid add-on that covers the server's cost: one auto-renewable
   - The app sends every signed transaction StoreKit gives it (current entitlement on refresh, plus `Transaction.updates`) to `POST /v1/accounts/:id/subscription`.
   - It sends no data and can't pair agents until the server says the subscription is active.
 - **The server never trusts the app's word** (`server/src/subscription.ts`, `billing.ts`):
-  - It accepts only JWS signed by Apple, checked with Apple's own `@apple/app-store-server-library` against Apple Root CA G3: signature, chain, bundle ID, environment, our product ID, and that the token, if present, names this account.
+  - It accepts only JWS signed by Apple, checked with Apple's own `@apple/app-store-server-library` against Apple Root CA G3: signature, chain, bundle ID, environment, and our product ID. The `appAccountToken` may name an older account: turning AI Agents off and on makes a new account, and the subscription moves to it.
   - It stores "paid until" (and refunds) in the account's Durable Object.
   - **One subscription unlocks one account**: the newest account to present it takes it over.
-- **App Store Server Notifications V2** at `POST /apple/notifications` keep it current without the app: renewals, expiries, refunds and revocations, matched by `appAccountToken` or the original transaction ID.
+- **App Store Server Notifications V2** at `POST /apple/notifications` keep it current without the app: renewals, expiries, refunds and revocations, matched to the account that holds the subscription now (by original transaction ID), or by `appAccountToken` if no account holds it yet.
 - **Without an active subscription:** snapshot uploads and pairing codes return 402, and every agent tool answers that the subscription isn't active.
 - **Free months: Apple offer codes.** Create them in App Store Connect (subscription → Offer Codes): a free or discounted period of up to a year, as one-time codes or a custom code. App Review doesn't allow unlocking paid features with our own codes. Testers on TestFlight subscribe in the sandbox for free.
 - `APP_APPLE_ID` in `subscription.ts` is the app's Apple ID in App Store Connect (6825521505). Apple requires it to verify production purchases.
