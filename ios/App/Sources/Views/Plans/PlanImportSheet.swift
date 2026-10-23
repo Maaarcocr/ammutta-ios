@@ -1,31 +1,22 @@
 import AmmuttaCore
 import SwiftUI
-import UIKit
 
-/// Previews a plan link before anything is saved. Opened by tapping an `ammutta://plan` link,
-/// or from Plans to paste one.
+/// Previews a plan from a tapped `ammutta://plan` link before anything is saved, or says why
+/// the link can't be read.
 struct PlanImportSheet: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
-    @State private var text = ""
-    @State private var result: Result<PlanImport, PlanLink.ParseError>?
-
-    init(request: ImportRequest) {
-        _result = State(initialValue: request.result)
-    }
-
-    private var preview: PlanImport? {
-        if case .success(let preview) = result { return preview }
-        return nil
-    }
+    let request: ImportRequest
 
     var body: some View {
         NavigationStack {
             Form {
-                if let preview {
+                switch request.result {
+                case .success(let preview):
                     previewSections(preview)
-                } else {
-                    pasteSection
+                case .failure(let error):
+                    Text(L10n.importError(error))
+                        .foregroundStyle(.red)
                 }
             }
             .navigationTitle(L10n.importTitle)
@@ -35,47 +26,14 @@ struct PlanImportSheet: View {
                     Button(L10n.cancel) { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    if let preview {
+                    if case .success(let preview) = request.result {
                         Button(L10n.importAdd) {
                             model.confirmImport(preview)
                             dismiss()
                         }
                         .accessibilityIdentifier("import.confirm")
-                    } else {
-                        Button(L10n.importPreview) { result = model.preparePlanImport(from: text) }
-                            .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                            .accessibilityIdentifier("import.preview")
                     }
                 }
-            }
-        }
-    }
-
-    private var pasteSection: some View {
-        Section {
-            TextField(L10n.importPlaceholder, text: $text, axis: .vertical)
-                .lineLimit(3...8)
-                .font(.callout.monospaced())
-                .autocorrectionDisabled()
-                .textInputAutocapitalization(.never)
-                .accessibilityIdentifier("import.text")
-            Button {
-                if let pasted = UIPasteboard.general.string {
-                    text = pasted
-                    result = model.preparePlanImport(from: pasted)
-                }
-            } label: {
-                Label(L10n.importPaste, systemImage: "doc.on.clipboard")
-            }
-            // Ask an AI assistant to write a link: the prompt lists every built-in and your own exercises.
-            ShareLink(item: model.planLinkPrompt()) {
-                Label(L10n.plansSharePrompt, systemImage: "sparkles")
-            }
-            .accessibilityIdentifier("import.sharePrompt")
-        } footer: {
-            if case .failure(let error) = result {
-                Text(L10n.importError(error))
-                    .foregroundStyle(.red)
             }
         }
     }

@@ -272,12 +272,13 @@ Rest timers and duration-set countdowns must alert the user reliably when the ph
   - a `.ammuttaplan` **file** via the share sheet;
   - a **CSV** export.
 
-  *Built so far:* links (share, tap to open, paste). QR codes, files and CSV are not built yet.
+  *Built so far:* links (share, tap to open). QR codes, files and CSV are not built yet.
 - Shared content contains **plan structure only**: name, exercises (built-in key, or custom name and kind), set targets and rest. **Never history, heart rate, Health data or any personal data.**
 - **Import** by:
   - opening a link (scanned with the Camera app or tapped);
-  - opening a `.ammuttaplan` or `.csv` file;
-  - pasting a link.
+  - opening a `.ammuttaplan` or `.csv` file.
+
+  There is no paste field: AI assistants add plans through the AI agents connector (§11.1).
 - Import shows a **preview** with the plan, the exercises that will be matched, and the custom exercises that will be created (marked "New"). Nothing is saved until the user confirms with **Add Plan**; the plan then appears in Plans and can be edited like any other.
 - Exercise matching on import: built-in keys map to the catalog. A name matches a built-in exercise of the same kind by its English or current-language name, then an existing custom exercise by name and kind (case- and diacritic-insensitive); otherwise a custom exercise is created.
 - Sets in a link carry no rest when the author leaves it out; the user's default rest is used.

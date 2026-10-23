@@ -199,28 +199,6 @@ struct AppModelTests {
         #expect(preview.plan.exercises.map(\.sets) == plan.exercises.map(\.sets))
     }
 
-    @Test func aiPromptListsBuiltInsAndTheUsersOwnExercises() throws {
-        let model = AppModel(store: try AmmuttaStore(inMemory: true), defaults: try makeDefaults())
-        model.load()
-        model.weightUnit = .kilograms   // the default follows the locale (pounds in en_US)
-        let basic = model.planLinkPrompt()
-        #expect(basic.contains("ammutta://plan?v=1"))
-        #expect(basic.contains("%20"))
-        #expect(!basic.contains("%%"))
-        #expect(basic.contains("barbell-bench-press"))
-        #expect(basic.contains("plank"))
-        #expect(!basic.contains("Landmine Press"))
-        #expect(!basic.contains("unit=lb"))
-
-        model.save(CustomExercise(name: "Landmine Press", kind: .reps, createdAt: .now))
-        model.save(CustomExercise(name: "Couch Stretch", kind: .duration, createdAt: .now))
-        model.weightUnit = .pounds
-        let personal = model.planLinkPrompt()
-        #expect(personal.contains("Landmine Press"))
-        #expect(personal.contains("Couch Stretch"))
-        #expect(personal.contains("unit=lb"))
-    }
-
     @Test func badLinksReportAnError() throws {
         let model = AppModel(store: try AmmuttaStore(inMemory: true), defaults: try makeDefaults())
         guard case .failure(let error) = model.preparePlanImport(from: "ammutta://plan?v=1&name=X&e=plank:10") else {
