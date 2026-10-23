@@ -6,7 +6,7 @@ import SwiftUI
 /// or when a view passes a raw string literal instead of going through this file.
 enum L10n {
     // MARK: Tabs
-    static var tabPlans: LocalizedStringKey { "tab.plans" }
+    static var tabStart: LocalizedStringKey { "tab.start" }
     static var tabExercises: LocalizedStringKey { "tab.exercises" }
     static var tabHistory: LocalizedStringKey { "tab.history" }
     static var tabSettings: LocalizedStringKey { "tab.settings" }
@@ -26,6 +26,10 @@ enum L10n {
     // MARK: Plans
     static var plansNew: LocalizedStringKey { "plans.new" }
     static var plansStartEmpty: LocalizedStringKey { "plans.startEmpty" }
+    static var plansStartEmptyTitle: LocalizedStringKey { "plans.startEmpty.title" }
+    static var plansStartEmptyConfirm: LocalizedStringKey { "plans.startEmpty.confirm" }
+    static var plansHeader: LocalizedStringKey { "plans.header" }
+    static var plansOptions: LocalizedStringKey { "plans.options" }
     static var plansEmptyTitle: LocalizedStringKey { "plans.empty.title" }
     static var plansEmptyMessage: LocalizedStringKey { "plans.empty.message" }
     static func exerciseCount(_ count: Int) -> String { String(localized: "plan.exerciseCount \(count)") }

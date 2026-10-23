@@ -35,7 +35,7 @@ These are constraints, not preferences. A feature that conflicts with one of the
 ### 1.4 Focused
 
 - The screens are about doing the workout. No feeds, streaks-for-engagement, social features, coaching, onboarding tours or explainer cards.
-- Confirmation dialogs are used only for destructive, unrecoverable actions: deleting history, discarding an active workout, or a full data import that replaces existing data.
+- Confirmation dialogs are used only for destructive, unrecoverable actions: deleting history, discarding an active workout, or a full data import that replaces existing data. The one exception is starting an empty workout from the small play button, which is easy to tap by mistake.
 
 ### 1.5 Works without anything optional
 
@@ -102,6 +102,10 @@ iOS 26 as the floor gives us AlarmKit, mature SwiftData and current ActivityKit 
 
 ## 5. Plans
 
+### 5.0 Start Workout screen
+
+The first tab, **Start Workout**, shows your plans as cards in two columns: the name, the exercises (a localized list) and when the plan was last done. Tapping a card opens the plan, which has **Start workout**. Each card's **…** menu offers Edit, Duplicate and Delete (with confirmation). The navigation bar has **▶︎** to start an empty workout (after a confirmation) and **+** for a new plan.
+
 ### 5.1 Creating and editing
 
 - A plan has a name and an ordered list of plan exercises. The same exercise may appear more than once, for example a warm-up block and a working block.
@@ -127,7 +131,7 @@ This is the heart of the app and must be excellent.
 ### 6.1 Starting
 
 - Start from a plan's detail screen. The plan's exercises and targets are **copied into the workout**, so the workout is independent of later plan edits.
-- Or **Start Empty Workout** from Plans: a workout named "Workout" with no exercises, built up as you go.
+- Or start an empty workout with **▶︎** on the Start Workout screen (after a confirmation): a workout named "Workout" with no exercises, built up as you go.
 - Only **one active workout** exists at a time. The workout screen covers the app while it runs, so another can't be started until it is finished or discarded.
 
 ### 6.2 The workout screen

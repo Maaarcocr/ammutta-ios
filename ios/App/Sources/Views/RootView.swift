@@ -7,7 +7,7 @@ struct RootView: View {
     var body: some View {
         @Bindable var model = model
         TabView(selection: $model.selectedTab) {
-            Tab(L10n.tabPlans, systemImage: "list.bullet.clipboard", value: AppTab.plans) {
+            Tab(L10n.tabStart, systemImage: "figure.strengthtraining.traditional", value: AppTab.plans) {
                 PlansView()
             }
             Tab(L10n.tabExercises, systemImage: "dumbbell", value: AppTab.exercises) {
@@ -20,7 +20,7 @@ struct RootView: View {
                 SettingsView()
             }
         }
-        // The only presentation on the root. The plan-link sheet belongs to the Plans screen:
+        // The only presentation on the root. The plan-link sheet belongs to the Start Workout screen:
         // two presentations on one view stopped the workout screen from appearing.
         .fullScreenCover(item: $model.session, onDismiss: { model.showDeferredImport() }) { session in
             WorkoutView(session: session)
