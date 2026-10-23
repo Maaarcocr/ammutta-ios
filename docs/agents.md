@@ -58,6 +58,8 @@ The connector is a paid add-on that covers the server's cost: one auto-renewable
 | `GET /v1/accounts/:id/subscription` | `{ active, expiresAt }` |
 | `POST /v1/accounts/:id/subscription` | `{ transaction: <JWS> }` from StoreKit; returns the status |
 | `POST /v1/accounts/:id/pairing` | New pairing code (402 without a subscription) |
+| `GET /v1/accounts/:id/pairing/:code` | `waiting`, `connected` (with the agent's name) or `expired`, for the connect sheet |
+| `GET /v1/accounts/:id/agents` | Connected agents: name and when |
 | `DELETE /v1/accounts/:id/agents` | Disconnect all agents |
 | `DELETE /v1/accounts/:id` | Delete everything |
 
@@ -81,9 +83,17 @@ The app reads the host from `AMMUTTA_AGENT_SERVER_HOST` in `ios/Config/Ammutta.x
 
 ## Connecting an agent
 
-1. In Ammutta: Settings → AI Agents → Connect AI Agents, then Subscribe (or Redeem Code), then Copy Address.
-2. In the agent, add a custom connector with that address (it ends in `/mcp`).
-3. When the agent opens the sign-in page, tap Get Pairing Code in Ammutta and type the code.
+Settings → Connections → **AI agents** opens the add-on.
+
+- **Not subscribed:** StoreKit's subscription screen with Subscribe, Restore and Redeem code.
+- **Subscribed:** the connected agents (by name), **Connect an agent**, when data last synced, the subscription, **Disconnect all agents**, and **Turn off and delete data** (asks first).
+
+**Connect an agent** opens one sheet with two steps:
+
+1. **The connector address** (`https://agents.ammutta.com/mcp`), with Copy and Share, plus where to paste it in Claude.
+2. **A fresh pairing code**, made when the sheet opens, shown large, with a countdown and Copy, and **New code** once it expires.
+
+The sheet checks the code's status every two seconds (`GET /pairing/:code`). When the agent signs in, it shows "Claude is connected", and the agent appears in the list. The server records the agent's self-reported name at sign-in (`completePairing` in the account's Durable Object). Disconnecting clears the list.
 
 ## Local development
 

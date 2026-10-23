@@ -53,6 +53,9 @@ assert.equal((await putSnapshot()).status, 204);
 // 2. The app asks for a pairing code.
 const { code } = await (await app("/pairing", { method: "POST" })).json();
 assert.match(code, /^[A-Z2-9]{8}$/);
+assert.deepEqual(await (await app(`/pairing/${code}`)).json(), { status: "waiting" });
+assert.deepEqual(await (await app("/pairing/ZZZZZZZZ")).json(), { status: "expired" }, "unknown codes read as expired");
+assert.deepEqual(await (await app("/agents")).json(), []);
 
 // 3. An agent registers and signs in with the code.
 const redirectUri = "https://agent.example/callback";
@@ -87,6 +90,9 @@ const approved = await post({ handle, code: code.toLowerCase(), decision: "appro
 assert.equal(approved.status, 302, await approved.text());
 const callback = new URL(approved.headers.get("Location"));
 assert.equal(callback.searchParams.get("state"), "s1");
+// The app's waiting screen sees the code was used, and by whom.
+assert.deepEqual(await (await app(`/pairing/${code}`)).json(), { status: "connected", agent: "Test Agent" });
+assert.deepEqual((await (await app("/agents")).json()).map((agent) => agent.name), ["Test Agent"]);
 
 const tokens = await (await fetch(`${base}/oauth/token`, {
   method: "POST",
@@ -174,6 +180,7 @@ assert.match(await call("list_plans"), /subscription isn't active/);
 assert.equal((await app("/agents", { method: "DELETE" })).status, 204);
 const revoked = await fetch(`${base}/mcp`, { method: "POST", headers: { Authorization: `Bearer ${tokens.access_token}` } });
 assert.equal(revoked.status, 401);
+assert.deepEqual(await (await app("/agents")).json(), [], "disconnecting clears the list");
 
 // 7. Turning off deletes the account; the next request claims it fresh.
 assert.equal((await app("", { method: "DELETE" })).status, 204);

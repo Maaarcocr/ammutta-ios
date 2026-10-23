@@ -273,35 +273,42 @@ final class AmmuttaUITests: XCTestCase {
         capture("22-apple-health")
     }
 
+    /// The AI agents flow with a fake connector: Settings row, the agents screen, the connect
+    /// sheet (code, copy, waiting) and the confirmation, then the agent in the list.
     @MainActor
-    func testConnectingAIAgentsShowsAPairingCode() throws {
+    func testConnectingAnAIAgent() throws {
         continueAfterFailure = false
         let app = XCUIApplication()
         app.launchArguments = ["-ui-testing", "-weightUnit", "kg"]
         app.launch()
 
         app.tabBars.buttons.element(boundBy: 3).tap()
-        let toggle = app.switches.matching(identifier: "settings.agents").firstMatch
-        XCTAssertTrue(toggle.waitForExistence(timeout: 30))
-        if !toggle.isHittable { app.swipeUp() }
-        let control = toggle.switches.firstMatch
-        (control.exists ? control : toggle).tap()
-        if toggle.value as? String != "1" {
-            toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
-        }
-        let getCode = element(app, "agents.getCode")
-        XCTAssertTrue(getCode.waitForExistence(timeout: 30))
-        if !getCode.isHittable { app.swipeUp() }
-        getCode.tap()
+        let row = element(app, "settings.agents")
+        XCTAssertTrue(row.waitForExistence(timeout: 30))
+        capture("23-settings-connections")
+        row.tap()
+
+        let connect = element(app, "agents.connect")
+        XCTAssertTrue(connect.waitForExistence(timeout: 30))
+        capture("24-ai-agents")
+        connect.tap()
+
         let code = app.staticTexts.matching(identifier: "agents.code").firstMatch
         XCTAssertTrue(code.waitForExistence(timeout: 30))
-        // The row reads as "Pairing Code, K7M2QX9P" (label and value together).
-        XCTAssertTrue(code.label.contains("K7M2QX9P"), code.label)
-        let copyCode = element(app, "agents.copyCode")
-        XCTAssertTrue(copyCode.waitForExistence(timeout: 30))
-        copyCode.tap()
+        XCTAssertTrue(code.label.contains("K7M2"), code.label)
+        capture("25-connect-agent")
+        element(app, "agents.copyCode").tap()
         element(app, "agents.copyAddress").tap()
-        capture("23-ai-agents")
+
+        // The fake connector reports the code as used a couple of seconds later.
+        let done = element(app, "agents.done")
+        XCTAssertTrue(done.waitForExistence(timeout: 30))
+        capture("26-agent-connected")
+        done.tap()
+
+        XCTAssertTrue(app.staticTexts["Claude"].waitForExistence(timeout: 30))
+        XCTAssertTrue(element(app, "agents.disconnect").exists)
+        capture("27-agents-list")
     }
 
     /// Every element the tests tap is a button (list rows with NavigationLink included).

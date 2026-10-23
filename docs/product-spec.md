@@ -289,7 +289,7 @@ Rest timers and duration-set countdowns must alert the user reliably when the ph
 - **A paid add-on** (about $0.99/month, App Store subscription) that covers the connector's server costs. Subscribe, restore, redeem offer codes and manage the subscription from Settings → AI Agents. Without it, nothing is sent and no agent can connect. Everything else in the app works without it.
 - **Settings → AI Agents → Connect AI Agents** (off by default) lets cloud agents such as Claude Duet, ChatGPT dots or Meta Muse, or any client with remote MCP connectors, read the user's plans, workout history and exercises, and create or update plans.
 - The app sends its data to Ammutta's connector whenever it changes, and imports plans agents wrote whenever it opens, without a preview.
-- Connecting an agent: copy the connector address into the agent, then type a pairing code from Settings on the agent's sign-in page. Codes work once, for 10 minutes.
+- Settings → Connections → **AI agents**: subscribe there, then **Connect an agent**. A guided sheet gives the connector address (Copy, Share) and a fresh pairing code (works once, for 10 minutes), and confirms by itself when the agent has signed in. The screen lists connected agents by name.
 - **Disconnect All Agents** revokes every agent. Turning the setting off deletes everything on the server.
 - Details: [agents.md](agents.md).
 

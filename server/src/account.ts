@@ -11,6 +11,20 @@ export interface InboxItem {
   createdAt: string;
 }
 
+/** An agent the user connected, for the app's list. */
+export interface ConnectedAgent {
+  name: string;
+  connectedAt: string;
+}
+
+/** Whether a pairing code is still waiting, was used (and by which agent), or expired. */
+export type PairingStatus = { status: "waiting" } | { status: "connected"; agent: string } | { status: "expired" };
+
+interface Pairing {
+  expiresAt: number;
+  agent?: string;
+}
+
 // Storage values are limited in size, so the snapshot is saved in chunks.
 const CHUNK = 32_000;
 const MAX_INBOX = 50;
@@ -47,6 +61,41 @@ export class Account extends DurableObject {
 
   async rotateAgentsKey(): Promise<void> {
     await this.ctx.storage.put("agentsKey", crypto.randomUUID());
+    await this.ctx.storage.delete("agents");
+  }
+
+  async agents(): Promise<ConnectedAgent[]> {
+    return (await this.ctx.storage.get<ConnectedAgent[]>("agents")) ?? [];
+  }
+
+  /** Remembers a code the app is showing, so the app can ask whether it was used. */
+  async issuePairingCode(code: string, expiresAt: number): Promise<void> {
+    const pairings = await this.pairings();
+    pairings[code] = { expiresAt };
+    await this.ctx.storage.put("pairings", pairings);
+  }
+
+  /** An agent signed in with `code`: add it to the list and mark the code as used. */
+  async completePairing(code: string, agent: string): Promise<void> {
+    const pairings = await this.pairings();
+    pairings[code] = { expiresAt: pairings[code]?.expiresAt ?? Date.now(), agent };
+    await this.ctx.storage.put("pairings", pairings);
+    const agents = await this.agents();
+    await this.ctx.storage.put("agents", [...agents, { name: agent, connectedAt: new Date().toISOString() }]);
+  }
+
+  async pairingStatus(code: string): Promise<PairingStatus> {
+    const pairing = (await this.pairings())[code];
+    if (pairing?.agent) return { status: "connected", agent: pairing.agent };
+    if (!pairing || pairing.expiresAt <= Date.now()) return { status: "expired" };
+    return { status: "waiting" };
+  }
+
+  /** Codes from the last hour; older ones are dropped. */
+  private async pairings(): Promise<Record<string, Pairing>> {
+    const all = (await this.ctx.storage.get<Record<string, Pairing>>("pairings")) ?? {};
+    const cutoff = Date.now() - 3_600_000;
+    return Object.fromEntries(Object.entries(all).filter(([, pairing]) => pairing.expiresAt > cutoff));
   }
 
   /** The AI Agents subscription, from the latest Apple-signed transaction. */
