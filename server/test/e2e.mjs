@@ -38,13 +38,12 @@ assert.deepEqual(await (await app("/subscription")).json(), { active: false, exp
 const intruder = await fetch(`${base}/v1/accounts/${accountId}/inbox`, { headers: { Authorization: `Bearer ${"x".repeat(64)}` } });
 assert.equal(intruder.status, 401, "another secret is refused");
 
-// 1b. Subscribing: only Apple-signed transactions for this app's product and account count.
+// 1b. Subscribing: only Apple-signed transactions for this app's product count.
 const original = String(Date.now());
 assert.equal((await app("/subscription", json({ transaction: "not.a.jws" }))).status, 400);
 const forged = signJWS({ productId: "com.rudilosso.ammutta.agents.monthly" }, generateKeyPairSync("ec", { namedCurve: "P-256" }).privateKey);
 assert.equal((await app("/subscription", json({ transaction: forged }))).status, 400, "a forged signature is refused");
 assert.equal((await app("/subscription", json({ transaction: transaction({ productId: "com.other" }) }))).status, 400);
-assert.equal((await app("/subscription", json({ transaction: transaction({ appAccountToken: randomUUID() }) }))).status, 403);
 const subscribed = await app("/subscription", json({ transaction: transaction({ originalTransactionId: original, appAccountToken: accountId }) }));
 assert.equal(subscribed.status, 200, await subscribed.clone().text());
 assert.equal((await subscribed.json()).active, true);
@@ -165,16 +164,24 @@ const renewal = transaction({ originalTransactionId: original, appAccountToken: 
 assert.equal((await notify(notification("DID_RENEW", renewal))).status, 200);
 assert.equal(JSON.parse(await call("list_workouts")).workouts.length, 2);
 
-// 5c. One subscription unlocks one account: the newest account to present it takes it over.
+// 5c. One subscription unlocks one account: the newest account to present it takes it over, even
+// when the purchase names the old one (the phone turned AI Agents off and on again).
 const otherId = randomUUID();
 const otherSecret = randomBytes(32).toString("hex");
-const other = await fetch(`${base}/v1/accounts/${otherId}/subscription`, {
-  ...json({ transaction: transaction({ originalTransactionId: original }) }),
-  headers: { "Content-Type": "application/json", Authorization: `Bearer ${otherSecret}` },
-});
+const otherSubscription = (init) =>
+  fetch(`${base}/v1/accounts/${otherId}/subscription`, {
+    ...init,
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${otherSecret}` },
+  });
+const other = await otherSubscription(json({ transaction: transaction({ originalTransactionId: original, appAccountToken: accountId }) }));
+assert.equal(other.status, 200, await other.clone().text());
 assert.equal((await other.json()).active, true);
 assert.equal((await (await app("/subscription")).json()).active, false);
 assert.match(await call("list_plans"), /subscription isn't active/);
+// Renewals still name the old account, but stay with the new one.
+assert.equal((await notify(notification("DID_RENEW", renewal))).status, 200);
+assert.equal((await (await otherSubscription({})).json()).active, true);
+assert.equal((await (await app("/subscription")).json()).active, false);
 
 // 6. Disconnecting agents cuts off their access immediately (the account's agents key changes).
 assert.equal((await app("/agents", { method: "DELETE" })).status, 204);
