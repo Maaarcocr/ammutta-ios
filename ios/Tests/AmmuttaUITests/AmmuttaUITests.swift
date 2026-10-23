@@ -64,6 +64,10 @@ final class AmmuttaUITests: XCTestCase {
 
         app.tabBars.buttons.element(boundBy: 3).tap()
         capture("11-settings")
+
+        // The tab bar shows icons only, but VoiceOver still reads each tab's name.
+        let startTab = app.tabBars.buttons.element(boundBy: 0).label
+        XCTAssertTrue(["Start Workout", "Allenamento"].contains(startTab), startTab)
     }
 
     @MainActor
