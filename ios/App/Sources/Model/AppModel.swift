@@ -74,7 +74,7 @@ final class AppModel {
     }
     var showingError = false
     var selectedTab: AppTab = .plans
-    /// A plan link being previewed (opened from a link, or pasted).
+    /// A tapped plan link being previewed.
     var importRequest: ImportRequest?
     /// A link opened during a workout, shown when the workout screen closes.
     var deferredImport: ImportRequest?

@@ -185,16 +185,13 @@ ammutta://plan?v=1&name=Mobility&e=Cat%20Cow:2x10:30&e=Couch%20Stretch:2x1m:30&e
 ## Using a link
 
 - **Tap it** in Notes, Messages, Mail, Safari or a chat app that makes links tappable. iOS opens Ammutta (it may ask to confirm "Open in Ammutta?").
-- **Paste it**: in Ammutta, tap the link button (🔗) in Plans, paste, then **Preview**.
 - **Share one**: open a plan and tap the share button; it shares a link in this format.
-- **Ask an AI for one**: Plans → link button (🔗) → **Share AI Prompt** (see below).
+- **Ask an AI for one**: paste the prompt below into an AI chat. With the AI agents add-on, connected agents add plans directly instead ([`agents.md`](agents.md)).
 
 Nothing is saved until **Add Plan** is tapped in the preview. Links contain plan structure only, never history or personal data.
 
 ## Prompt for AI assistants
 
-**In the app:** Plans → link button (🔗) → **Share AI Prompt** generates this prompt for you. It lists every built-in key *and the exercises you added yourself*, and uses your weight unit. Send it to an AI app or copy it, then describe the plan you want.
-
-Without the app at hand, paste this into an AI chat, followed by what you want:
+Paste this into an AI chat, followed by what you want:
 
 > Create an Ammutta workout plan link. Format: `ammutta://plan?v=1&name=<name, spaces as %20>&e=<exercise>:<sets>:<rest>` with one `&e=` per exercise in order. `<exercise>` is a built-in key (barbell-bench-press, incline-barbell-bench-press, close-grip-bench-press, barbell-back-squat, barbell-front-squat, barbell-deadlift, sumo-deadlift, barbell-romanian-deadlift, good-morning, barbell-hip-thrust, barbell-overhead-press, barbell-row, barbell-shrug, barbell-curl, dumbbell-bench-press, incline-dumbbell-bench-press, dumbbell-fly, dumbbell-shoulder-press, arnold-press, dumbbell-lateral-raise, rear-delt-fly, dumbbell-row, dumbbell-curl, hammer-curl, dumbbell-triceps-extension, dumbbell-romanian-deadlift, dumbbell-lunge, bulgarian-split-squat, kettlebell-goblet-squat, kettlebell-swing, push-up, pull-up, chin-up, inverted-row, dip, bodyweight-squat, walking-lunge, step-up, burpee, crunch, sit-up, leg-raise, hanging-knee-raise, hanging-leg-raise, back-extension, lat-pulldown, seated-cable-row, cable-face-pull, triceps-pushdown, cable-overhead-triceps-extension, cable-curl, cable-woodchop, machine-chest-press, pec-deck, machine-shoulder-press, assisted-pull-up, assisted-dip, leg-press, hack-squat, smith-machine-squat, leg-extension, leg-curl, lying-leg-curl, standing-calf-raise, seated-calf-raise, hip-abductor, hip-adductor; timed: plank, side-plank, bear-plank, hollow-hold, l-sit, wall-sit, glute-bridge-hold, superman-hold, dead-hang, mountain-climbers, high-knees, bear-crawl, jump-rope, battle-ropes) or any other exercise name (exercises outside this list are fine and get created on the phone), with spaces as %20 and no colons. `<sets>` is comma-separated: `8` = 8 reps bodyweight, `8@60` = 8 reps at 60 kg, `45s`/`2m`/`1m30s` = timed set, `3x8@60` = three identical sets; one exercise uses only reps or only timed sets. `<rest>` is seconds between sets (0–600) and may be omitted. Add `&unit=lb` for pounds. Limits: 1–30 exercises, 1–20 sets each, reps 1–999, timed sets 5 s–60 min. Reply with the link on its own line, then the same plan as a short list.

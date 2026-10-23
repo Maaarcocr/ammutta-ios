@@ -169,27 +169,6 @@ final class AmmuttaUITests: XCTestCase {
         capture("16-typed-weight")
     }
 
-    /// Regression: sharing the AI prompt used to crash the app (it was a ShareLink inside a menu).
-    @MainActor
-    func testSharingTheAIPromptOpensTheShareSheet() throws {
-        continueAfterFailure = false
-        let app = XCUIApplication()
-        app.launchArguments = ["-ui-testing", "-weightUnit", "kg"]
-        app.launch()
-
-        let importLink = element(app, "plans.importLink")
-        XCTAssertTrue(importLink.waitForExistence(timeout: 30))
-        importLink.tap()
-        let share = element(app, "import.sharePrompt")
-        XCTAssertTrue(share.waitForExistence(timeout: 30))
-        share.tap()
-
-        // The share sheet appears and the app keeps running.
-        XCTAssertTrue(app.otherElements["ActivityListView"].waitForExistence(timeout: 30))
-        XCTAssertEqual(app.state, .runningForeground)
-        capture("15-share-ai-prompt")
-    }
-
     @MainActor
     func testSharingAPlanLinkOpensTheShareSheet() throws {
         continueAfterFailure = false

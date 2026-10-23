@@ -17,10 +17,10 @@ struct PlanImport {
     }
 }
 
+/// A tapped plan link waiting for the preview sheet.
 struct ImportRequest: Identifiable {
     let id = UUID()
-    /// nil while the user still has to paste a link.
-    let result: Result<PlanImport, PlanLink.ParseError>?
+    let result: Result<PlanImport, PlanLink.ParseError>
 }
 
 extension AppModel {
@@ -49,10 +49,6 @@ extension AppModel {
         importRequest = deferredImport
     }
 
-    func startPasteImport() {
-        importRequest = ImportRequest(result: nil)
-    }
-
     func preparePlanImport(from text: String) -> Result<PlanImport, PlanLink.ParseError> {
         do throws(PlanLink.ParseError) {
             return .success(resolve(try PlanLink.parse(text)))
@@ -69,23 +65,6 @@ extension AppModel {
         save(preview.plan)
         importRequest = nil
         selectedTab = .plans
-    }
-
-    /// A prompt that teaches an AI assistant the link format, listing the built-in keys and
-    /// this user's own exercises, in the user's weight unit.
-    func planLinkPrompt() -> String {
-        let reps = ExerciseCatalog.all.filter { $0.kind == .reps }.map(\.key).joined(separator: ", ")
-        let timed = ExerciseCatalog.all.filter { $0.kind == .duration }.map(\.key).joined(separator: ", ")
-        var paragraphs = [L10n.promptFormat(reps, timed)]
-        let own = customExercises
-            .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
-            .map { "\($0.name) (\($0.kind == .reps ? L10n.promptKindReps : L10n.promptKindTimed))" }
-        if !own.isEmpty {
-            paragraphs.append(L10n.promptOwnExercises(own.joined(separator: ", ")))
-        }
-        paragraphs.append(weightUnit == .pounds ? L10n.promptUnitPounds : L10n.promptUnitKilograms)
-        paragraphs.append(L10n.promptReply)
-        return paragraphs.joined(separator: "\n\n")
     }
 
     /// Saves a plan an agent wrote through the connector, without asking: the user connected the
