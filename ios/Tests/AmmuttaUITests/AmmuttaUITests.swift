@@ -384,7 +384,8 @@ final class AmmuttaUITests: XCTestCase {
         XCTAssertTrue(update.waitForNonExistence(timeout: 30), "the button turns into an updated label")
         capture("32-plan-updated")
         element(app, "summary.done").tap()
-        XCTAssertTrue(element(app, "plans.row").waitForExistence(timeout: 30))
+        // Back on the plan the workout started from.
+        XCTAssertTrue(element(app, "plan.start").waitForExistence(timeout: 30))
     }
 
     /// Every element the tests tap is a button (list rows with NavigationLink included).
