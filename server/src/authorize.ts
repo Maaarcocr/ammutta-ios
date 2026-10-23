@@ -97,6 +97,9 @@ ${sameOrigin ? `<p><a href="${escape(retry)}">Try again</a></p>` : ""}`,
     scope: approved.request.scope,
     props: { accountId, agentsKey: await account(env, accountId).agentsKey() },
   });
+  // Show the agent in the app's list, and let the app's waiting screen see the code was used.
+  const { clientName } = await oauth.describeConsent(approved.request);
+  await account(env, accountId).completePairing(code.trim().toUpperCase(), clientName);
   approved.headers.set("Location", redirectTo);
   return new Response(null, { status: 302, headers: approved.headers });
 }

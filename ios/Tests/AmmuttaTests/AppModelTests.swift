@@ -374,7 +374,7 @@ struct AppModelTests {
         await model.agents.settled()
         #expect(server.snapshots.isEmpty, "nothing leaves the phone while off")
 
-        model.agents.isEnabled = true
+        model.agents.activate()
         await model.agents.settled()
         #expect(accounts.account != nil)
         let decoder = JSONDecoder()
@@ -387,9 +387,8 @@ struct AppModelTests {
         let second = try decoder.decode(AgentSnapshot.self, from: try #require(server.snapshots.last))
         #expect(Set(second.plans.map(\.name)) == ["Legs", "Arms"])
 
-        model.agents.requestPairingCode()
-        await model.agents.settled()
-        #expect(model.agents.pairingCode == "K7M2QX9P")
+        await model.agents.startPairing()
+        #expect(model.agents.pairing?.code == "K7M2QX9P")
     }
 
     @Test func plansWrittenByAgentsAreImportedAndUpdatesKeepThePlan() async throws {
@@ -404,7 +403,7 @@ struct AppModelTests {
                            link: "ammutta://plan?v=1&name=Legs%20v2&e=barbell-back-squat%3A5x5%40100%3A180"),
             AgentInboxItem(id: "3", planId: nil, name: "Broken", link: "ammutta://plan?v=1&name=Broken"),
         ]
-        model.agents.isEnabled = true
+        model.agents.activate()
         await model.agents.settled()
 
         #expect(server.pending.isEmpty, "imported and unusable items both leave the inbox")
@@ -419,11 +418,11 @@ struct AppModelTests {
         let server = FakeAgentServer()
         let accounts = MemoryAgentAccountStore()
         let model = try agentModel(server, accounts: accounts)
-        model.agents.isEnabled = true
+        model.agents.activate()
         await model.agents.settled()
         let id = try #require(accounts.account?.id)
 
-        model.agents.isEnabled = false
+        model.agents.turnOffAndDeleteData()
         await model.agents.settled()
         #expect(accounts.account == nil)
         #expect(server.deletedAccounts == [id])
@@ -434,7 +433,7 @@ struct AppModelTests {
         server.failing = true
         server.pending = [AgentInboxItem(id: "1", planId: nil, name: "Later", link: "ammutta://plan?v=1&name=Later&e=plank%3A45s")]
         let model = try agentModel(server)
-        model.agents.isEnabled = true
+        model.agents.activate()
         await model.agents.settled()
         #expect(model.agents.isOffline)
         #expect(model.plans.isEmpty)
@@ -452,7 +451,7 @@ struct AppModelTests {
         let appStore = FakeAgentStore()
         let model = try agentModel(server, store: appStore)
         model.save(legDay())
-        model.agents.isEnabled = true
+        model.agents.activate()
         await model.agents.settled()
         #expect(!model.agents.isSubscribed)
         #expect(server.snapshots.isEmpty)
@@ -469,15 +468,85 @@ struct AppModelTests {
         #expect(server.snapshots.count == 1)
     }
 
+    /// The add-on was on, but the account is gone (a new phone without iCloud Keychain).
+    @Test func openingTheScreenMakesAMissingAccount() async throws {
+        let server = FakeAgentServer()
+        let accounts = MemoryAgentAccountStore()
+        let defaults = try makeDefaults()
+        defaults.set(true, forKey: "agentsEnabled")
+        let model = AppModel(
+            store: try AmmuttaStore(inMemory: true), defaults: defaults,
+            agentServer: server, agentStore: FakeAgentStore(), agentAccounts: accounts
+        )
+        model.load()
+        #expect(model.agents.isEnabled && accounts.account == nil)
+
+        model.agents.activate()
+        await model.agents.settled()
+        #expect(accounts.account != nil)
+        #expect(model.agents.isSubscribed)
+    }
+
     @Test func refreshSendsTheCurrentAppStoreTransaction() async throws {
         let server = FakeAgentServer()
         let appStore = FakeAgentStore()
         appStore.transaction = "current-transaction"
         let model = try agentModel(server, store: appStore)
-        model.agents.isEnabled = true
+        model.agents.activate()
         await model.agents.settled()
         #expect(server.uploadedTransactions == ["current-transaction"])
         #expect(model.agents.isSubscribed)
         #expect(model.agents.accountToken != nil)
+    }
+
+    /// The connect sheet's flow: a code, waiting, then the agent that signed in, now in the list.
+    @Test func pairingWaitsForTheAgentThenListsIt() async throws {
+        let server = FakeAgentServer()
+        let model = try agentModel(server)
+        model.agents.activate()
+        await model.agents.settled()
+        #expect(model.agents.connectedAgents.isEmpty)
+
+        await model.agents.startPairing()
+        #expect(model.agents.pairingStatus == .waiting)
+        await model.agents.watchPairing()
+        #expect(model.agents.pairingStatus == .connected(agent: "Claude"))
+        #expect(model.agents.connectedAgents.map(\.name) == ["Claude"])
+
+        model.agents.disconnectAgents()
+        await model.agents.settled()
+        #expect(model.agents.connectedAgents.isEmpty)
+        #expect(server.disconnects == 1)
+    }
+
+    @Test func closingTheSheetStopsWatching() async throws {
+        let server = FakeAgentServer()
+        server.agentSigningIn = nil
+        let model = try agentModel(server)
+        model.agents.activate()
+        await model.agents.settled()
+        await model.agents.startPairing()
+        let watching = Task { await model.agents.watchPairing() }
+        try await Task.sleep(for: .milliseconds(100))
+        watching.cancel()
+        await watching.value
+        #expect(model.agents.pairingStatus == .waiting, "closing the sheet stops watching")
+    }
+
+    @Test func turningOffClearsTheAgentScreen() async throws {
+        let server = FakeAgentServer()
+        server.connected = [ConnectedAgent(name: "Claude", connectedAt: .now)]
+        let model = try agentModel(server)
+        model.agents.activate()
+        await model.agents.settled()
+        #expect(model.agents.isSubscribed)
+        #expect(model.agents.connectedAgents.count == 1)
+        #expect(model.agents.lastSynced != nil)
+
+        model.agents.turnOffAndDeleteData()
+        await model.agents.settled()
+        #expect(!model.agents.isEnabled)
+        #expect(!model.agents.isSubscribed)
+        #expect(model.agents.connectedAgents.isEmpty)
     }
 }

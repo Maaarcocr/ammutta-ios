@@ -11,6 +11,8 @@ import { account, type Env, PAIRING_SECONDS, pairingKey, revokeAgents } from "./
 //   GET    /v1/accounts/:id/inbox        plans agents wrote, waiting to be imported
 //   DELETE /v1/accounts/:id/inbox/:item  imported (or unusable): remove it
 //   POST   /v1/accounts/:id/pairing      a one-time code for connecting an agent
+//   GET    /v1/accounts/:id/pairing/:code whether that code was used yet, and by which agent
+//   GET    /v1/accounts/:id/agents       the agents connected to this account
 //   DELETE /v1/accounts/:id/agents       disconnect every agent
 //   DELETE /v1/accounts/:id              turn off: disconnect agents and delete everything
 
@@ -32,7 +34,7 @@ const error = (status: number, message: string) => Response.json({ error: messag
 
 export async function handleAppRequest(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
-  const match = /^\/v1\/accounts\/([0-9a-f-]{36})(\/[a-z]+)?(?:\/([0-9a-f-]{36}))?$/i.exec(url.pathname);
+  const match = /^\/v1\/accounts\/([0-9a-f-]{36})(\/[a-z]+)?(?:\/([0-9a-z-]{8,36}))?$/i.exec(url.pathname);
   if (!match) return error(404, "not found");
   const [, accountId, resource = "", itemId] = match;
 
@@ -69,8 +71,13 @@ export async function handleAppRequest(request: Request, env: Env): Promise<Resp
       if (!(await subscribed())) return error(402, "subscription inactive");
       const code = pairingCode();
       await env.OAUTH_KV.put(pairingKey(code), accountId.toLowerCase(), { expirationTtl: PAIRING_SECONDS });
+      await store.issuePairingCode(code, Date.now() + PAIRING_SECONDS * 1000);
       return Response.json({ code, expiresInSeconds: PAIRING_SECONDS });
     }
+    case "GET /pairing/:item":
+      return Response.json(await store.pairingStatus(itemId.toUpperCase()));
+    case "GET /agents":
+      return Response.json(await store.agents());
     case "DELETE /agents":
       await store.rotateAgentsKey();
       await revokeAgents(env, accountId.toLowerCase());

@@ -80,6 +80,26 @@ final class MemoryAgentAccountStore: AgentAccountStore {
     func delete() { account = nil }
 }
 
+
+/// An agent connected to this account, as the server lists it.
+struct ConnectedAgent: Codable, Equatable, Identifiable {
+    let name: String
+    let connectedAt: Date
+    var id: String { "\(name)-\(connectedAt.timeIntervalSince1970)" }
+}
+
+/// A code for connecting an agent, shown in the connect sheet.
+struct AgentPairing: Equatable {
+    let code: String
+    let expiresAt: Date
+}
+
+enum AgentPairingStatus: Equatable {
+    case waiting
+    case connected(agent: String)
+    case expired
+}
+
 /// The connector's API for the app (server/src/app-api.ts).
 @MainActor
 protocol AgentServer: AnyObject {
@@ -88,7 +108,10 @@ protocol AgentServer: AnyObject {
     func putSnapshot(_ json: Data, account: AgentAccount) async throws
     func inbox(account: AgentAccount) async throws -> [AgentInboxItem]
     func removeFromInbox(_ id: String, account: AgentAccount) async throws
-    func pairingCode(account: AgentAccount) async throws -> String
+    func pairingCode(account: AgentAccount) async throws -> AgentPairing
+    /// Whether an agent has signed in with `code` yet.
+    func pairingStatus(_ code: String, account: AgentAccount) async throws -> AgentPairingStatus
+    func agents(account: AgentAccount) async throws -> [ConnectedAgent]
     func disconnectAgents(account: AgentAccount) async throws
     func deleteAccount(_ account: AgentAccount) async throws
     /// Whether the AI Agents subscription is active, as the server last verified it.
@@ -127,9 +150,29 @@ final class HTTPAgentServer: AgentServer {
         _ = try await send("DELETE", "/inbox/\(id)", account: account)
     }
 
-    func pairingCode(account: AgentAccount) async throws -> String {
-        struct Pairing: Decodable { let code: String }
-        return try JSONDecoder().decode(Pairing.self, from: await send("POST", "/pairing", account: account)).code
+    func pairingCode(account: AgentAccount) async throws -> AgentPairing {
+        struct Pairing: Decodable { let code: String; let expiresInSeconds: Double }
+        let pairing = try JSONDecoder().decode(Pairing.self, from: await send("POST", "/pairing", account: account))
+        return AgentPairing(code: pairing.code, expiresAt: .now.addingTimeInterval(pairing.expiresInSeconds))
+    }
+
+    func pairingStatus(_ code: String, account: AgentAccount) async throws -> AgentPairingStatus {
+        struct Status: Decodable { let status: String; let agent: String? }
+        let status = try JSONDecoder().decode(Status.self, from: await send("GET", "/pairing/\(code)", account: account))
+        switch status.status {
+        case "connected": return .connected(agent: status.agent ?? "")
+        case "waiting": return .waiting
+        default: return .expired
+        }
+    }
+
+    func agents(account: AgentAccount) async throws -> [ConnectedAgent] {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .custom { decoder in
+            let text = try decoder.singleValueContainer().decode(String.self)
+            return (try? Date(text, strategy: .iso8601.year().month().day().time(includingFractionalSeconds: true))) ?? .now
+        }
+        return try decoder.decode([ConnectedAgent].self, from: await send("GET", "/agents", account: account))
     }
 
     func disconnectAgents(account: AgentAccount) async throws {
@@ -164,7 +207,8 @@ final class HTTPAgentServer: AgentServer {
     }
 }
 
-/// A server for tests and UI tests: keeps everything in memory.
+/// A server for tests and UI tests: keeps everything in memory. A code counts as used after a
+/// few status checks (two seconds apart), so UI tests see the code and then the "connected" screen.
 @MainActor
 final class FakeAgentServer: AgentServer {
     var connectorURL: URL { URL(string: "https://agents.example/mcp")! }
@@ -176,6 +220,15 @@ final class FakeAgentServer: AgentServer {
     var pending: [AgentInboxItem] = []
     private(set) var deletedAccounts: [String] = []
     private(set) var disconnects = 0
+    var connected: [ConnectedAgent] = []
+    /// The agent that signs in with the next code; nil keeps codes waiting.
+    var agentSigningIn: String? = "Claude"
+    private var statusChecks = 0
+    private let checksBeforeSignIn: Int
+
+    init(checksBeforeSignIn: Int = 2) {
+        self.checksBeforeSignIn = checksBeforeSignIn
+    }
 
     private func check() throws {
         if failing { throw AgentServerError(status: 503) }
@@ -196,14 +249,30 @@ final class FakeAgentServer: AgentServer {
         pending.removeAll { $0.id == id }
     }
 
-    func pairingCode(account: AgentAccount) async throws -> String {
+    func pairingCode(account: AgentAccount) async throws -> AgentPairing {
         try check()
-        return "K7M2QX9P"
+        return AgentPairing(code: "K7M2QX9P", expiresAt: .now.addingTimeInterval(600))
+    }
+
+    func pairingStatus(_ code: String, account: AgentAccount) async throws -> AgentPairingStatus {
+        try check()
+        statusChecks += 1
+        guard let agent = agentSigningIn, statusChecks >= checksBeforeSignIn else { return .waiting }
+        if !connected.contains(where: { $0.name == agent }) {
+            connected.append(ConnectedAgent(name: agent, connectedAt: .now))
+        }
+        return .connected(agent: agent)
+    }
+
+    func agents(account: AgentAccount) async throws -> [ConnectedAgent] {
+        try check()
+        return connected
     }
 
     func disconnectAgents(account: AgentAccount) async throws {
         try check()
         disconnects += 1
+        connected = []
     }
 
     func deleteAccount(_ account: AgentAccount) async throws {
@@ -224,9 +293,9 @@ final class FakeAgentServer: AgentServer {
     }
 }
 
-/// The "AI Agents" setting. While on, the app sends its data to the connector whenever it
-/// changes and imports plans agents wrote whenever the app opens. Network work runs in order,
-/// one step at a time.
+/// The AI agents add-on. Once turned on (by opening its screen), the app sends its data to the
+/// connector whenever it changes and imports plans agents wrote whenever the app opens, as long
+/// as the subscription is active. Background work runs in order, one step at a time.
 @Observable
 final class AgentConnector {
     @ObservationIgnored let server: (any AgentServer)?
@@ -240,14 +309,20 @@ final class AgentConnector {
     @ObservationIgnored private var queue: Task<Void, Never>?
     @ObservationIgnored private var pushQueued = false
 
-    /// The latest pairing code, shown until it expires.
-    private(set) var pairingCode: String?
-    private(set) var pairingExpiry: Date?
     /// True after the last network step failed; cleared by the next success.
     private(set) var isOffline = false
     /// Whether the AI Agents subscription is active, as the server verified it. Nothing is sent
     /// and no agent can connect without it.
     private(set) var isSubscribed = false
+    private(set) var connectedAgents: [ConnectedAgent] = []
+    /// When the data last reached the connector.
+    private(set) var lastSynced: Date?
+
+    /// The code the connect sheet shows, and what became of it.
+    private(set) var pairing: AgentPairing?
+    private(set) var pairingStatus: AgentPairingStatus = .waiting
+    /// True when a code couldn't be fetched (offline, or the subscription lapsed).
+    private(set) var pairingFailed = false
 
     private enum Keys {
         static let enabled = "agentsEnabled"
@@ -269,17 +344,30 @@ final class AgentConnector {
     var isAvailable: Bool { server != nil }
     var connectorURL: URL? { server?.connectorURL }
 
-    var isEnabled: Bool {
+    private(set) var isEnabled: Bool {
         didSet {
             guard isEnabled != oldValue else { return }
             defaults.set(isEnabled, forKey: Keys.enabled)
             if isEnabled {
-                if accounts.load() == nil { accounts.save(.make()) }
                 refresh()
             } else {
                 turnOff()
             }
         }
+    }
+
+    /// Opening the AI Agents screen turns the add-on on (an account is made on the phone) and
+    /// checks the subscription. Nothing is sent until the subscription is active. The account is
+    /// also made when the add-on was already on but the account is gone (a new phone without
+    /// iCloud Keychain), so the screen never gets stuck.
+    func activate() {
+        if accounts.load() == nil { accounts.save(.make()) }
+        if isEnabled { refresh() } else { isEnabled = true }
+    }
+
+    /// Disconnects every agent and deletes everything on the server.
+    func turnOffAndDeleteData() {
+        isEnabled = false
     }
 
     /// The app's data changed: send it.
@@ -292,7 +380,8 @@ final class AgentConnector {
         }
     }
 
-    /// The app opened or came back: check the subscription, send the latest data and import new plans.
+    /// The app opened or came back: check the subscription, send the latest data, import new
+    /// plans and update the list of agents.
     func refresh() {
         guard isEnabled else { return }
         enqueue { connector, server, account in
@@ -308,6 +397,7 @@ final class AgentConnector {
                     try await server.removeFromInbox(item.id, account: account)
                 }
             }
+            connector.connectedAgents = try await server.agents(account: account)
         }
     }
 
@@ -317,21 +407,44 @@ final class AgentConnector {
             connector.isSubscribed = try await server.uploadTransaction(jws, account: account)
             if connector.isSubscribed {
                 try await connector.push(server, account)
+                connector.connectedAgents = try await server.agents(account: account)
             }
         }
     }
 
-    func requestPairingCode() {
-        enqueue { connector, server, account in
-            connector.pairingCode = try await server.pairingCode(account: account)
-            connector.pairingExpiry = .now.addingTimeInterval(600)
+    /// Gets a fresh code for the connect sheet.
+    func startPairing() async {
+        pairing = nil
+        pairingStatus = .waiting
+        pairingFailed = false
+        guard let server, let account = accounts.load() else { return }
+        do {
+            pairing = try await server.pairingCode(account: account)
+        } catch {
+            pairingFailed = true
+        }
+    }
+
+    /// Checks every couple of seconds whether an agent signed in with the current code, until it
+    /// does, the code expires, or the sheet closes (which cancels the task).
+    func watchPairing() async {
+        guard let server, let account = accounts.load() else { return }
+        while !Task.isCancelled, let pairing, pairingStatus == .waiting {
+            if let status = try? await server.pairingStatus(pairing.code, account: account) {
+                pairingStatus = status == .waiting && pairing.expiresAt <= .now ? .expired : status
+            }
+            if case .connected = pairingStatus {
+                connectedAgents = (try? await server.agents(account: account)) ?? connectedAgents
+                return
+            }
+            try? await Task.sleep(for: .seconds(2))
         }
     }
 
     func disconnectAgents() {
-        pairingCode = nil
-        enqueue { _, server, account in
+        enqueue { connector, server, account in
             try await server.disconnectAgents(account: account)
+            connector.connectedAgents = []
         }
     }
 
@@ -341,8 +454,10 @@ final class AgentConnector {
     }
 
     private func turnOff() {
-        pairingCode = nil
+        pairing = nil
         isSubscribed = false
+        connectedAgents = []
+        lastSynced = nil
         guard let server, let account = accounts.load() else { return }
         accounts.delete()
         let previous = queue
@@ -361,6 +476,7 @@ final class AgentConnector {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         try await server.putSnapshot(try encoder.encode(snapshot), account: account)
+        lastSynced = .now
     }
 
     private func enqueue(_ step: @escaping @MainActor (AgentConnector, any AgentServer, AgentAccount) async throws -> Void) {

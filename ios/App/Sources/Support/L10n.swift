@@ -176,9 +176,6 @@ enum L10n {
     static var settingsWorkout: LocalizedStringKey { "settings.workout" }
     static var settingsWeightUnit: LocalizedStringKey { "settings.weightUnit" }
     static var settingsDefaultRest: LocalizedStringKey { "settings.defaultRest" }
-    static var settingsHeartRate: LocalizedStringKey { "settings.heartRate" }
-    static var settingsSensor: LocalizedStringKey { "settings.sensor" }
-    static var settingsHealth: LocalizedStringKey { "settings.health" }
     static var settingsHealthSync: LocalizedStringKey { "settings.healthSync" }
     static var healthNotAllowed: LocalizedStringKey { "health.notAllowed" }
     static var healthOpenSettings: LocalizedStringKey { "health.openSettings" }
@@ -186,18 +183,47 @@ enum L10n {
     static var settingsAbout: LocalizedStringKey { "settings.about" }
     static var settingsVersion: LocalizedStringKey { "settings.version" }
     static var settingsAgents: LocalizedStringKey { "settings.agents" }
-    static var agentsToggle: LocalizedStringKey { "agents.toggle" }
-    static var agentsAddress: LocalizedStringKey { "agents.address" }
-    static var agentsCopy: LocalizedStringKey { "agents.copy" }
     static var agentsCopyCode: LocalizedStringKey { "agents.copyCode" }
     static var agentsCopied: LocalizedStringKey { "agents.copied" }
-    static var agentsCode: LocalizedStringKey { "agents.code" }
-    static var agentsGetCode: LocalizedStringKey { "agents.getCode" }
-    static var agentsCodeNote: LocalizedStringKey { "agents.codeNote" }
     static var agentsDisconnect: LocalizedStringKey { "agents.disconnect" }
     static var agentsOffline: LocalizedStringKey { "agents.offline" }
-    static var agentsSubscribe: LocalizedStringKey { "agents.subscribe" }
-    static var agentsRedeem: LocalizedStringKey { "agents.redeem" }
+    static var settingsConnections: LocalizedStringKey { "settings.connections" }
+    static var agentsOff: String { String(localized: "agents.off") }
+    static var agentsOn: String { String(localized: "agents.on") }
+    static func agentsConnectedCount(_ count: Int) -> String { String(localized: "agents.connectedCount \(count)") }
+    static var agentsPitchTitle: LocalizedStringKey { "agents.pitchTitle" }
+    static var agentsPitchBody: LocalizedStringKey { "agents.pitchBody" }
+    static var agentsFeatureRead: LocalizedStringKey { "agents.featureRead" }
+    static var agentsFeatureWrite: LocalizedStringKey { "agents.featureWrite" }
+    static var agentsFeaturePrivate: LocalizedStringKey { "agents.featurePrivate" }
+    static var agentsConnectedHeader: LocalizedStringKey { "agents.connectedHeader" }
+    static func agentsConnectedDate(_ date: Date) -> String {
+        let when = date.formatted(.relative(presentation: .named))
+        return String(localized: "agents.connectedDate \(when)")
+    }
+    static func agentsSynced(_ date: Date) -> String {
+        let when = date.formatted(.relative(presentation: .named))
+        return String(localized: "agents.synced \(when)")
+    }
+    static var agentsConnect: LocalizedStringKey { "agents.connect" }
+    static var agentsSubscription: LocalizedStringKey { "agents.subscription" }
+    static var agentsSubscriptionActive: String { String(localized: "agents.subscriptionActive") }
+    static var agentsTurnOff: LocalizedStringKey { "agents.turnOff" }
+    static var agentsTurnOffTitle: LocalizedStringKey { "agents.turnOffTitle" }
+    static var agentsTurnOffMessage: LocalizedStringKey { "agents.turnOffMessage" }
+    static var agentsTurnOffConfirm: LocalizedStringKey { "agents.turnOffConfirm" }
+    static var agentsStep1: LocalizedStringKey { "agents.step1" }
+    static var agentsStep1Hint: LocalizedStringKey { "agents.step1Hint" }
+    static var agentsStep2: LocalizedStringKey { "agents.step2" }
+    static var agentsCopyShort: LocalizedStringKey { "agents.copyShort" }
+    static var agentsShare: LocalizedStringKey { "agents.share" }
+    static var agentsExpiresIn: LocalizedStringKey { "agents.expiresIn" }
+    static var agentsExpired: LocalizedStringKey { "agents.expired" }
+    static var agentsNewCode: LocalizedStringKey { "agents.newCode" }
+    static var agentsWaiting: LocalizedStringKey { "agents.waiting" }
+    static var agentsPairingFailed: LocalizedStringKey { "agents.pairingFailed" }
+    static func agentsConnectedTitle(_ name: String) -> String { String(localized: "agents.connectedTitle \(name)") }
+    static var agentsConnectedBody: LocalizedStringKey { "agents.connectedBody" }
     static var agentsManage: LocalizedStringKey { "agents.manage" }
 
     // MARK: Heart rate

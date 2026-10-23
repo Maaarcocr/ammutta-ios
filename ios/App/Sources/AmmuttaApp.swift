@@ -27,7 +27,10 @@ struct AmmuttaApp: App {
         let health: any HealthSyncing = uiTesting ? FakeHealthSync() : HealthKitSync()
         // The agent connector's address comes from the build (AMMUTTA_AGENT_SERVER_HOST); empty hides the feature.
         let agentHost = Bundle.main.object(forInfoDictionaryKey: "AmmuttaAgentServerHost") as? String ?? ""
-        let agentServer: (any AgentServer)? = uiTesting ? FakeAgentServer() : (agentHost.isEmpty ? nil : HTTPAgentServer(host: agentHost))
+        // In UI tests the agent signs in after about 18 seconds, so slow simulators still see the code.
+        let agentServer: (any AgentServer)? = uiTesting
+            ? FakeAgentServer(checksBeforeSignIn: 10)
+            : (agentHost.isEmpty ? nil : HTTPAgentServer(host: agentHost))
         let agentAccounts: any AgentAccountStore = uiTesting ? MemoryAgentAccountStore() : KeychainAgentAccountStore()
         let agentStore: any AgentStore = uiTesting ? FakeAgentStore() : StoreKitAgentStore()
         let model = AppModel(

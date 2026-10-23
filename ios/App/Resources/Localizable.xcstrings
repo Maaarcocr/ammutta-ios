@@ -13,22 +13,54 @@
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Serie %1$lld di %2$lld" } }
       }
     },
-    "agents.address" : {
+    "agents.connect" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Connector Address" } },
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Indirizzo del connettore" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Connect an Agent" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Collega un agente" } }
       }
     },
-    "agents.code" : {
+    "agents.connectedBody" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Pairing Code" } },
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Codice di abbinamento" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Ask it about your training, or for a new plan." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Chiedigli dei tuoi allenamenti o una nuova scheda." } }
       }
     },
-    "agents.codeNote" : {
+    "agents.connectedCount %lld" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "The code works once, for 10 minutes." } },
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Il codice vale una sola volta, per 10 minuti." } }
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : { "stringUnit" : { "state" : "translated", "value" : "%lld connected" } },
+              "other" : { "stringUnit" : { "state" : "translated", "value" : "%lld connected" } }
+            }
+          }
+        },
+        "it" : {
+          "variations" : {
+            "plural" : {
+              "one" : { "stringUnit" : { "state" : "translated", "value" : "%lld collegato" } },
+              "other" : { "stringUnit" : { "state" : "translated", "value" : "%lld collegati" } }
+            }
+          }
+        }
+      }
+    },
+    "agents.connectedDate %@" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Connected %@" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Collegato %@" } }
+      }
+    },
+    "agents.connectedHeader" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Connected Agents" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Agenti collegati" } }
+      }
+    },
+    "agents.connectedTitle %@" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ is connected" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "%@ è collegato" } }
       }
     },
     "agents.copied" : {
@@ -37,16 +69,16 @@
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Copiato" } }
       }
     },
-    "agents.copy" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Copy Address" } },
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Copia indirizzo" } }
-      }
-    },
     "agents.copyCode" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Copy Code" } },
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Copia codice" } }
+      }
+    },
+    "agents.copyShort" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Copy" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Copia" } }
       }
     },
     "agents.disconnect" : {
@@ -55,10 +87,34 @@
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Scollega tutti gli agenti" } }
       }
     },
-    "agents.getCode" : {
+    "agents.expired" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Get Pairing Code" } },
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Ottieni codice di abbinamento" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This code expired." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Questo codice è scaduto." } }
+      }
+    },
+    "agents.expiresIn" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Expires in" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Scade tra" } }
+      }
+    },
+    "agents.featurePrivate" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Only agents you connect" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Solo gli agenti che colleghi" } }
+      }
+    },
+    "agents.featureRead" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Reads your plans and workouts" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Legge schede e allenamenti" } }
+      }
+    },
+    "agents.featureWrite" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Writes plans for you" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Crea schede per te" } }
       }
     },
     "agents.manage" : {
@@ -67,28 +123,118 @@
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Gestisci abbonamento" } }
       }
     },
+    "agents.newCode" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "New Code" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Nuovo codice" } }
+      }
+    },
+    "agents.off" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Off" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Disattivati" } }
+      }
+    },
     "agents.offline" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Couldn't reach the connector. Ammutta will try again." } },
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Impossibile raggiungere il connettore. Ammutta riproverà." } }
       }
     },
-    "agents.redeem" : {
+    "agents.on" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Redeem Code" } },
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Riscatta codice" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "On" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Attivi" } }
       }
     },
-    "agents.subscribe" : {
+    "agents.pairingFailed" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Subscribe" } },
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Abbonati" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Couldn't get a code. Check your connection and try again." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Impossibile ottenere un codice. Controlla la connessione e riprova." } }
       }
     },
-    "agents.toggle" : {
+    "agents.pitchBody" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Connect AI Agents" } },
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Collega agenti IA" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Claude, ChatGPT and other AI agents can read your workouts and add plans to Ammutta." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Claude, ChatGPT e altri agenti IA possono leggere i tuoi allenamenti e aggiungere schede ad Ammutta." } }
+      }
+    },
+    "agents.pitchTitle" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Your training, in your AI" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "I tuoi allenamenti, nella tua IA" } }
+      }
+    },
+    "agents.share" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Share" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Condividi" } }
+      }
+    },
+    "agents.step1" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "1 · Add Ammutta to your agent" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "1 · Aggiungi Ammutta al tuo agente" } }
+      }
+    },
+    "agents.step1Hint" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "In Claude: Settings → Connectors → Add custom connector." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "In Claude: Impostazioni → Connettori → Aggiungi connettore personalizzato." } }
+      }
+    },
+    "agents.step2" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "2 · When it asks, enter this code" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "2 · Quando te lo chiede, inserisci questo codice" } }
+      }
+    },
+    "agents.subscription" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Subscription" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Abbonamento" } }
+      }
+    },
+    "agents.subscriptionActive" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Active" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Attivo" } }
+      }
+    },
+    "agents.synced %@" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Synced %@" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Sincronizzato %@" } }
+      }
+    },
+    "agents.turnOff" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Turn Off and Delete Data" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Disattiva ed elimina i dati" } }
+      }
+    },
+    "agents.turnOffConfirm" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Turn Off" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Disattiva" } }
+      }
+    },
+    "agents.turnOffMessage" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Every agent is disconnected and your data is deleted from Ammutta's server." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Tutti gli agenti vengono scollegati e i tuoi dati vengono eliminati dal server di Ammutta." } }
+      }
+    },
+    "agents.turnOffTitle" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Turn off AI agents?" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Disattivare gli agenti IA?" } }
+      }
+    },
+    "agents.waiting" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Waiting for your agent…" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "In attesa del tuo agente…" } }
       }
     },
     "alert.rest.body" : {
@@ -823,16 +969,16 @@
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Agenti IA" } }
       }
     },
+    "settings.connections" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Connections" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Collegamenti" } }
+      }
+    },
     "settings.defaultRest" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Default rest" } },
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Recupero predefinito" } }
-      }
-    },
-    "settings.health" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Apple Health" } },
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Apple Salute" } }
       }
     },
     "settings.healthSync" : {
@@ -841,22 +987,10 @@
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Sincronizza con Apple Salute" } }
       }
     },
-    "settings.heartRate" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Heart Rate" } },
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Frequenza cardiaca" } }
-      }
-    },
     "settings.language" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Language" } },
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Lingua" } }
-      }
-    },
-    "settings.sensor" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Sensor" } },
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Sensore" } }
       }
     },
     "settings.version" : {
