@@ -468,6 +468,25 @@ struct AppModelTests {
         #expect(server.snapshots.count == 1)
     }
 
+    /// The add-on was on, but the account is gone (a new phone without iCloud Keychain).
+    @Test func openingTheScreenMakesAMissingAccount() async throws {
+        let server = FakeAgentServer()
+        let accounts = MemoryAgentAccountStore()
+        let defaults = try makeDefaults()
+        defaults.set(true, forKey: "agentsEnabled")
+        let model = AppModel(
+            store: try AmmuttaStore(inMemory: true), defaults: defaults,
+            agentServer: server, agentStore: FakeAgentStore(), agentAccounts: accounts
+        )
+        model.load()
+        #expect(model.agents.isEnabled && accounts.account == nil)
+
+        model.agents.activate()
+        await model.agents.settled()
+        #expect(accounts.account != nil)
+        #expect(model.agents.isSubscribed)
+    }
+
     @Test func refreshSendsTheCurrentAppStoreTransaction() async throws {
         let server = FakeAgentServer()
         let appStore = FakeAgentStore()

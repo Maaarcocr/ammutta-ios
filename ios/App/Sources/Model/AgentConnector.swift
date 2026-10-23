@@ -349,7 +349,6 @@ final class AgentConnector {
             guard isEnabled != oldValue else { return }
             defaults.set(isEnabled, forKey: Keys.enabled)
             if isEnabled {
-                if accounts.load() == nil { accounts.save(.make()) }
                 refresh()
             } else {
                 turnOff()
@@ -358,8 +357,11 @@ final class AgentConnector {
     }
 
     /// Opening the AI Agents screen turns the add-on on (an account is made on the phone) and
-    /// checks the subscription. Nothing is sent until the subscription is active.
+    /// checks the subscription. Nothing is sent until the subscription is active. The account is
+    /// also made when the add-on was already on but the account is gone (a new phone without
+    /// iCloud Keychain), so the screen never gets stuck.
     func activate() {
+        if accounts.load() == nil { accounts.save(.make()) }
         if isEnabled { refresh() } else { isEnabled = true }
     }
 
