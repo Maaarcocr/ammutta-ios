@@ -712,7 +712,25 @@
         "en" : { "stringUnit" : { "state" : "translated", "value" : "New Plan" } },
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Nuova scheda" } }
       }
+    },    "plans.startEmpty.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Start an Empty Workout?" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Iniziare un allenamento libero?" } }
+      }
     },
+    "plans.startEmpty.confirm" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Start" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Inizia" } }
+      }
+    },
+    "plans.options" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Plan Options" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Opzioni scheda" } }
+      }
+    },
+
     "plans.startEmpty" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Start Empty Workout" } },
@@ -1022,8 +1040,14 @@
         "en" : { "stringUnit" : { "state" : "translated", "value" : "History" } },
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Storico" } }
       }
+    },    "tab.start" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Start Workout" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Allenamento" } }
+      }
     },
-    "tab.plans" : {
+
+    "plans.header" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Plans" } },
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Schede" } }

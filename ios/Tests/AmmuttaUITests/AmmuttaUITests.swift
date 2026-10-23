@@ -301,6 +301,10 @@ final class AmmuttaUITests: XCTestCase {
         let startEmpty = element(app, "plans.startEmpty")
         XCTAssertTrue(startEmpty.waitForExistence(timeout: 30))
         startEmpty.tap()
+        let alert = app.alerts.firstMatch
+        XCTAssertTrue(alert.waitForExistence(timeout: 30))
+        capture("27b-start-empty-alert")
+        alert.buttons.matching(identifier: "plans.confirmStartEmpty").firstMatch.tap()
 
         let add = element(app, "workout.addExercise")
         XCTAssertTrue(add.waitForExistence(timeout: 30))
@@ -386,6 +390,43 @@ final class AmmuttaUITests: XCTestCase {
         element(app, "summary.done").tap()
         // Back on the plan the workout started from.
         XCTAssertTrue(element(app, "plan.start").waitForExistence(timeout: 30))
+    }
+
+    /// The Start Workout screen's plan cards: duplicate, edit and delete (which asks first).
+    @MainActor
+    func testPlanCardMenu() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-ui-testing", "-seed-sample-plan", "-weightUnit", "kg"]
+        app.launch()
+
+        let cards = app.buttons.matching(identifier: "plans.row")
+        let menu = element(app, "plans.menu")
+        XCTAssertTrue(menu.waitForExistence(timeout: 30))
+        capture("33-start-workout")
+        menu.tap()
+        let duplicate = element(app, "plans.duplicate")
+        XCTAssertTrue(duplicate.waitForExistence(timeout: 30))
+        duplicate.tap()
+        XCTAssertTrue(cards.element(boundBy: 1).waitForExistence(timeout: 30))
+
+        menu.tap()
+        let edit = element(app, "plans.edit")
+        XCTAssertTrue(edit.waitForExistence(timeout: 30))
+        edit.tap()
+        let save = element(app, "planEditor.save")
+        XCTAssertTrue(save.waitForExistence(timeout: 30))
+        save.tap()
+
+        XCTAssertTrue(menu.waitForExistence(timeout: 30))
+        menu.tap()
+        let delete = element(app, "plans.delete")
+        XCTAssertTrue(delete.waitForExistence(timeout: 30))
+        delete.tap()
+        let alert = app.alerts.firstMatch
+        XCTAssertTrue(alert.waitForExistence(timeout: 30))
+        alert.buttons.matching(identifier: "plans.confirmDelete").firstMatch.tap()
+        XCTAssertTrue(cards.element(boundBy: 1).waitForNonExistence(timeout: 30))
     }
 
     /// Every element the tests tap is a button (list rows with NavigationLink included).
