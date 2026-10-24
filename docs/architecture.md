@@ -194,9 +194,9 @@ protocol TimerAlerting: Sendable {
 }
 ```
 
-- The `AlarmKitAlerting` implementation schedules countdown alarms whose presentation (Lock Screen, Dynamic Island, StandBy) comes from the widget extension.
-- The `NotificationAlerting` implementation uses time-sensitive `UNNotificationRequest`s with a time-interval trigger. It needs the Time Sensitive Notifications capability.
-- `CompositeAlerting` picks the best authorized backend at runtime and re-evaluates it whenever the app returns to the foreground.
+- The `AlarmKitAlerting` implementation schedules one fixed-time alarm (`Alarm.Schedule.fixed`) with only an alert presentation, so no AlarmKit widget is needed: the workout's Live Activity shows the countdown. Every change cancels the app's alarms first, which also clears any left over from before a relaunch.
+- The `NotificationAlerting` implementation uses `UNNotificationRequest`s with a time-interval trigger. Time-sensitive delivery would need the Time Sensitive Notifications capability (not added yet).
+- `SystemAlerting` uses AlarmKit when it is allowed and notifications when alarms are declined, so exactly one holds the pending alert. Both play `rest-chime.wav`.
 - Alert IDs are derived deterministically from `(workoutID, exerciseIndex, setIndex, kind)`. Rescheduling replaces rather than duplicates, and cleanup on finish or discard is exhaustive.
 
 ## 7. Live Activity (`AmmuttaLiveActivity` + `Widgets/`)
@@ -326,7 +326,7 @@ The first prototype implements the core loop and deliberately simplifies some of
 | --- | --- | --- |
 | Modules | `AmmuttaCore` + `AmmuttaPersistence` in the package; screens, app model and formatting live in the app target | `AmmuttaFeatures` and the service packages (§3) as features arrive |
 | Persistence | `AmmuttaStore` on the main actor; plans and workouts stored as one JSON blob per row with scalar columns for queries | Background `ModelActor` (§5) |
-| Timers | Deadlines in the engine; in-app task and haptic while open; one local notification per workout, derived purely from state (`Workout.pendingTimerAlert`) and replaced in order on every event, so the phone alerts on time when locked | AlarmKit as the primary path, Live Activity (§4.3, §6, §7) |
+| Timers | Deadlines in the engine; in-app task and haptic while open; one AlarmKit alarm (or a notification when alarms are declined) per workout, derived purely from state (`Workout.pendingTimerAlert`) and replaced in order on every event, so the phone alerts on time when locked | Time-sensitive notifications for the fallback (§4.3, §6, §7) |
 | Formatting | `Format` in the app target, tested on iOS | `Formatting` in the core (§4.4) |
 | Not yet built | QR/file/CSV sharing (plan links are built), export, personal bests, archiving exercises | §7–§9, product spec §11–§12 |
 

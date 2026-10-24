@@ -13,8 +13,8 @@ struct TimerAlertRequest: Equatable, Sendable {
 }
 
 /// Delivers timer alerts when the app is in the background, the phone is locked, or the app
-/// isn't running. Product spec §6.4: AlarmKit is the target primary path; local notifications
-/// (its fallback) are implemented first.
+/// isn't running. Product spec §6.4: AlarmKit alarms first (`AlarmKitAlerting`), local
+/// notifications when alarms are declined (`SystemAlerting` picks).
 @MainActor
 protocol TimerAlerting: AnyObject, Sendable {
     func authorization() async -> AlertAuthorization
@@ -23,7 +23,8 @@ protocol TimerAlerting: AnyObject, Sendable {
     func replace(id: String, with alert: TimerAlertRequest?) async
 }
 
-/// Local notifications. Only Sendable values cross into the UserNotifications calls.
+/// Local notifications, the fallback when AlarmKit is declined. Only Sendable values cross
+/// into the UserNotifications calls.
 @MainActor
 final class NotificationAlerting: TimerAlerting {
     func authorization() async -> AlertAuthorization {
@@ -65,7 +66,7 @@ final class NotificationAlerting: TimerAlerting {
         let content = UNMutableNotificationContent()
         content.title = alert.title
         content.body = alert.body
-        content.sound = .default
+        content.sound = UNNotificationSound(named: UNNotificationSoundName(TimerSound.fileName))
         content.interruptionLevel = .active
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: delay, repeats: false)
         try? await center.add(UNNotificationRequest(identifier: id, content: content, trigger: trigger))
