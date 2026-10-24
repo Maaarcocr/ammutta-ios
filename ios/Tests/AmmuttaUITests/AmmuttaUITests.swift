@@ -56,8 +56,21 @@ final class AmmuttaUITests: XCTestCase {
         done.tap()
 
         app.tabBars.buttons.element(boundBy: 2).tap()
-        XCTAssertTrue(element(app, "history.row").waitForExistence(timeout: 30))
+        let historyRow = element(app, "history.row")
+        XCTAssertTrue(historyRow.waitForExistence(timeout: 30))
         capture("09-history")
+
+        // Correct the finished workout: add a set and save.
+        historyRow.tap()
+        let editWorkout = element(app, "history.edit")
+        XCTAssertTrue(editWorkout.waitForExistence(timeout: 30))
+        editWorkout.tap()
+        let addSet = element(app, "edit.addSet")
+        XCTAssertTrue(addSet.waitForExistence(timeout: 30))
+        addSet.tap()
+        capture("09b-edit-workout")
+        element(app, "edit.save").tap()
+        XCTAssertTrue(editWorkout.waitForExistence(timeout: 30))
 
         app.tabBars.buttons.element(boundBy: 1).tap()
         capture("10-exercises")

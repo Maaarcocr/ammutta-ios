@@ -146,6 +146,29 @@ public struct Workout: Hashable, Codable, Sendable, Identifiable {
         }
     }
 
+    /// Checks a finished workout after editing: it ends after it starts, every exercise keeps
+    /// 1–20 sets of its own kind, and every value is a valid result.
+    public func validateAsFinished() throws(ValidationError) {
+        guard let endedAt, endedAt > startedAt else { throw .times }
+        for exercise in exercises {
+            guard Limits.setsPerExercise.contains(exercise.sets.count) else { throw .setCount }
+            for set in exercise.sets {
+                guard set.value.kind == exercise.kind else { throw .kindMismatch }
+                try set.value.validateAsResult()
+            }
+        }
+    }
+
+    public var isValidFinished: Bool {
+        do { try validateAsFinished(); return true } catch { return false }
+    }
+
+    /// Drops heart-rate readings outside the workout's times, for example after its end moved earlier.
+    public mutating func trimHeartRateToTimes() {
+        guard let endedAt else { return }
+        heartRate.removeAll { $0.date < startedAt || $0.date > endedAt }
+    }
+
     /// True when the workout's exercises, or their order, differ from the plan's.
     public func changesExercises(of plan: Plan) -> Bool {
         exercises.map(\.exercise) != plan.exercises.map(\.exercise)

@@ -38,6 +38,14 @@ public struct HealthSyncQueue: Hashable, Codable, Sendable {
         }
     }
 
+    /// Rewrites a workout already in Health, for example after its times were edited: any pending
+    /// job for it is dropped, then it's deleted and saved again. Both steps are idempotent.
+    public mutating func enqueueReplacement(of id: WorkoutID) {
+        jobs.removeAll { $0.workoutID == id }
+        jobs.append(.delete(id))
+        jobs.append(.save(id))
+    }
+
     /// Removes a job once it succeeded.
     public mutating func complete(_ job: HealthSyncJob) {
         if let index = jobs.firstIndex(of: job) {

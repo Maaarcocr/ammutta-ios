@@ -222,6 +222,41 @@ struct AppModelTests {
         #expect(!second.workout.changesExercises(of: updated))
     }
 
+    @Test func editingAFinishedWorkoutSavesItAndRewritesHealthOnlyForNewTimes() async throws {
+        let health = FakeHealthSync()
+        let model = AppModel(store: try AmmuttaStore(inMemory: true), defaults: try makeDefaults(), healthService: health)
+        model.load()
+        model.health.isEnabled = true
+        await model.health.authorizeAndRun()
+        model.startWorkout(from: legDay())
+        let session = try #require(model.session)
+        session.send(.logSet(try #require(session.workout.nextPendingSetID)))
+        session.send(.finish)
+        model.closeFinishedSession()
+        await model.health.settled()
+        let original = try #require(model.history.first)
+        #expect(health.saved == [original.id])
+
+        var heavier = original
+        heavier.exercises[0].sets[0].value = .reps(count: 5, weight: .kilograms(120))
+        model.updateFinishedWorkout(heavier)
+        await model.health.settled()
+        #expect(model.workout(original.id)?.exercises[0].sets[0].value == .reps(count: 5, weight: .kilograms(120)))
+        #expect(health.deleted.isEmpty, "Health has no sets, so a value change doesn't touch it")
+
+        var earlier = try #require(model.workout(original.id))
+        earlier.startedAt = original.startedAt.addingTimeInterval(-600)
+        model.updateFinishedWorkout(earlier)
+        await model.health.settled()
+        #expect(health.deleted == [original.id], "new times: deleted from Health...")
+        #expect(health.saved == [original.id], "...and saved again")
+
+        var broken = earlier
+        broken.endedAt = broken.startedAt
+        model.updateFinishedWorkout(broken)
+        #expect(model.workout(original.id)?.endedAt != broken.startedAt, "invalid edits are ignored")
+    }
+
     @Test func activeWorkoutIsRestoredOnRelaunch() throws {
         let store = try AmmuttaStore(inMemory: true)
         let defaults = try makeDefaults()
