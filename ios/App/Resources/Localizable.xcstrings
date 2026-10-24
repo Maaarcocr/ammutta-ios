@@ -998,7 +998,82 @@
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Workout Complete" } },
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Fine allenamento" } }
       }
-    },    "history.edit.title" : {
+    },
+    "settings.data" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Your Data" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "I tuoi dati" } }
+      }
+    },
+    "settings.exportBackup" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Export Backup" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Esporta backup" } }
+      }
+    },
+    "settings.backupName" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Ammutta Backup" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Backup di Ammutta" } }
+      }
+    },
+    "settings.restoreBackup" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Restore Backup" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Ripristina backup" } }
+      }
+    },
+    "settings.restore.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Replace All Your Data?" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Sostituire tutti i tuoi dati?" } }
+      }
+    },
+    "settings.restore.message" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Your plans, exercises, history and settings are replaced by the ones in the backup." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Schede, esercizi, storico e impostazioni vengono sostituiti da quelli del backup." } }
+      }
+    },
+    "settings.restore.confirm" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Replace" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Sostituisci" } }
+      }
+    },
+    "settings.importHistory" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Import from Strong or Hevy" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Importa da Strong o Hevy" } }
+      }
+    },
+    "settings.fileError" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This File Can’t Be Read" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Impossibile leggere il file" } }
+      }
+    },
+    "settings.imported %lld" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : { "stringUnit" : { "state" : "translated", "value" : "Imported %lld Workout" } },
+              "other" : { "stringUnit" : { "state" : "translated", "value" : "Imported %lld Workouts" } }
+            }
+          }
+        },
+        "it" : {
+          "variations" : {
+            "plural" : {
+              "one" : { "stringUnit" : { "state" : "translated", "value" : "Importato %lld allenamento" } },
+              "other" : { "stringUnit" : { "state" : "translated", "value" : "Importati %lld allenamenti" } }
+            }
+          }
+        }
+      }
+    },
+    "history.edit.title" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Edit Workout" } },
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Modifica allenamento" } }
@@ -1022,7 +1097,6 @@
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Completata" } }
       }
     },
-
     "summary.volume" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Volume" } },

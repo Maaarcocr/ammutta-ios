@@ -222,6 +222,50 @@ struct AppModelTests {
         #expect(!second.workout.changesExercises(of: updated))
     }
 
+    @Test func aBackupRestoresEverythingOnAnotherPhone() throws {
+        let phone = AppModel(store: try AmmuttaStore(inMemory: true), defaults: try makeDefaults())
+        phone.load()
+        phone.weightUnit = .pounds
+        phone.save(CustomExercise(name: "Band Pull-Apart", kind: .reps, createdAt: .now))
+        let plan = legDay()
+        phone.save(plan)
+        phone.startWorkout(from: plan)
+        let session = try #require(phone.session)
+        session.send(.logSet(try #require(session.workout.nextPendingSetID)))
+        session.send(.finish)
+        phone.closeFinishedSession()
+        let data = try phone.backup().encoded()
+
+        let newPhone = AppModel(store: try AmmuttaStore(inMemory: true), defaults: try makeDefaults())
+        newPhone.load()
+        newPhone.weightUnit = .kilograms
+        newPhone.save(Plan(name: "Old", exercises: [.make(exercise: .builtIn(key: "plank"), kind: .duration, restSeconds: 60)], createdAt: .now))
+        newPhone.restore(try AmmuttaBackup.decode(data))
+        #expect(newPhone.plans.map(\.name) == ["Legs"], "the backup replaces what was there")
+        #expect(newPhone.history.map(\.id) == phone.history.map(\.id))
+        #expect(newPhone.customExercises.map(\.name) == ["Band Pull-Apart"])
+        #expect(newPhone.weightUnit == .pounds)
+    }
+
+    @Test func importingHistoryMatchesExercisesAndSkipsWhatsAlreadyThere() throws {
+        let model = AppModel(store: try AmmuttaStore(inMemory: true), defaults: try makeDefaults())
+        model.load()
+        let start = Date(timeIntervalSince1970: 1_750_000_000)
+        let imported = [ImportedWorkout(title: "Push", startedAt: start, endedAt: start.addingTimeInterval(3600), exercises: [
+            ImportedExercise(name: "Bench Press (Barbell)", kind: .reps, sets: [.reps(count: 5, weight: .kilograms(80))]),
+            ImportedExercise(name: "Zercher Squat (Barbell)", kind: .reps, sets: [.reps(count: 8, weight: .kilograms(60))]),
+        ])]
+        #expect(model.importHistory(imported) == 1)
+        let workout = try #require(model.history.first)
+        #expect(workout.exercises[0].exercise == .builtIn(key: "barbell-bench-press"))
+        #expect(model.customExercises.map(\.name) == ["Zercher Squat (Barbell)"])
+        #expect(workout.exercises[1].exercise == model.customExercises[0].ref)
+
+        #expect(model.importHistory(imported) == 0, "importing the same file twice adds nothing")
+        #expect(model.history.count == 1)
+        #expect(model.customExercises.count == 1)
+    }
+
     @Test func editingAFinishedWorkoutSavesItAndRewritesHealthOnlyForNewTimes() async throws {
         let health = FakeHealthSync()
         let model = AppModel(store: try AmmuttaStore(inMemory: true), defaults: try makeDefaults(), healthService: health)
