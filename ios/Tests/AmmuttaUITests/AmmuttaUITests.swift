@@ -65,12 +65,21 @@ final class AmmuttaUITests: XCTestCase {
         let editWorkout = element(app, "history.edit")
         XCTAssertTrue(editWorkout.waitForExistence(timeout: 30))
         editWorkout.tap()
-        let addSet = element(app, "edit.addSet")
-        XCTAssertTrue(addSet.waitForExistence(timeout: 30))
-        addSet.tap()
+        // Open the first set and type a new weight.
+        let firstSet = element(app, "edit.set")
+        XCTAssertTrue(firstSet.waitForExistence(timeout: 30))
+        firstSet.tap()
+        let weight = app.textFields.matching(identifier: "edit.weight").firstMatch
+        XCTAssertTrue(weight.waitForExistence(timeout: 30))
+        weight.tap()
+        weight.typeText("42")
         capture("09b-edit-workout")
+        element(app, "keyboard.done").tap()
+        element(app, "edit.addSet").tap()
         element(app, "edit.save").tap()
         XCTAssertTrue(editWorkout.waitForExistence(timeout: 30))
+        let edited = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "42")).firstMatch
+        XCTAssertTrue(edited.waitForExistence(timeout: 30), "the new weight is saved")
 
         app.tabBars.buttons.element(boundBy: 1).tap()
         capture("10-exercises")

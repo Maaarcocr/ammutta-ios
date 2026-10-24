@@ -509,7 +509,7 @@ struct SetField: Hashable {
 /// A label, then [−] typeable number [+]. Typing handles big jumps (120 kg); the buttons
 /// handle small ones. Tapping the number empties it (the old value stays as a grey hint), so
 /// typing replaces it; the value is applied when the field loses focus. Empty keeps the old value.
-private struct NumberStepper: View {
+struct NumberStepper: View {
     let title: String
     @Binding var value: Double
     let step: Double
@@ -558,6 +558,11 @@ private struct NumberStepper: View {
                     .onAppear { text = formatted }
                     .onChange(of: isFocused) { _, focused in
                         if focused { text = "" } else { commit() }
+                    }
+                    // Typed numbers apply right away, so a Save or log tapped mid-typing keeps them.
+                    .onChange(of: text) { _, typed in
+                        guard isFocused, let number = try? Double(typed.trimmingCharacters(in: .whitespaces), format: .number) else { return }
+                        value = number
                     }
                     .onChange(of: value) { _, _ in
                         if !isFocused { text = formatted }

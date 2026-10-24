@@ -203,7 +203,7 @@ Rest timers and duration-set countdowns must alert the user reliably when the ph
 
 - **History list**: completed workouts, newest first, grouped by month. Each shows the plan name, date, duration and a set and volume summary.
 - **Workout detail**: every set with its logged values and timestamps, the rest actually taken between sets, and a heart-rate chart when samples exist.
-- **Edit after finishing** (History → workout → Edit): logged values, whether each set was done, adding or removing sets, and start and end times can all be corrected later. Only time changes reach Apple Health (§9), which stores no sets: the workout is deleted there and saved again. Heart rate outside the new times is dropped.
+- **Edit after finishing** (History → workout → Edit, laid out like the workout screen: tap a set for its − value + controls, tap its circle to mark it done or not): logged values, whether each set was done, adding or removing sets, and start and end times can all be corrected later. Only time changes reach Apple Health (§9), which stores no sets: the workout is deleted there and saved again. Heart rate outside the new times is dropped.
 - **Delete** a workout, with confirmation. This also removes it from Apple Health if Ammutta wrote it there.
 - **Progress** is surfaced in the exercise detail (§4.3) and as "last time" hints during workouts. Charts are a candidate for v1.x, not v1.
 
