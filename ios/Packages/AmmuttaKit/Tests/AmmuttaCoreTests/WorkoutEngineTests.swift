@@ -298,6 +298,45 @@ struct ChangingExercisesTests {
     }
 }
 
+struct EditingFinishedWorkoutsTests {
+    private func finished() throws -> Workout {
+        let w0 = Workout.start(from: makePlan(), now: t0)
+        let ids = w0.exercises.flatMap(\.sets).map(\.id)
+        return try reduce(w0, [.logSet(ids[0]), .logSet(ids[1]), .finish], at: [60, 180, 1800])
+    }
+
+    @Test func aFinishedWorkoutValidatesItsTimesSetsAndValues() throws {
+        var w = try finished()
+        #expect(w.isValidFinished)
+
+        w.endedAt = w.startedAt
+        #expect(throws: ValidationError.times) { try w.validateAsFinished() }
+
+        w = try finished()
+        w.exercises[0].sets[0].value = .reps(count: 1000, weight: nil)
+        #expect(throws: ValidationError.reps) { try w.validateAsFinished() }
+
+        w = try finished()
+        w.exercises[0].sets.removeAll()
+        #expect(throws: ValidationError.setCount) { try w.validateAsFinished() }
+
+        w = try finished()
+        w.exercises[1].sets[0].value = .reps(count: 5, weight: nil)
+        #expect(throws: ValidationError.kindMismatch) { try w.validateAsFinished() }
+    }
+
+    @Test func heartRateOutsideTheTimesIsDropped() throws {
+        var w = try finished()
+        w.heartRate = [
+            HeartRateSample(date: t0.addingTimeInterval(30), bpm: 100),
+            HeartRateSample(date: t0.addingTimeInterval(1500), bpm: 140),
+        ]
+        w.endedAt = t0.addingTimeInterval(1200)
+        w.trimHeartRateToTimes()
+        #expect(w.heartRate.map(\.bpm) == [100])
+    }
+}
+
 struct FinishTests {
     @Test func finishingStopsTimersAndLocksTheWorkout() throws {
         let w0 = Workout.start(from: makePlan(), now: t0)

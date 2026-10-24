@@ -160,6 +160,10 @@ enum L10n {
 
     // MARK: Summary
     static var summaryTitle: LocalizedStringKey { "summary.title" }
+    static var historyEditTitle: LocalizedStringKey { "history.edit.title" }
+    static var historyEditStart: LocalizedStringKey { "history.edit.start" }
+    static var historyEditEnd: LocalizedStringKey { "history.edit.end" }
+    static var historyEditSetDone: LocalizedStringKey { "history.edit.setDone" }
     static var summarySaveAsPlan: LocalizedStringKey { "summary.saveAsPlan" }
     static var summarySavedAsPlan: LocalizedStringKey { "summary.savedAsPlan" }
     static var summaryPlanUpdated: LocalizedStringKey { "summary.planUpdated" }

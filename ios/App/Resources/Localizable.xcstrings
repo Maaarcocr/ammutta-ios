@@ -998,7 +998,31 @@
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Workout Complete" } },
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Fine allenamento" } }
       }
+    },    "history.edit.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Edit Workout" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Modifica allenamento" } }
+      }
     },
+    "history.edit.start" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Start" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Inizio" } }
+      }
+    },
+    "history.edit.end" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "End" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Fine" } }
+      }
+    },
+    "history.edit.setDone" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Done" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Completata" } }
+      }
+    },
+
     "summary.volume" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Volume" } },

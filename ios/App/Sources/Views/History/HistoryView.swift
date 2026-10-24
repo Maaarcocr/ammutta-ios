@@ -87,6 +87,7 @@ struct WorkoutDetailView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
     @State private var confirmingDelete = false
+    @State private var editing: Workout?
 
     var body: some View {
         if let workout = model.workout(workoutID) {
@@ -95,12 +96,19 @@ struct WorkoutDetailView: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .primaryAction) {
+                        Button(L10n.edit) { editing = workout }
+                            .accessibilityIdentifier("history.edit")
+                    }
+                    ToolbarItem(placement: .primaryAction) {
                         Button(role: .destructive) {
                             confirmingDelete = true
                         } label: {
                             Label(L10n.delete, systemImage: "trash")
                         }
                     }
+                }
+                .sheet(item: $editing) { workout in
+                    WorkoutEditorView(workout: workout)
                 }
                 .alert(L10n.historyDeleteTitle, isPresented: $confirmingDelete) {
                     Button(L10n.delete, role: .destructive) {
@@ -109,6 +117,92 @@ struct WorkoutDetailView: View {
                     }
                     Button(L10n.cancel, role: .cancel) {}
                 }
+        }
+    }
+}
+
+/// Corrections to a finished workout: its times, each set's value and whether it was done,
+/// plus adding and removing sets.
+struct WorkoutEditorView: View {
+    @Environment(AppModel.self) private var model
+    @Environment(\.dismiss) private var dismiss
+    @State private var workout: Workout
+    @State private var endedAt: Date
+
+    init(workout: Workout) {
+        _workout = State(initialValue: workout)
+        _endedAt = State(initialValue: workout.endedAt ?? workout.startedAt)
+    }
+
+    private var edited: Workout {
+        var edited = workout
+        edited.endedAt = endedAt
+        return edited
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    DatePicker(L10n.historyEditStart, selection: $workout.startedAt)
+                    DatePicker(L10n.historyEditEnd, selection: $endedAt, in: workout.startedAt...)
+                }
+                ForEach($workout.exercises) { $exercise in
+                    Section(model.name(of: exercise.exercise, snapshot: exercise.nameSnapshot)) {
+                        ForEach($exercise.sets) { $set in
+                            let number = (exercise.sets.firstIndex { $0.id == set.id } ?? 0) + 1
+                            EditedSetRow(number: number, set: $set, doneAt: endedAt, unit: model.weightUnit)
+                        }
+                        .onDelete { offsets in
+                            guard exercise.sets.count - offsets.count >= Limits.setsPerExercise.lowerBound else { return }
+                            exercise.sets.remove(atOffsets: offsets)
+                        }
+                        Button {
+                            let value = exercise.sets.last?.value ?? .defaultValue(for: exercise.kind)
+                            exercise.sets.append(WorkoutSet(target: value, value: value, status: .logged(at: endedAt)))
+                        } label: {
+                            Label(L10n.addSet, systemImage: "plus")
+                        }
+                        .disabled(exercise.sets.count >= Limits.setsPerExercise.upperBound)
+                        .accessibilityIdentifier("edit.addSet")
+                    }
+                }
+            }
+            .navigationTitle(L10n.historyEditTitle)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(L10n.cancel) { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(L10n.save) {
+                        model.updateFinishedWorkout(edited)
+                        dismiss()
+                    }
+                    .disabled(!edited.isValidFinished)
+                    .accessibilityIdentifier("edit.save")
+                }
+            }
+        }
+    }
+}
+
+/// One set in the workout editor: its value, and whether it was done.
+private struct EditedSetRow: View {
+    let number: Int
+    @Binding var set: WorkoutSet
+    /// When a set newly marked as done counts as logged.
+    let doneAt: Date
+    let unit: WeightUnit
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            SetTargetEditor(number: number, value: $set.value, unit: unit)
+            Toggle(L10n.historyEditSetDone, isOn: Binding(
+                get: { set.status.isLogged },
+                set: { done in set.status = done ? .logged(at: set.status.loggedAt ?? doneAt) : .pending }
+            ))
+            .accessibilityIdentifier("edit.setDone")
         }
     }
 }

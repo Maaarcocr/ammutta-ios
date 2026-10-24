@@ -126,7 +126,8 @@ struct PlanExerciseEditor: View {
     }
 }
 
-private struct SetTargetEditor: View {
+/// Reps and weight, or a duration, for one set. Used by the plan editor and the workout editor.
+struct SetTargetEditor: View {
     let number: Int
     @Binding var value: SetValue
     let unit: WeightUnit

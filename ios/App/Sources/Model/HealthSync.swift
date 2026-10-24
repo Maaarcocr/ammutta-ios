@@ -156,6 +156,13 @@ final class HealthSync {
         run()
     }
 
+    /// The workout's times changed: Health gets it again with the new times.
+    func workoutEdited(_ id: WorkoutID) {
+        guard isEnabled else { return }
+        update { $0.enqueueReplacement(of: id) }
+        run()
+    }
+
     func workoutDeleted(_ id: WorkoutID) {
         guard isEnabled else { return }
         update { $0.enqueue(.delete(id)) }
