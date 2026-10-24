@@ -220,6 +220,8 @@ struct AppModelTests {
         #expect(model.importHistory(imported) == 0, "importing the same file twice adds nothing")
         #expect(model.history.count == 1)
         #expect(model.customExercises.count == 1)
+    }
+
     @Test func editingAFinishedWorkoutSavesItAndRewritesHealthOnlyForNewTimes() async throws {
         let health = FakeHealthSync()
         let model = AppModel(store: try AmmuttaStore(inMemory: true), defaults: try makeDefaults(), healthService: health)
