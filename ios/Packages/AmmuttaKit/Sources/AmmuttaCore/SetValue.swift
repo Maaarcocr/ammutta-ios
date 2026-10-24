@@ -110,4 +110,6 @@ public enum ValidationError: Error, Equatable, Sendable {
     case duration
     case rest
     case kindMismatch
+    /// A finished workout must end after it starts.
+    case times
 }

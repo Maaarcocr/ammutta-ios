@@ -363,6 +363,24 @@ final class AppModel {
         )
     }
 
+    /// Saves corrections to a finished workout. Health only stores its times (and heart rate),
+    /// so it's rewritten there only when those changed.
+    func updateFinishedWorkout(_ edited: Workout) {
+        guard edited.isValidFinished, let original = workout(edited.id) else { return }
+        var workout = edited
+        workout.trimHeartRateToTimes()
+        do {
+            try store.save(workout)
+            if workout.startedAt != original.startedAt || workout.endedAt != original.endedAt {
+                health.workoutEdited(workout.id)
+            }
+            agents.dataChanged()
+        } catch {
+            report(error)
+        }
+        reloadHistory()
+    }
+
     func deleteWorkout(_ id: WorkoutID) {
         do {
             try store.deleteWorkout(id)

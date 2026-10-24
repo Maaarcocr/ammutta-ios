@@ -36,6 +36,18 @@ struct HealthSyncQueueTests {
         #expect(queue.jobs == [.save(other), .delete(id)])
     }
 
+    @Test func replacingDeletesThenSavesAgain() {
+        let id = WorkoutID()
+        let other = WorkoutID()
+        var queue = HealthSyncQueue()
+        queue.enqueue(.save(id))
+        queue.enqueue(.save(other))
+        queue.enqueueReplacement(of: id)
+        #expect(queue.jobs == [.save(other), .delete(id), .save(id)])
+        queue.enqueueReplacement(of: id)
+        #expect(queue.jobs == [.save(other), .delete(id), .save(id)], "replacing twice keeps one pair")
+    }
+
     @Test func survivesEncoding() throws {
         var queue = HealthSyncQueue()
         queue.enqueue(.save(WorkoutID()))
