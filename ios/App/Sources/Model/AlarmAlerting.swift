@@ -26,7 +26,7 @@ final class AlarmKitAlerting: TimerAlerting {
     }
 
     func replace(id: String, with alert: TimerAlertRequest?) async {
-        await Self.schedule(title: alert?.title, at: alert?.fireDate)
+        await Self.schedule(title: alert?.title, at: alert?.fireDate, stopLabel: L10n.alarmStop)
     }
 
     private static func map(_ state: AlarmManager.AuthorizationState) -> AlertAuthorization {
@@ -47,17 +47,28 @@ final class AlarmKitAlerting: TimerAlerting {
 
     /// An active workout has at most one pending alert, so every change first cancels the
     /// app's alarms, including any left over from before a relaunch.
-    private nonisolated static func schedule(title: String?, at date: Date?) async {
+    private nonisolated static func schedule(title: String?, at date: Date?, stopLabel: LocalizedStringResource) async {
         let manager = AlarmManager.shared
         for alarm in (try? manager.alarms) ?? [] {
             try? manager.cancel(id: alarm.id)
         }
         guard let title, let date, date > .now else { return }
-        let alert = AlarmPresentation.Alert(
-            title: LocalizedStringResource(stringLiteral: title),
-            secondaryButton: nil,
-            secondaryButtonBehavior: nil
-        )
+        let alert: AlarmPresentation.Alert
+        if #available(iOS 26.1, *) {
+            alert = AlarmPresentation.Alert(
+                title: LocalizedStringResource(stringLiteral: title),
+                secondaryButton: nil,
+                secondaryButtonBehavior: nil
+            )
+        } else {
+            // iOS 26.0 needs the stop button spelled out.
+            alert = AlarmPresentation.Alert(
+                title: LocalizedStringResource(stringLiteral: title),
+                stopButton: AlarmButton(text: stopLabel, textColor: .white, systemImageName: "stop.circle"),
+                secondaryButton: nil,
+                secondaryButtonBehavior: nil
+            )
+        }
         let attributes = AlarmAttributes<TimerAlarmMetadata>(
             presentation: AlarmPresentation(alert: alert),
             metadata: TimerAlarmMetadata(),
