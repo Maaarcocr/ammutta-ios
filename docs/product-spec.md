@@ -312,6 +312,7 @@ Rest timers and duration-set countdowns must alert the user reliably when the ph
 
 - **Export everything** to a single versioned JSON file, saved through the system share sheet or Files. It contains exercises, plans, history, heart-rate samples and settings.
 - **Import a full export** into an empty app, or replace existing data after confirmation. This is the migration path between phones that doesn't depend on any Ammutta service.
+- *Built so far:* **Export Backup** (a versioned JSON file through the share sheet: exercises, plans, finished workouts with heart rate, weight unit and default rest), **Restore Backup** (replaces everything after a confirmation; Apple Health is left alone), and **Import from Strong or Hevy**: their CSV exports become finished workouts in history. Exercise names match built-ins (for example "Bench Press (Dumbbell)" → Dumbbell Bench Press), then your own exercises, otherwise new ones are created. Cardio rows and Strong's rest-timer rows are skipped, a plain Strong "Weight" column is read in your unit, and importing the same file twice adds nothing. Imported workouts aren't sent to Apple Health. Delete all data isn't built yet.
 - **Delete all data** in Settings, with confirmation. It does not touch Apple Health data unless the user also chooses "Remove Ammutta workouts from Apple Health".
 
 ## 13. Settings

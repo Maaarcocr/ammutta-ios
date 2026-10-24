@@ -160,6 +160,16 @@ enum L10n {
 
     // MARK: Summary
     static var summaryTitle: LocalizedStringKey { "summary.title" }
+    static var settingsData: LocalizedStringKey { "settings.data" }
+    static var settingsExportBackup: LocalizedStringKey { "settings.exportBackup" }
+    static var settingsBackupName: String { String(localized: "settings.backupName") }
+    static var settingsRestoreBackup: LocalizedStringKey { "settings.restoreBackup" }
+    static var settingsRestoreTitle: LocalizedStringKey { "settings.restore.title" }
+    static var settingsRestoreMessage: LocalizedStringKey { "settings.restore.message" }
+    static var settingsRestoreConfirm: LocalizedStringKey { "settings.restore.confirm" }
+    static var settingsImportHistory: LocalizedStringKey { "settings.importHistory" }
+    static var settingsFileError: LocalizedStringKey { "settings.fileError" }
+    static func settingsImported(_ count: Int) -> String { String(localized: "settings.imported \(count)") }
     static var summarySaveAsPlan: LocalizedStringKey { "summary.saveAsPlan" }
     static var summarySavedAsPlan: LocalizedStringKey { "summary.savedAsPlan" }
     static var summaryPlanUpdated: LocalizedStringKey { "summary.planUpdated" }

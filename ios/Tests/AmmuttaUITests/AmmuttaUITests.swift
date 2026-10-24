@@ -433,6 +433,34 @@ final class AmmuttaUITests: XCTestCase {
         XCTAssertTrue(cards.element(boundBy: 1).waitForNonExistence(timeout: 30))
     }
 
+    /// Your data in Settings: restore and import open the file picker; export opens the share sheet.
+    @MainActor
+    func testYourDataActions() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-ui-testing", "-seed-sample-plan", "-weightUnit", "kg"]
+
+        for action in ["settings.restoreBackup", "settings.importHistory"] {
+            app.launch()
+            app.tabBars.buttons.element(boundBy: 3).tap()
+            let button = element(app, action)
+            XCTAssertTrue(button.waitForExistence(timeout: 30))
+            button.tap()
+            sleep(2)
+            XCTAssertEqual(app.state, .runningForeground)
+            app.terminate()
+        }
+
+        app.launch()
+        app.tabBars.buttons.element(boundBy: 3).tap()
+        let export = element(app, "settings.exportBackup")
+        XCTAssertTrue(export.waitForExistence(timeout: 30))
+        capture("34-your-data")
+        export.tap()
+        XCTAssertTrue(app.otherElements["ActivityListView"].waitForExistence(timeout: 30))
+        XCTAssertEqual(app.state, .runningForeground)
+    }
+
     /// Every element the tests tap is a button (list rows with NavigationLink included).
     /// Querying buttons only is much cheaper than `descendants(matching: .any)`, which
     /// timed out on slow CI simulators.

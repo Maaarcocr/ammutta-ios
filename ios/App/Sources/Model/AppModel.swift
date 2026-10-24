@@ -488,3 +488,97 @@ final class AppModel {
         save(plan)
     }
 }
+
+// MARK: Your data (backup, restore, import)
+
+extension AppModel {
+    /// Everything stored on this phone, for the backup file.
+    func backup(now: Date = .now) throws -> AmmuttaBackup {
+        AmmuttaBackup(
+            exportedAt: now, weightUnit: weightUnit, defaultRestSeconds: defaultRestSeconds,
+            customExercises: customExercises, plans: plans, workouts: try store.completedWorkouts()
+        )
+    }
+
+    /// Replaces plans, exercises, history and settings with a backup's. Apple Health is left
+    /// as it is.
+    func restore(_ backup: AmmuttaBackup) {
+        do {
+            for workout in try store.completedWorkouts() { try store.deleteWorkout(workout.id) }
+            for plan in try store.plans() { try store.deletePlan(plan.id) }
+            for exercise in try store.customExercises() { try store.deleteCustomExercise(exercise.id) }
+            for exercise in backup.customExercises { try store.save(exercise) }
+            for plan in backup.plans { try store.save(plan) }
+            for workout in backup.workouts where workout.isFinished { try store.save(workout) }
+            weightUnit = backup.weightUnit
+            defaultRestSeconds = backup.defaultRestSeconds
+            reloadAfterImport()
+        } catch {
+            report(error)
+            reloadAfterImport()
+        }
+    }
+
+    /// Adds workouts read from a Strong or Hevy export to history and returns how many. One
+    /// already there (same name, starting within a minute) is skipped, so importing the same
+    /// file twice adds nothing. Exercises match built-ins where possible, otherwise your own
+    /// exercises, otherwise new ones are created. Nothing is sent to Apple Health.
+    @discardableResult
+    func importHistory(_ imported: [ImportedWorkout]) -> Int {
+        var created: [CustomExercise] = []
+        var added = 0
+        do {
+            for item in imported {
+                let title = item.title.trimmingCharacters(in: .whitespaces).isEmpty ? L10n.workoutEmptyName : item.title
+                let alreadyThere = history.contains {
+                    $0.planName == title && abs($0.startedAt.timeIntervalSince(item.startedAt)) < 60
+                }
+                guard !alreadyThere else { continue }
+                var exercises: [WorkoutExercise] = []
+                for exercise in item.exercises {
+                    let (ref, snapshot) = importedRef(name: exercise.name, kind: exercise.kind, created: &created)
+                    exercises.append(WorkoutExercise(
+                        exercise: ref, kind: exercise.kind, nameSnapshot: snapshot, restSeconds: defaultRestSeconds,
+                        sets: exercise.sets.map { WorkoutSet(target: $0, value: $0, status: .logged(at: item.startedAt)) }
+                    ))
+                }
+                let workout = Workout(planID: nil, planName: title, startedAt: item.startedAt, endedAt: item.endedAt, exercises: exercises)
+                guard workout.isValidFinished, !exercises.isEmpty else { continue }
+                for exercise in created where !customExercises.contains(where: { $0.id == exercise.id }) {
+                    try store.save(exercise)
+                    customExercises.append(exercise)
+                }
+                try store.save(workout)
+                history.append(workout)
+                added += 1
+            }
+        } catch {
+            report(error)
+        }
+        reloadAfterImport()
+        return added
+    }
+
+    private func importedRef(name: String, kind: TrackingKind, created: inout [CustomExercise]) -> (ExerciseRef, String?) {
+        if let key = ImportedExerciseNames.builtInKey(for: name, kind: kind, englishName: { ExerciseText.englishName($0) }) {
+            return (.builtIn(key: key), nil)
+        }
+        let target = ExerciseNames.normalized(name)
+        if let existing = (customExercises + created).first(where: { $0.kind == kind && ExerciseNames.normalized($0.name) == target }) {
+            return (existing.ref, existing.name)
+        }
+        let exercise = CustomExercise(
+            name: String(name.trimmingCharacters(in: .whitespaces).prefix(Limits.nameLength.upperBound)),
+            kind: kind, createdAt: .now
+        )
+        created.append(exercise)
+        return (exercise.ref, exercise.name)
+    }
+
+    private func reloadAfterImport() {
+        customExercises = (try? store.customExercises()) ?? customExercises
+        plans = (try? sortedPlans()) ?? plans
+        reloadHistory()
+        agents.dataChanged()
+    }
+}
