@@ -46,7 +46,7 @@ struct HistoryCSVTests {
     @Test func readsAStrongExport() throws {
         let csv = """
         Date,Workout Name,Duration,Exercise Name,Set Order,Weight,Reps,Distance,Seconds,Notes,Workout Notes,RPE\r
-        2020-12-30 18:51:52,"Evening Workout",1h 5m,"Bench Press (Barbell)",1,60.0,8,0,0,"felt ""good""","",\r
+        2020-12-30 18:51:52,"Evening Workout",1h 5m,"Bench Press (Barbell)",1,60.0,8,0,0,"felt ""great"" today","",\r
         2020-12-30 18:51:52,"Evening Workout",1h 5m,"Bench Press (Barbell)",2,62.5,6,0,0,,,\r
         2020-12-30 18:51:52,"Evening Workout",1h 5m,"Plank",1,0,0,0,45,,,\r
         2020-12-30 18:51:52,"Evening Workout",1h 5m,"Running",1,0,0,5000,0,,,\r
