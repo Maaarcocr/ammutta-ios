@@ -1,4 +1,5 @@
 "CFBundleDisplayName" = "Ammutta";
+"NSAlarmKitUsageDescription" = "Ammutta sounds an alarm when your rest or a timed set ends, even in silent mode.";
 "NSBluetoothAlwaysUsageDescription" = "Ammutta connects to your heart rate sensor during workouts.";
 "NSHealthUpdateUsageDescription" = "Ammutta saves your finished workouts and their heart rate to Health.";
 "NSHealthShareUsageDescription" = "Ammutta checks which workouts it already saved to Health, so none is saved twice.";

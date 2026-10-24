@@ -134,6 +134,8 @@ enum L10n {
     static var workoutLogSet: LocalizedStringKey { "workout.logSet" }
     static var workoutStartTimer: LocalizedStringKey { "workout.startTimer" }
     static var workoutStopTimer: LocalizedStringKey { "workout.stopTimer" }
+    /// The alarm's stop button, on iOS 26.0 (later versions provide their own).
+    static var alarmStop: LocalizedStringResource { "workout.stopTimer" }
     static var workoutLogged: LocalizedStringKey { "workout.logged" }
     static var increase: LocalizedStringKey { "workout.increase" }
     static var decrease: LocalizedStringKey { "workout.decrease" }

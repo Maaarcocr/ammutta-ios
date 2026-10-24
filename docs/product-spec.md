@@ -164,7 +164,7 @@ Rest timers and duration-set countdowns must alert the user reliably when the ph
 
 - **Primary path: AlarmKit (iOS 26).** Each running countdown is scheduled as an AlarmKit countdown alarm. The system then delivers a prominent alert at the right moment, even if the app was suspended or terminated, and shows the countdown on the Lock Screen, in the Dynamic Island and on StandBy. Alerts use a short, workout-appropriate sound, not a wake-up alarm.
 - **Fallback: time-sensitive local notifications.** These are used if the user declines AlarmKit authorization. The app asks for notification permission at that point, and the in-app countdown is unaffected.
-- *Built so far:* the local-notification path. Notification permission is requested at the first countdown; each rest and timed-set countdown is scheduled as one notification that is replaced or removed on every change. AlarmKit and time-sensitive delivery (which needs its entitlement) come next.
+- *Built so far:* both paths. AlarmKit permission is asked at the first countdown; each rest and timed-set countdown is one fixed-time alarm (alert only: the workout's Live Activity already shows the countdown), replaced or removed on every change. Alarms and the notification fallback play the app's short two-note chime (`rest-chime.wav`). Time-sensitive notification delivery (which needs its entitlement) is not built yet.
 - **No permission at all:** timers still run correctly in the app. A small, persistent status line on the workout screen explains that alerts are off, with a button that opens Settings. It is shown once per workout, not as a modal.
 - **Correctness rules:**
   - Countdowns are stored as **absolute deadlines**, never as decremented counters.

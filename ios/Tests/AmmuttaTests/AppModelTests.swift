@@ -14,10 +14,54 @@ final class RecordingAlerting: TimerAlerting {
     func authorization() async -> AlertAuthorization { status == .notDetermined ? .notDetermined : status }
     func requestAuthorization() async -> AlertAuthorization {
         permissionRequests += 1
-        status = .allowed
+        // Like the system: only an unanswered prompt can still be allowed.
+        if status == .notDetermined { status = .allowed }
         return status
     }
     func replace(id: String, with alert: TimerAlertRequest?) async { current[id] = alert }
+}
+
+/// AlarmKit first; notifications only when alarms are declined.
+@MainActor
+struct SystemAlertingTests {
+    private let alert = TimerAlertRequest(fireDate: .now.addingTimeInterval(90), title: "Rest over", body: "Next: Squat")
+
+    @Test func alarmsHoldTheAlertWhenAllowed() async {
+        let alarms = RecordingAlerting()
+        let notifications = RecordingAlerting()
+        let system = SystemAlerting(alarms: alarms, notifications: notifications)
+        await system.replace(id: "timer", with: alert)
+        #expect(alarms.current["timer"] == alert)
+        #expect(notifications.current["timer"] == nil)
+
+        await system.replace(id: "timer", with: nil)
+        #expect(alarms.current["timer"] == nil)
+    }
+
+    @Test func notificationsTakeOverWhenAlarmsAreDeclined() async {
+        let alarms = RecordingAlerting()
+        alarms.status = .denied
+        let notifications = RecordingAlerting()
+        notifications.status = .notDetermined
+        let system = SystemAlerting(alarms: alarms, notifications: notifications)
+        #expect(await system.authorization() == .notDetermined)
+        #expect(await system.requestAuthorization() == .allowed)
+        #expect(notifications.permissionRequests == 1)
+
+        await system.replace(id: "timer", with: alert)
+        #expect(notifications.current["timer"] == alert)
+        #expect(alarms.current["timer"] == nil)
+    }
+
+    @Test func askingForAlarmsComesFirst() async {
+        let alarms = RecordingAlerting()
+        alarms.status = .notDetermined
+        let notifications = RecordingAlerting()
+        let system = SystemAlerting(alarms: alarms, notifications: notifications)
+        #expect(await system.requestAuthorization() == .allowed)
+        #expect(alarms.permissionRequests == 1)
+        #expect(notifications.permissionRequests == 0)
+    }
 }
 
 @MainActor

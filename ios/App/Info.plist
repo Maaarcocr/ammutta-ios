@@ -44,6 +44,8 @@
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSAlarmKitUsageDescription</key>
+	<string>Ammutta sounds an alarm when your rest or a timed set ends, even in silent mode.</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>Ammutta connects to your heart rate sensor during workouts.</string>
 	<key>NSHealthShareUsageDescription</key>
