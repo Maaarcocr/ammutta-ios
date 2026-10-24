@@ -1,6 +1,7 @@
 import AmmuttaCore
 import Charts
 import SwiftUI
+import UIKit
 
 struct HistoryView: View {
     @Environment(AppModel.self) private var model
@@ -121,13 +122,16 @@ struct WorkoutDetailView: View {
     }
 }
 
-/// Corrections to a finished workout: its times, each set's value and whether it was done,
-/// plus adding and removing sets.
+/// Corrections to a finished workout, laid out like the workout screen: each set is a compact
+/// row ("8 × 60 kg") with a done circle; tapping it opens the same − value + controls.
 struct WorkoutEditorView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
     @State private var workout: Workout
     @State private var endedAt: Date
+    /// Sets showing their controls.
+    @State private var expanded: Set<UUID> = []
+    @FocusState private var focusedField: SetField?
 
     init(workout: Workout) {
         _workout = State(initialValue: workout)
@@ -150,8 +154,14 @@ struct WorkoutEditorView: View {
                 ForEach($workout.exercises) { $exercise in
                     Section(model.name(of: exercise.exercise, snapshot: exercise.nameSnapshot)) {
                         ForEach($exercise.sets) { $set in
-                            let number = (exercise.sets.firstIndex { $0.id == set.id } ?? 0) + 1
-                            EditedSetRow(number: number, set: $set, doneAt: endedAt, unit: model.weightUnit)
+                            EditableSetRow(
+                                number: (exercise.sets.firstIndex { $0.id == set.id } ?? 0) + 1,
+                                set: $set,
+                                isExpanded: expanded.contains(set.id),
+                                toggle: { toggle(set.id) },
+                                doneAt: endedAt,
+                                focus: $focusedField
+                            )
                         }
                         .onDelete { offsets in
                             guard exercise.sets.count - offsets.count >= Limits.setsPerExercise.lowerBound else { return }
@@ -159,7 +169,9 @@ struct WorkoutEditorView: View {
                         }
                         Button {
                             let value = exercise.sets.last?.value ?? .defaultValue(for: exercise.kind)
-                            exercise.sets.append(WorkoutSet(target: value, value: value, status: .logged(at: endedAt)))
+                            let added = WorkoutSet(target: value, value: value, status: .logged(at: endedAt))
+                            exercise.sets.append(added)
+                            expanded = [added.id]
                         } label: {
                             Label(L10n.addSet, systemImage: "plus")
                         }
@@ -182,27 +194,108 @@ struct WorkoutEditorView: View {
                     .disabled(!edited.isValidFinished)
                     .accessibilityIdentifier("edit.save")
                 }
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button(L10n.done) { focusedField = nil }
+                        .accessibilityIdentifier("keyboard.done")
+                }
             }
         }
     }
+
+    private func toggle(_ id: UUID) {
+        if expanded.contains(id) { expanded.remove(id) } else { expanded.insert(id) }
+    }
 }
 
-/// One set in the workout editor: its value, and whether it was done.
-private struct EditedSetRow: View {
+/// One set in the workout editor: its number, its value (tap to change it) and whether it was done.
+private struct EditableSetRow: View {
     let number: Int
     @Binding var set: WorkoutSet
+    let isExpanded: Bool
+    let toggle: () -> Void
     /// When a set newly marked as done counts as logged.
     let doneAt: Date
-    let unit: WeightUnit
+    let focus: FocusState<SetField?>.Binding
+    @Environment(AppModel.self) private var model
+
+    private var unit: WeightUnit { model.weightUnit }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            SetTargetEditor(number: number, value: $set.value, unit: unit)
-            Toggle(L10n.historyEditSetDone, isOn: Binding(
-                get: { set.status.isLogged },
-                set: { done in set.status = done ? .logged(at: set.status.loggedAt ?? doneAt) : .pending }
-            ))
-            .accessibilityIdentifier("edit.setDone")
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 12) {
+                Text(number, format: .number)
+                    .font(.headline.monospacedDigit())
+                    .frame(minWidth: 24)
+                    .foregroundStyle(.secondary)
+                Button(action: toggle) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(Format.value(set.value, unit: unit))
+                            .font(.title3.weight(.semibold).monospacedDigit())
+                        if !set.status.isLogged {
+                            Text(L10n.notDone)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("edit.set")
+                Button {
+                    set.status = set.status.isLogged ? .pending : .logged(at: doneAt)
+                } label: {
+                    Image(systemName: set.status.isLogged ? "checkmark.circle.fill" : "circle")
+                        .font(.system(size: 30))
+                        .foregroundStyle(set.status.isLogged ? Color.accentColor : Color.secondary)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(L10n.historyEditSetDone)
+                .accessibilityValue(set.status.isLogged ? L10n.workoutLogged : L10n.notDone)
+                .accessibilityIdentifier("edit.setDone")
+            }
+            if isExpanded {
+                controls
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    @ViewBuilder
+    private var controls: some View {
+        switch set.value {
+        case .reps(let count, let weight):
+            HStack(spacing: 12) {
+                NumberStepper(
+                    title: L10n.repsText,
+                    value: Binding(
+                        get: { Double(count) },
+                        set: { set.value = set.value.withReps(Int(min(max($0, 0), 999))) }
+                    ),
+                    step: 1, fractionDigits: 0, keyboard: .numberPad,
+                    focus: focus, field: SetField(set: set.id, kind: .reps), identifier: "edit.reps"
+                )
+                NumberStepper(
+                    title: L10n.weightIn(unit == .kilograms ? L10n.unitKg : L10n.unitLb),
+                    value: Binding(
+                        get: { (weight ?? .zero).value(in: unit) },
+                        set: { set.value = set.value.withWeight(Mass(min(max($0, 0), 2_500), unit: unit)) }
+                    ),
+                    step: unit.increment, fractionDigits: 2, keyboard: .decimalPad,
+                    focus: focus, field: SetField(set: set.id, kind: .weight), identifier: "edit.weight"
+                )
+            }
+        case .duration(let seconds):
+            NumberStepper(
+                title: L10n.secondsLabel,
+                value: Binding(
+                    get: { Double(seconds) },
+                    set: { set.value = set.value.withSeconds(Int(min(max($0, 1), 3600)), range: Limits.loggedSeconds) }
+                ),
+                step: 5, fractionDigits: 0, keyboard: .numberPad,
+                focus: focus, field: SetField(set: set.id, kind: .seconds), identifier: "edit.seconds"
+            )
         }
     }
 }
