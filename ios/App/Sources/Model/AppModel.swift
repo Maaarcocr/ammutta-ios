@@ -396,6 +396,11 @@ final class AppModel {
         ExerciseProgress.lastPerformance(of: ref, in: history)
     }
 
+    /// The exercise's bests in history, optionally leaving out one workout (the one just finished).
+    func records(of ref: ExerciseRef, excluding workoutID: WorkoutID? = nil) -> ExerciseRecords {
+        ExerciseRecords(sessions: sessions(of: ref).filter { $0.id != workoutID })
+    }
+
     func sessions(of ref: ExerciseRef) -> [ExerciseSession] {
         ExerciseProgress.sessions(of: ref, in: history)
     }

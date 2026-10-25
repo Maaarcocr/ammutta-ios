@@ -483,6 +483,46 @@ final class AmmuttaUITests: XCTestCase {
         XCTAssertEqual(app.state, .runningForeground)
     }
 
+    /// Beating last time's weight shows a Record badge, then a New Records row on the summary.
+    @MainActor
+    func testBeatingLastTimeShowsARecord() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-ui-testing", "-seed-sample-plan", "-weightUnit", "kg"]
+        app.launch()
+
+        let row = element(app, "plans.row")
+        XCTAssertTrue(row.waitForExistence(timeout: 30))
+        row.tap()
+        let start = element(app, "plan.start")
+        XCTAssertTrue(start.waitForExistence(timeout: 30))
+        start.tap()
+        let log = element(app, "workout.log")
+        XCTAssertTrue(log.waitForExistence(timeout: 30))
+        log.tap()
+        element(app, "workout.finish").tap()
+        let done = element(app, "summary.done")
+        XCTAssertTrue(done.waitForExistence(timeout: 30))
+        done.tap()
+
+        XCTAssertTrue(start.waitForExistence(timeout: 30))
+        start.tap()
+        let weight = app.textFields.matching(identifier: "set.weight").firstMatch
+        XCTAssertTrue(weight.waitForExistence(timeout: 30))
+        weight.tap()
+        weight.typeText("70")
+        element(app, "keyboard.done").tap()
+        element(app, "workout.log").tap()
+        let badge = app.descendants(matching: .any).matching(identifier: "workout.record").firstMatch
+        XCTAssertTrue(badge.waitForExistence(timeout: 30))
+        capture("35-record-badge")
+
+        element(app, "workout.finish").tap()
+        let record = app.descendants(matching: .any).matching(identifier: "summary.record").firstMatch
+        XCTAssertTrue(record.waitForExistence(timeout: 30))
+        capture("36-new-records")
+    }
+
     /// Every element the tests tap is a button (list rows with NavigationLink included).
     /// Querying buttons only is much cheaper than `descendants(matching: .any)`, which
     /// timed out on slow CI simulators.

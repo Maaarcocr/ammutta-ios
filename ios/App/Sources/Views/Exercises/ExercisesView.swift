@@ -1,4 +1,5 @@
 import AmmuttaCore
+import Charts
 import SwiftUI
 
 struct ExercisesView: View {
@@ -137,6 +138,7 @@ struct ExerciseDetailView: View {
             }
 
             let sessions = model.sessions(of: ref)
+            RecordsSections(records: ExerciseRecords(sessions: sessions), estimates: ExerciseProgress.estimates(sessions))
             if let last = sessions.first {
                 Section(L10n.exerciseLast) {
                     ForEach(Array(last.results.enumerated()), id: \.offset) { index, result in
@@ -189,6 +191,65 @@ struct ExerciseDetailView: View {
                 dismiss()
             }
             Button(L10n.cancel, role: .cancel) {}
+        }
+    }
+}
+
+/// An exercise's bests: the headline records, the estimated 1RM over time, and the heaviest
+/// weight for each rep count. Nothing shows before there's history.
+private struct RecordsSections: View {
+    let records: ExerciseRecords
+    let estimates: [(date: Date, estimate: Mass)]
+    @Environment(AppModel.self) private var model
+
+    private var unit: WeightUnit { model.weightUnit }
+
+    var body: some View {
+        if !records.isEmpty {
+            Section(L10n.recordsTitle) {
+                if let estimate = records.bestEstimate {
+                    LabeledContent(L10n.recordsEstimate, value: Format.mass(estimate, unit: unit))
+                }
+                if let heaviest = records.heaviest {
+                    LabeledContent(L10n.recordsHeaviest, value: Format.mass(heaviest, unit: unit))
+                }
+                if let volume = records.bestVolumeGrams {
+                    LabeledContent(L10n.recordsVolume, value: Format.mass(Mass(grams: volume), unit: unit))
+                }
+                if let reps = records.mostReps {
+                    LabeledContent(L10n.recordsMostReps, value: L10n.repsCount(reps))
+                }
+                if let seconds = records.longestSeconds {
+                    LabeledContent(L10n.recordsLongest, value: Format.clock(seconds))
+                }
+            }
+            .accessibilityIdentifier("exercise.records")
+        }
+        if estimates.count > 1 {
+            Section(L10n.recordsEstimate) {
+                Chart(Array(estimates.enumerated()), id: \.offset) { item in
+                    LineMark(
+                        x: .value(L10n.chartTime, item.element.date),
+                        y: .value(L10n.recordsEstimate, item.element.estimate.value(in: unit))
+                    )
+                    PointMark(
+                        x: .value(L10n.chartTime, item.element.date),
+                        y: .value(L10n.recordsEstimate, item.element.estimate.value(in: unit))
+                    )
+                }
+                .chartYScale(domain: .automatic(includesZero: false))
+                .frame(height: 160)
+                .padding(.vertical, 8)
+            }
+        }
+        if !records.bestByReps.isEmpty {
+            Section(L10n.recordsByReps) {
+                ForEach(records.bestByReps.keys.sorted(), id: \.self) { reps in
+                    if let weight = records.bestByReps[reps] {
+                        LabeledContent(L10n.repsCount(reps), value: Format.mass(weight, unit: unit))
+                    }
+                }
+            }
         }
     }
 }

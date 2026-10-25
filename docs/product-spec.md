@@ -205,7 +205,11 @@ Rest timers and duration-set countdowns must alert the user reliably when the ph
 - **Workout detail**: every set with its logged values and timestamps, the rest actually taken between sets, and a heart-rate chart when samples exist.
 - **Edit after finishing** (History → workout → Edit, laid out like the workout screen: tap a set for its − value + controls, tap its circle to mark it done or not): logged values, whether each set was done, adding or removing sets, and start and end times can all be corrected later. Only time changes reach Apple Health (§9), which stores no sets: the workout is deleted there and saved again. Heart rate outside the new times is dropped.
 - **Delete** a workout, with confirmation. This also removes it from Apple Health if Ammutta wrote it there.
-- **Progress** is surfaced in the exercise detail (§4.3) and as "last time" hints during workouts. Charts are a candidate for v1.x, not v1.
+- **Progress** is surfaced in the exercise detail (§4.3) and as "last time" hints during workouts.
+- **Records and estimated 1RM**: the estimated one-rep max uses the Epley formula, weight × (1 + reps ÷ 30); a single counts as itself and sets above 10 reps give no estimate. Each exercise keeps its bests: estimated 1RM, heaviest weight, the heaviest weight for each rep count from 1 to 10, best workout volume, most reps (without weight) and longest timed set. They're worked out from history, so edits, deletes and imports count. A result is a record only when it beats an earlier one, so a first session sets none.
+  - The exercise detail shows the records, the estimated 1RM over time (a chart, from two sessions), and the bests by rep count.
+  - During a workout, a logged set that beats history (and the sets before it) gets a small **Record** tag and a success haptic.
+  - The summary lists **New Records**: the most telling record each exercise broke.
 
 ## 8. Bluetooth heart-rate sensors (including Google Fitbit Air)
 

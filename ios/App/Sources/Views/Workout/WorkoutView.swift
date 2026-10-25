@@ -245,6 +245,7 @@ private struct ExerciseCard: View {
 
             if isExpanded {
                 let last = model.lastPerformance(of: exercise.exercise)
+                let recordSets = model.records(of: exercise.exercise).recordSets(exercise.sets)
                 ForEach(Array(exercise.sets.enumerated()), id: \.element.id) { setIndex, set in
                     Divider()
                     SetRow(
@@ -252,6 +253,7 @@ private struct ExerciseCard: View {
                         number: setIndex + 1,
                         kind: exercise.kind,
                         last: last?.results[safe: setIndex],
+                        isRecord: recordSets.contains(set.id),
                         isNext: set.id == session.workout.nextPendingSetID,
                         canRemove: exercise.sets.count > 1,
                         session: session,
@@ -299,6 +301,8 @@ private struct SetRow: View {
     let number: Int
     let kind: TrackingKind
     let last: SetValue?
+    /// Logging this set beat the exercise's history.
+    let isRecord: Bool
     let isNext: Bool
     let canRemove: Bool
     let session: WorkoutSession
@@ -322,7 +326,12 @@ private struct SetRow: View {
                     editing.toggle()
                 } label: {
                     VStack(alignment: .leading, spacing: 2) {
-                        valueText
+                        HStack(spacing: 8) {
+                            valueText
+                            if isRecord {
+                                RecordBadge()
+                            }
+                        }
                         if set.status.isSkipped {
                             Text(L10n.skipped)
                                 .font(.caption)
@@ -347,6 +356,7 @@ private struct SetRow: View {
         }
         .padding(.vertical, 4)
         .opacity(set.status.isSkipped ? 0.6 : 1)
+        .sensoryFeedback(.success, trigger: isRecord) { old, new in !old && new }
     }
 
     @ViewBuilder
@@ -475,6 +485,17 @@ private struct SetRow: View {
 
     private func update(_ value: SetValue) {
         session.send(.setValue(set.id, value))
+    }
+}
+
+/// A small trophy tag on a set that beat the exercise's history.
+private struct RecordBadge: View {
+    var body: some View {
+        Label(L10n.recordsBadge, systemImage: "trophy.fill")
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(.orange)
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("workout.record")
     }
 }
 
@@ -647,6 +668,7 @@ struct WorkoutSummaryView: View {
     var body: some View {
         NavigationStack {
             WorkoutResultsList(workout: workout) {
+                newRecords
                 planActions
             }
             .navigationTitle(L10n.summaryTitle)
@@ -658,6 +680,38 @@ struct WorkoutSummaryView: View {
             }
             .sheet(item: $draft) { draft in
                 PlanEditorView(plan: draft, isNew: true)
+            }
+        }
+    }
+
+    /// The best record each exercise broke in this workout, if any.
+    @ViewBuilder private var newRecords: some View {
+        let found = workout.exercises.compactMap { exercise -> (id: UUID, name: String, record: PersonalRecord)? in
+            let logged = exercise.sets.filter { $0.status.isLogged }.map(\.value)
+            guard let best = model.records(of: exercise.exercise, excluding: workout.id).broken(bySession: logged).first else { return nil }
+            return (exercise.id, model.name(of: exercise.exercise, snapshot: exercise.nameSnapshot), best)
+        }
+        if !found.isEmpty {
+            Section(L10n.recordsNew) {
+                ForEach(found, id: \.id) { item in
+                    let text = Format.record(item.record, unit: model.weightUnit)
+                    LabeledContent {
+                        Text(text.value)
+                    } label: {
+                        Label {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(item.name)
+                                Text(text.title)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        } icon: {
+                            Image(systemName: "trophy.fill")
+                                .foregroundStyle(.orange)
+                        }
+                    }
+                    .accessibilityIdentifier("summary.record")
+                }
             }
         }
     }

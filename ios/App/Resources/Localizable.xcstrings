@@ -718,6 +718,66 @@
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Iniziare un allenamento libero?" } }
       }
     },
+    "records.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Records" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Record" } }
+      }
+    },
+    "records.new" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "New Records" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Nuovi record" } }
+      }
+    },
+    "records.badge" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Record" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Record" } }
+      }
+    },
+    "records.byReps" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Best by Reps" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Migliori per ripetizioni" } }
+      }
+    },
+    "records.estimate" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Estimated 1RM" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "1RM stimato" } }
+      }
+    },
+    "records.heaviest" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Heaviest" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Peso massimo" } }
+      }
+    },
+    "records.repBest" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Rep Record" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Record di ripetizioni" } }
+      }
+    },
+    "records.mostReps" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Most Reps" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Più ripetizioni" } }
+      }
+    },
+    "records.longest" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Longest" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Durata massima" } }
+      }
+    },
+    "records.volume" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Best Volume" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Volume massimo" } }
+      }
+    },
     "plans.startEmpty.confirm" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Start" } },
