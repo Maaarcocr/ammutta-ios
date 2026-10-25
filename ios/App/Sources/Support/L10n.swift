@@ -107,6 +107,18 @@ enum L10n {
     static var exerciseTechnique: LocalizedStringKey { "exercise.technique" }
     static var exerciseLast: LocalizedStringKey { "exercise.last" }
     static var exerciseHistory: LocalizedStringKey { "exercise.history" }
+
+    // MARK: Records
+    static var recordsTitle: LocalizedStringKey { "records.title" }
+    static var recordsNew: LocalizedStringKey { "records.new" }
+    static var recordsBadge: LocalizedStringKey { "records.badge" }
+    static var recordsByReps: LocalizedStringKey { "records.byReps" }
+    static var recordsEstimate: String { String(localized: "records.estimate") }
+    static var recordsHeaviest: String { String(localized: "records.heaviest") }
+    static var recordsRepBest: String { String(localized: "records.repBest") }
+    static var recordsMostReps: String { String(localized: "records.mostReps") }
+    static var recordsLongest: String { String(localized: "records.longest") }
+    static var recordsVolume: String { String(localized: "records.volume") }
     static var exerciseNoHistory: LocalizedStringKey { "exercise.noHistory" }
     static var exerciseName: LocalizedStringKey { "exercise.name" }
     static var exerciseDuplicate: LocalizedStringKey { "exercise.duplicate" }

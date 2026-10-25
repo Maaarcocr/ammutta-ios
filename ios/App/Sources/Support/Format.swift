@@ -42,6 +42,18 @@ enum Format {
         }
     }
 
+    /// A record's name and its value, for example "Estimated 1RM" and "82.5 kg".
+    static func record(_ record: PersonalRecord, unit: WeightUnit) -> (title: String, value: String) {
+        switch record {
+        case .estimate(let weight): (L10n.recordsEstimate, mass(weight, unit: unit))
+        case .heaviest(let weight): (L10n.recordsHeaviest, mass(weight, unit: unit))
+        case .repBest(let reps, let weight): (L10n.recordsRepBest, value(.reps(count: reps, weight: weight), unit: unit))
+        case .mostReps(let reps): (L10n.recordsMostReps, L10n.repsCount(reps))
+        case .longest(let seconds): (L10n.recordsLongest, clock(seconds))
+        case .volume(let grams): (L10n.recordsVolume, mass(Mass(grams: grams), unit: unit))
+        }
+    }
+
     /// "3 sets · 8 × 60 kg" when every set is the same, otherwise each set in order.
     static func setsSummary(_ sets: [SetValue], unit: WeightUnit) -> String {
         guard let first = sets.first else { return "" }

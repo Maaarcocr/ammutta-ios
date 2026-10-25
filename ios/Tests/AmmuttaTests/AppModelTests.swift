@@ -301,7 +301,25 @@ struct AppModelTests {
         #expect(model.workout(original.id)?.endedAt != broken.startedAt, "invalid edits are ignored")
     }
 
-    @Test func activeWorkoutIsRestoredOnRelaunch() throws {
+    @Test func recordsComeFromHistoryAndCanLeaveOutTheWorkoutJustFinished() throws {
+        let model = AppModel(store: try AmmuttaStore(inMemory: true), defaults: try makeDefaults())
+        model.load()
+        let squat = ExerciseRef.builtIn(key: "barbell-back-squat")
+        for kilograms in [100.0, 110.0] {
+            model.startWorkout(from: legDay())
+            let session = try #require(model.session)
+            let set = try #require(session.workout.nextPendingSetID)
+            session.send(.setValue(set, .reps(count: 5, weight: .kilograms(kilograms))))
+            session.send(.logSet(set))
+            session.send(.finish)
+            model.closeFinishedSession()
+        }
+        #expect(model.records(of: squat).heaviest == .kilograms(110))
+        let latest = try #require(model.history.first { $0.exercises[0].sets[0].value.weight == .kilograms(110) })
+        #expect(model.records(of: squat, excluding: latest.id).heaviest == .kilograms(100))
+    }
+
+        @Test func activeWorkoutIsRestoredOnRelaunch() throws {
         let store = try AmmuttaStore(inMemory: true)
         let defaults = try makeDefaults()
         let model = AppModel(store: store, defaults: defaults)
