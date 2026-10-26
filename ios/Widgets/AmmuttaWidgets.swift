@@ -1,4 +1,5 @@
 import ActivityKit
+import AlarmKit
 import SwiftUI
 import WidgetKit
 
@@ -6,6 +7,7 @@ import WidgetKit
 struct AmmuttaWidgetsBundle: WidgetBundle {
     var body: some Widget {
         WorkoutLiveActivity()
+        TimerAlarmLiveActivity()
     }
 }
 
@@ -52,9 +54,81 @@ struct WorkoutLiveActivity: Widget {
                     .foregroundStyle(Palette.iceBlue)
                     .frame(maxWidth: 52)
             } minimal: {
-                Image(systemName: "dumbbell.fill")
-                    .foregroundStyle(Palette.iceBlue)
+                // The island splits into small bubbles when another activity (such as the
+                // rest alarm) is on: keep the countdown visible there too.
+                if context.state.hasCountdown, let start = context.state.timerStart, let end = context.state.timerEnd {
+                    Text(timerInterval: start...end, countsDown: true)
+                        .font(.caption2.weight(.semibold).monospacedDigit())
+                        .foregroundStyle(Palette.iceBlue)
+                        .frame(maxWidth: 40)
+                } else {
+                    Image(systemName: "dumbbell.fill")
+                        .foregroundStyle(Palette.iceBlue)
+                }
             }
+        }
+    }
+}
+
+/// The system's own Live Activity for a pending rest or set alarm. It can share the Dynamic
+/// Island and Lock Screen with the workout's, so it shows the same countdown instead of an
+/// empty bubble. When the alarm goes off, the system shows its alert instead.
+struct TimerAlarmLiveActivity: Widget {
+    var body: some WidgetConfiguration {
+        ActivityConfiguration(for: AlarmAttributes<TimerAlarmMetadata>.self) { context in
+            AlarmCountdownRow(metadata: context.attributes.metadata)
+                .padding(16)
+                .activityBackgroundTint(Palette.navy)
+                .activitySystemActionForegroundColor(Palette.iceBlue)
+        } dynamicIsland: { context in
+            DynamicIsland {
+                DynamicIslandExpandedRegion(.center) {
+                    AlarmCountdownRow(metadata: context.attributes.metadata)
+                }
+            } compactLeading: {
+                Image(systemName: "timer")
+                    .foregroundStyle(Palette.iceBlue)
+            } compactTrailing: {
+                AlarmCountdown(metadata: context.attributes.metadata)
+                    .monospacedDigit()
+                    .foregroundStyle(Palette.iceBlue)
+                    .frame(maxWidth: 52)
+            } minimal: {
+                AlarmCountdown(metadata: context.attributes.metadata)
+                    .font(.caption2.weight(.semibold).monospacedDigit())
+                    .foregroundStyle(Palette.iceBlue)
+                    .frame(maxWidth: 40)
+            }
+        }
+    }
+}
+
+private struct AlarmCountdown: View {
+    let metadata: TimerAlarmMetadata?
+
+    var body: some View {
+        if let metadata, metadata.endsAt > metadata.startsAt {
+            Text(timerInterval: metadata.startsAt...metadata.endsAt, countsDown: true)
+        } else {
+            Image(systemName: "timer")
+        }
+    }
+}
+
+private struct AlarmCountdownRow: View {
+    let metadata: TimerAlarmMetadata?
+
+    var body: some View {
+        HStack {
+            Text(metadata?.label ?? "")
+                .font(.headline)
+                .foregroundStyle(.white)
+            Spacer(minLength: 8)
+            AlarmCountdown(metadata: metadata)
+                .font(.title2.weight(.semibold).monospacedDigit())
+                .foregroundStyle(Palette.iceBlue)
+                .multilineTextAlignment(.trailing)
+                .frame(maxWidth: 110, alignment: .trailing)
         }
     }
 }

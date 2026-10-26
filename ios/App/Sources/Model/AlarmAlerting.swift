@@ -8,9 +8,6 @@ nonisolated enum TimerSound {
     static let fileName = "rest-chime.wav"
 }
 
-/// What AlarmKit stores with each alarm. Ammutta needs nothing beyond the title.
-nonisolated struct TimerAlarmMetadata: AlarmMetadata {}
-
 /// Timer alerts as AlarmKit alarms (product spec §6.4): they sound even in silent mode or a
 /// Focus, like the Clock app. The workout's own Live Activity shows the countdown, so the alarm
 /// only has an alert state, at a fixed time. Only Sendable values cross into AlarmKit.
@@ -26,7 +23,14 @@ final class AlarmKitAlerting: TimerAlerting {
     }
 
     func replace(id: String, with alert: TimerAlertRequest?) async {
-        await Self.schedule(title: alert?.title, at: alert?.fireDate, stopLabel: L10n.alarmStop)
+        let metadata = alert.map {
+            TimerAlarmMetadata(label: $0.countdownLabel ?? $0.title, startsAt: $0.countdownStart ?? .now, endsAt: $0.fireDate)
+        }
+        await Self.schedule(title: alert?.title, metadata: metadata, stopLabel: L10n.alarmStop)
+    }
+
+    func dismissFired(id: String) async {
+        await Self.stopFired()
     }
 
     private static func map(_ state: AlarmManager.AuthorizationState) -> AlertAuthorization {
@@ -46,13 +50,15 @@ final class AlarmKitAlerting: TimerAlerting {
     }
 
     /// An active workout has at most one pending alert, so every change first cancels the
-    /// app's alarms, including any left over from before a relaunch.
-    private nonisolated static func schedule(title: String?, at date: Date?, stopLabel: LocalizedStringResource) async {
+    /// app's alarms that haven't gone off yet, including any left over from before a relaunch.
+    /// One that is going off (or due within a moment) stays until `stopFired`.
+    private nonisolated static func schedule(title: String?, metadata: TimerAlarmMetadata?, stopLabel: LocalizedStringResource) async {
         let manager = AlarmManager.shared
-        for alarm in (try? manager.alarms) ?? [] {
+        for alarm in (try? manager.alarms) ?? [] where !hasFired(alarm) {
             try? manager.cancel(id: alarm.id)
         }
-        guard let title, let date, date > .now else { return }
+        guard let title, let metadata, metadata.endsAt > .now else { return }
+        let date = metadata.endsAt
         let alert: AlarmPresentation.Alert
         if #available(iOS 26.1, *) {
             alert = AlarmPresentation.Alert(
@@ -71,7 +77,7 @@ final class AlarmKitAlerting: TimerAlerting {
         }
         let attributes = AlarmAttributes<TimerAlarmMetadata>(
             presentation: AlarmPresentation(alert: alert),
-            metadata: TimerAlarmMetadata(),
+            metadata: metadata,
             tintColor: .accentColor
         )
         let configuration = AlarmManager.AlarmConfiguration<TimerAlarmMetadata>.alarm(
@@ -82,6 +88,25 @@ final class AlarmKitAlerting: TimerAlerting {
             sound: .named(TimerSound.fileName)
         )
         _ = try? await manager.schedule(id: UUID(), configuration: configuration)
+    }
+
+    /// Going off, or due within two seconds: the app's own timer can end a moment before the
+    /// system starts the alert, and that alarm must not be cancelled.
+    private nonisolated static func hasFired(_ alarm: Alarm) -> Bool {
+        if case .alerting = alarm.state { return true }
+        if case .fixed(let date)? = alarm.schedule { return date <= .now.addingTimeInterval(2) }
+        return false
+    }
+
+    private nonisolated static func stopFired() async {
+        let manager = AlarmManager.shared
+        for alarm in (try? manager.alarms) ?? [] where hasFired(alarm) {
+            if case .alerting = alarm.state {
+                try? manager.stop(id: alarm.id)
+            } else {
+                try? manager.cancel(id: alarm.id)
+            }
+        }
     }
 }
 
@@ -111,5 +136,10 @@ final class SystemAlerting: TimerAlerting {
         let useAlarms = await alarms.authorization() == .allowed
         await alarms.replace(id: id, with: useAlarms ? alert : nil)
         await notifications.replace(id: id, with: useAlarms ? nil : alert)
+    }
+
+    func dismissFired(id: String) async {
+        await alarms.dismissFired(id: id)
+        await notifications.dismissFired(id: id)
     }
 }
