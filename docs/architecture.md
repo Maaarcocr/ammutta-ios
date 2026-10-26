@@ -194,7 +194,7 @@ protocol TimerAlerting: Sendable {
 }
 ```
 
-- The `AlarmKitAlerting` implementation schedules one fixed-time alarm (`Alarm.Schedule.fixed`) with only an alert presentation, so no AlarmKit widget is needed: the workout's Live Activity shows the countdown. Every change cancels the app's alarms first, which also clears any left over from before a relaunch.
+- The `AlarmKitAlerting` implementation schedules one fixed-time alarm (`Alarm.Schedule.fixed`) with only an alert presentation, so no AlarmKit widget is needed: the workout's Live Activity shows the countdown. Every change cancels the app's alarms that haven't gone off yet, which also clears any left over from before a relaunch; one going off (or due within two seconds) stays until `dismissFired`, which the session calls when the person acts or the app comes back. The alarm carries `TimerAlarmMetadata` (label, start, end), and the widget extension draws its Live Activity with the same countdown.
 - The `NotificationAlerting` implementation uses `UNNotificationRequest`s with a time-interval trigger. Time-sensitive delivery would need the Time Sensitive Notifications capability (not added yet).
 - `SystemAlerting` uses AlarmKit when it is allowed and notifications when alarms are declined, so exactly one holds the pending alert. Both play `rest-chime.wav`.
 - Alert IDs are derived deterministically from `(workoutID, exerciseIndex, setIndex, kind)`. Rescheduling replaces rather than duplicates, and cleanup on finish or discard is exhaustive.

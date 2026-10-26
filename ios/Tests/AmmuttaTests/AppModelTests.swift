@@ -10,6 +10,7 @@ final class RecordingAlerting: TimerAlerting {
     var status: AlertAuthorization = .allowed
     private(set) var current: [String: TimerAlertRequest] = [:]
     private(set) var permissionRequests = 0
+    private(set) var dismissals = 0
 
     func authorization() async -> AlertAuthorization { status == .notDetermined ? .notDetermined : status }
     func requestAuthorization() async -> AlertAuthorization {
@@ -19,6 +20,7 @@ final class RecordingAlerting: TimerAlerting {
         return status
     }
     func replace(id: String, with alert: TimerAlertRequest?) async { current[id] = alert }
+    func dismissFired(id: String) async { dismissals += 1 }
 }
 
 /// AlarmKit first; notifications only when alarms are declined.
@@ -120,6 +122,32 @@ struct TimerAlertTests {
         model.discardActiveWorkout()
         await session.alertsSettled()
         #expect(alerts.current.isEmpty)
+    }
+
+    /// The alert that just went off isn't swept away by the app's own timer ending; it goes when
+    /// the person acts or comes back to the app.
+    @Test func aFiredAlertStaysUntilThePersonActs() async throws {
+        let alerts = RecordingAlerting()
+        let model = try makeModel(alerts)
+        model.startWorkout(from: plan())
+        let session = try #require(model.session)
+        await session.alertsSettled()
+        let before = alerts.dismissals
+
+        session.send(.logSet(try #require(session.workout.nextPendingSetID)))
+        await session.alertsSettled()
+        #expect(alerts.dismissals == before + 1, "logging a set puts away an old alert")
+        let alert = try #require(alerts.current.values.first)
+        #expect(alert.countdownLabel == L10n.timerRestText)
+        #expect(alert.countdownStart == session.workout.timer?.startedAt)
+
+        session.send(.timerElapsed)
+        await session.alertsSettled()
+        #expect(alerts.dismissals == before + 1, "the rest ending by itself doesn't")
+
+        session.refresh()
+        await session.alertsSettled()
+        #expect(alerts.dismissals == before + 2, "coming back to the app does")
     }
 
     @Test func declinedNotificationsShowTheAlertsOffLine() async throws {

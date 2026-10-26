@@ -10,6 +10,9 @@ struct TimerAlertRequest: Equatable, Sendable {
     var fireDate: Date
     var title: String
     var body: String
+    /// When the countdown started and what it is ("Rest"), for the alarm's own Live Activity.
+    var countdownStart: Date? = nil
+    var countdownLabel: String? = nil
 }
 
 /// Delivers timer alerts when the app is in the background, the phone is locked, or the app
@@ -19,8 +22,11 @@ struct TimerAlertRequest: Equatable, Sendable {
 protocol TimerAlerting: AnyObject, Sendable {
     func authorization() async -> AlertAuthorization
     func requestAuthorization() async -> AlertAuthorization
-    /// Replaces whatever alert `id` had with `alert`, or removes it when `alert` is nil.
+    /// Replaces whatever alert `id` had pending with `alert`, or removes it when `alert` is
+    /// nil. An alert that already went off stays, so it isn't swept away the moment it fires.
     func replace(id: String, with alert: TimerAlertRequest?) async
+    /// The person is using the app again: puts away an alert that already went off.
+    func dismissFired(id: String) async
 }
 
 /// Local notifications, the fallback when AlarmKit is declined. Only Sendable values cross
@@ -38,6 +44,10 @@ final class NotificationAlerting: TimerAlerting {
 
     func replace(id: String, with alert: TimerAlertRequest?) async {
         await Self.schedule(id: id, alert: alert)
+    }
+
+    func dismissFired(id: String) async {
+        UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: [id])
     }
 
     private static func map(_ status: UNAuthorizationStatus) -> AlertAuthorization {
@@ -59,7 +69,6 @@ final class NotificationAlerting: TimerAlerting {
     private nonisolated static func schedule(id: String, alert: TimerAlertRequest?) async {
         let center = UNUserNotificationCenter.current()
         center.removePendingNotificationRequests(withIdentifiers: [id])
-        center.removeDeliveredNotifications(withIdentifiers: [id])
         guard let alert else { return }
         let delay = alert.fireDate.timeIntervalSinceNow
         guard delay > 0 else { return }
@@ -79,4 +88,5 @@ final class DisabledAlerting: TimerAlerting {
     func authorization() async -> AlertAuthorization { .allowed }
     func requestAuthorization() async -> AlertAuthorization { .allowed }
     func replace(id: String, with alert: TimerAlertRequest?) async {}
+    func dismissFired(id: String) async {}
 }

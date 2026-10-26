@@ -48,6 +48,10 @@ final class WorkoutSession: Identifiable {
     var isFinished: Bool { workout.endedAt != nil }
 
     func send(_ event: WorkoutEvent) {
+        // Anything the person does means they're back: an alert that went off can go.
+        if event != .timerElapsed {
+            enqueueDismissFired()
+        }
         do {
             let updated = try WorkoutEngine.reduce(workout, event, now: .now)
             if updated != workout {
@@ -73,7 +77,9 @@ final class WorkoutSession: Identifiable {
     }
 
     /// Settles a deadline that passed while the app was in the background or not running.
+    /// Called when the app comes back, so an alert that went off is put away.
     func refresh() {
+        enqueueDismissFired()
         guard !isFinished else {
             syncAlert()
             syncActivity()
@@ -91,6 +97,7 @@ final class WorkoutSession: Identifiable {
     /// Removes the pending system alert and the Live Activity, for example when the workout is discarded.
     func close() {
         enqueueAlert(nil)
+        enqueueDismissFired()
         activity.end()
     }
 
@@ -133,6 +140,17 @@ final class WorkoutSession: Identifiable {
                 self?.alertsOff = status == .denied
             }
             await service.replace(id: id, with: alert)
+        }
+    }
+
+    /// Runs in the alert queue, after any change already requested.
+    private func enqueueDismissFired() {
+        let id = alertID
+        let previous = alertQueue
+        let service = alerts
+        alertQueue = Task {
+            await previous?.value
+            await service.dismissFired(id: id)
         }
     }
 
