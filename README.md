@@ -24,7 +24,7 @@ Ammutta ("push!" in Sicilian) lets you build workout plans, run them set by set 
   - one-tap set logging, editable inline until you finish;
   - automatic rest timers;
   - countdowns for timed sets.
-- **Timers you can trust on the Lock Screen:** AlarmKit alerts, falling back to time-sensitive notifications, plus a Live Activity with quick actions.
+- **Timers you can trust on the Lock Screen:** notifications with a clear chime, plus a Live Activity with the countdown.
 - **Bluetooth heart rate:** any standard BLE heart-rate sensor (chest straps, armbands) and **Google Fitbit Air** with "Share heart rate" turned on.
 - **History and progress:** every set with timestamps, last performance and personal bests per exercise.
 - **Apple Health (optional):** completed workouts and heart rate written on device, kept in sync when you edit or delete.
@@ -40,13 +40,13 @@ The full behavior is specified in **[docs/product-spec.md](docs/product-spec.md)
 | **Local-only** | No server, no login, no cloud sync, no analytics or crash SDKs. The app contains no networking code. App Store privacy label: *Data Not Collected* |
 | **Free** | No purchases, subscriptions, ads or paywalls. Every feature for everyone |
 | **Multilingual** | Ships in English and Italian from day one. Built-in exercise names are localized too, and more languages need only translations |
-| **Nothing is required** | Works fully without Bluetooth, Apple Health, notifications or alarms |
+| **Nothing is required** | Works fully without Bluetooth, Apple Health or notifications |
 | **No dependencies** | Apple SDKs only |
 
 ## Technical overview
 
 - iPhone, **iOS 26+**, Swift 6, SwiftUI with Observation, SwiftData;
-- AlarmKit, ActivityKit, CoreBluetooth and HealthKit;
+- ActivityKit, UserNotifications, CoreBluetooth and HealthKit;
 - XcodeGen project, with a modular local Swift package;
 - a pure, fully unit-tested domain core and workout engine.
 

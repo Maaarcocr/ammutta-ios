@@ -39,7 +39,7 @@ These are constraints, not preferences. A feature that conflicts with one of the
 
 ### 1.5 Works without anything optional
 
-Bluetooth, Apple Health, notifications and alarms each improve the experience, but the app must remain **fully usable** when any of them is denied, unavailable or turned off later.
+Bluetooth, Apple Health and notifications each improve the experience, but the app must remain **fully usable** when any of them is denied, unavailable or turned off later.
 
 ## 2. Platform targets
 
@@ -50,7 +50,7 @@ Bluetooth, Apple Health, notifications and alarms each improve the experience, b
 | Toolchain | Xcode 26.6+ and the iOS 26 SDK (current App Store upload minimum), Swift 6 language mode |
 | Distribution | TestFlight first (internal, then external), then the App Store, free |
 
-iOS 26 as the floor gives us AlarmKit, mature SwiftData and current ActivityKit without compatibility shims. The fallbacks that still matter come from **permission choices**, not OS versions. For example, AlarmKit denied means using time-sensitive notifications instead (see §6.4).
+iOS 26 as the floor gives us mature SwiftData and current ActivityKit without compatibility shims. The fallbacks that still matter come from **permission choices**, not OS versions. For example, notifications denied means timers only alert inside the app (see §6.4).
 
 ## 3. Core concepts
 
@@ -160,16 +160,16 @@ This is the heart of the app and must be excellent.
 
 ### 6.4 Timers that survive the lock screen
 
-Rest timers and duration-set countdowns must alert the user reliably when the phone is locked, in silent mode or in a Focus mode.
+Rest timers and duration-set countdowns must alert the user reliably when the phone is locked or the app is in the background.
 
-- **Primary path: AlarmKit (iOS 26).** Each running countdown is scheduled as an AlarmKit countdown alarm. The system then delivers a prominent alert at the right moment, even if the app was suspended or terminated, and shows the countdown on the Lock Screen, in the Dynamic Island and on StandBy. Alerts use a short, workout-appropriate sound, not a wake-up alarm.
-- **Fallback: time-sensitive local notifications.** These are used if the user declines AlarmKit authorization. The app asks for notification permission at that point, and the in-app countdown is unaffected.
-- *Built so far:* both paths. AlarmKit permission is asked at the first countdown; each rest and timed-set countdown is one fixed-time alarm (alert only: the workout's Live Activity already shows the countdown), replaced or removed on every change. Alarms and the notification fallback play the app's chime (`rest-chime.wav`, a rising three-note chime three times over about 5 seconds). An alert that went off stays until the person acts in the app (logs a set, comes back to it, finishes or discards); only alerts that haven't gone off yet are cancelled when a timer is skipped or adjusted. The alarm's own Live Activity shows the same countdown as the workout's, and the workout's minimal Dynamic Island bubble shows the countdown too, so it stays visible when the island splits. Time-sensitive notification delivery (which needs its entitlement) is not built yet.
+- **Local notifications with the app's chime.** Each running countdown schedules one notification for when it ends, replaced or removed on every change, so it is delivered even if the app was suspended or terminated. The workout's Live Activity shows the countdown on the Lock Screen and in the Dynamic Island. Alerts use a short, workout-appropriate chime, not a wake-up alarm.
+- **One Live Activity.** The workout's Live Activity is the app's only one, so the Dynamic Island always shows it. AlarmKit is not used: each AlarmKit alarm is a system Live Activity of its own, which competed with the workout's for the island (ours often went missing), and AlarmKit has open bugs that leave blank activities.
+- *Built so far:* notification permission is asked at the first countdown. Notifications play the app's chime (`rest-chime.wav`, a rising three-note chime three times over about 5 seconds); with the app open the chime plays without a banner, next to a haptic. An alert that went off stays until the person acts in the app (logs a set, comes back to it, finishes or discards); only alerts that haven't gone off yet are cancelled when a timer is skipped or adjusted. The workout's minimal Dynamic Island bubble shows the countdown too, so it stays visible when the island splits with another app. The sound follows the silent switch. Time-sensitive delivery, which gets through a Focus, needs its entitlement and is not built yet.
 - **No permission at all:** timers still run correctly in the app. A small, persistent status line on the workout screen explains that alerts are off, with a button that opens Settings. It is shown once per workout, not as a modal.
 - **Correctness rules:**
   - Countdowns are stored as **absolute deadlines**, never as decremented counters.
   - The UI derives remaining time from the deadline, so it is correct after backgrounding, app kill or relaunch.
-  - Adjusting, skipping or finishing a timer reschedules or cancels its system alarm or notification immediately. Stale alerts must never fire.
+  - Adjusting, skipping or finishing a timer reschedules or cancels its notification immediately. Stale alerts must never fire.
 
 ### 6.5 Live Activity
 
@@ -263,7 +263,7 @@ Rest timers and duration-set countdowns must alert the user reliably when the ph
 - **What is localized**:
   - all UI text, accessibility labels and hints;
   - built-in exercise names, equipment and muscle groups;
-  - notification, AlarmKit and Live Activity text;
+  - notification and Live Activity text;
   - App Intent and Shortcut phrases;
   - permission purpose strings in `InfoPlist.xcstrings`;
   - error messages;
@@ -323,7 +323,7 @@ Rest timers and duration-set countdowns must alert the user reliably when the ph
 
 - Weight unit (kg / lb)
 - Default rest time and rest adjustment step
-- Timer alerts: AlarmKit / notification status with a link to system settings, and sound and haptics toggles
+- Timer alerts: notification status with a link to system settings, and sound and haptics toggles
 - Heart-rate sensor: the paired device, forget it, or pair a new one
 - Apple Health: on/off, status, and pending-sync count with a retry action
 - Language, which links to the system per-app language setting
@@ -343,8 +343,7 @@ Every permission is requested in context, at first use, and the app must handle 
 
 | Permission | Asked when | If denied |
 | --- | --- | --- |
-| AlarmKit | First countdown in the first workout | Fall back to notifications |
-| Notifications | Only if AlarmKit is denied | In-app timers only, with a status line |
+| Notifications | First countdown in the first workout | In-app timers only, with a status line |
 | Bluetooth | User opens sensor pairing | No heart rate; everything else works |
 | Apple Health (write) | User enables Health | Workouts stay local; sync intent remains queued |
 

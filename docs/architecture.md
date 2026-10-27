@@ -7,7 +7,7 @@ Status: **design only**. This describes the system to build from scratch. There 
 1. **Correct under interruption.** Workouts and timers survive suspension, termination, reboots and denied permissions.
 2. **Local-only by construction.** No module can make network requests. Every outbound flow (Health, share, export) is explicit and user-initiated.
 3. **Testable core.** Domain rules, the workout engine, codecs and parsers are pure Swift with no Apple-framework side effects. They are exhaustively unit-tested.
-4. **Replaceable edges.** Persistence, Bluetooth, HealthKit, alarms and Live Activities sit behind small protocols, so each has a fake for tests and previews.
+4. **Replaceable edges.** Persistence, Bluetooth, HealthKit, timer alerts and Live Activities sit behind small protocols, so each has a fake for tests and previews.
 5. **No third-party dependencies.** Apple SDKs only.
 
 ## 2. Stack
@@ -17,7 +17,7 @@ Status: **design only**. This describes the system to build from scratch. There 
 | Language | Swift 6 language mode, strict concurrency checking |
 | UI | SwiftUI, Observation (`@Observable`), `NavigationStack` with typed routes |
 | Persistence | SwiftData with `VersionedSchema` + `SchemaMigrationPlan` from v1 |
-| Timers / alerts | AlarmKit, with a `UserNotifications` fallback |
+| Timers / alerts | `UserNotifications` (local notifications with the app's chime) |
 | Lock Screen | ActivityKit Live Activity + App Intents (widget extension) |
 | Heart rate | CoreBluetooth (Heart Rate Service `0x180D`) |
 | Health | HealthKit (write-only in v1) |
@@ -34,12 +34,12 @@ There is one local Swift package with several library targets, plus a thin app t
 ios/
   project.yml                 XcodeGen: Ammutta app, AmmuttaWidgets extension, test targets
   App/                        @main, composition root, Info.plist, entitlements, assets
-  Widgets/                    Live Activity + AlarmKit countdown presentation, App Intents
+  Widgets/                    Live Activity, App Intents
   Packages/AmmuttaKit/
     Sources/
       AmmuttaCore/            Pure domain: models, rules, workout engine, codecs, formatting
       AmmuttaPersistence/     SwiftData schema, migrations, repositories
-      AmmuttaTimers/          AlarmKit + notification fallback behind TimerAlerting
+      AmmuttaTimers/          local notifications behind TimerAlerting
       AmmuttaHeartRate/       CoreBluetooth sensor service behind HeartRateSource (prototype: app target)
       AmmuttaHealth/          HealthKit writer + durable sync queue behind HealthSyncing
       AmmuttaLiveActivity/    ActivityKit attributes and controller (shared with Widgets)
@@ -69,7 +69,7 @@ flowchart TD
   LiveActivity --> Core
 ```
 
-`AmmuttaCore` imports only Foundation. It must never import SwiftUI, SwiftData, CoreBluetooth, HealthKit, ActivityKit or AlarmKit.
+`AmmuttaCore` imports only Foundation. It must never import SwiftUI, SwiftData, CoreBluetooth, HealthKit, ActivityKit or UserNotifications.
 
 ## 4. Domain model (`AmmuttaCore`)
 
@@ -154,7 +154,7 @@ struct WorkoutEngine {
   2. persists the new snapshot (§5);
   3. executes the effects.
 
-  On launch it reloads the snapshot and reconciles timers. A deadline that passed while the app was dead resolves through `timerElapsed`, and alarms are re-registered from the snapshot.
+  On launch it reloads the snapshot and reconciles timers. A deadline that passed while the app was dead resolves through `timerElapsed`, and alerts are re-registered from the snapshot.
 
 ### 4.4 Other core components
 
@@ -186,7 +186,7 @@ struct WorkoutEngine {
 
 ```swift
 protocol TimerAlerting: Sendable {
-  func authorization() async -> AlertAuthorization        // .alarmKit, .notifications, .none
+  func authorization() async -> AlertAuthorization        // .notDetermined, .allowed, .denied
   func requestAuthorization() async -> AlertAuthorization
   func schedule(_ alert: TimerAlert) async throws         // id, kind (rest/work), fireDate, localized title
   func cancel(_ id: TimerAlert.ID) async
@@ -194,9 +194,9 @@ protocol TimerAlerting: Sendable {
 }
 ```
 
-- The `AlarmKitAlerting` implementation schedules one fixed-time alarm (`Alarm.Schedule.fixed`) with only an alert presentation, so no AlarmKit widget is needed: the workout's Live Activity shows the countdown. Every change cancels the app's alarms that haven't gone off yet, which also clears any left over from before a relaunch; one going off (or due within two seconds) stays until `dismissFired`, which the session calls when the person acts or the app comes back. The alarm carries `TimerAlarmMetadata` (label, start, end), and the widget extension draws its Live Activity with the same countdown.
-- The `NotificationAlerting` implementation uses `UNNotificationRequest`s with a time-interval trigger. Time-sensitive delivery would need the Time Sensitive Notifications capability (not added yet).
-- `SystemAlerting` uses AlarmKit when it is allowed and notifications when alarms are declined, so exactly one holds the pending alert. Both play `rest-chime.wav`.
+- The `NotificationAlerting` implementation schedules one `UNNotificationRequest` per workout with a time-interval trigger and the app's chime (`rest-chime.wav`). `replace` removes only the pending request, so an alert that went off isn't swept away; `dismissFired`, which the session calls when the person acts or the app comes back, removes the delivered one. Its `ForegroundChime` delegate plays the chime without a banner while the app is open.
+- Time-sensitive delivery would need the Time Sensitive Notifications entitlement, which must also be in the App Store profile (not added yet).
+- No AlarmKit: every AlarmKit alarm is a system Live Activity of its own. Next to the workout's, the two competed for the Dynamic Island and ours often went missing, and AlarmKit has open bugs that leave blank activities (Apple developer forums threads 817305 and 819556). The workout's Live Activity is the app's only one.
 - Alert IDs are derived deterministically from `(workoutID, exerciseIndex, setIndex, kind)`. Rescheduling replaces rather than duplicates, and cleanup on finish or discard is exhaustive.
 
 ## 7. Live Activity (`AmmuttaLiveActivity` + `Widgets/`)
@@ -301,7 +301,7 @@ protocol TimerAlerting: Sendable {
 | --- | --- |
 | Core | Swift Testing, table-driven: engine transitions and effect diffs, validation ranges, codecs (round-trip, limits, malformed input), CSV dialects, progress math, formatting in `en`/`it` × kg/lb, heart-rate byte fixtures |
 | Persistence | In-memory `ModelContainer`: repository mapping, single-active-workout invariant, migration tests per frozen schema |
-| Services | Protocol fakes for alarms, Bluetooth and Health. Adapter-level tests where the frameworks allow; the HealthKit description mapping is tested in the core |
+| Services | Protocol fakes for timer alerts, Bluetooth and Health. Adapter-level tests where the frameworks allow; the HealthKit description mapping is tested in the core |
 | UI | XCUITest flows in both languages and at large Dynamic Type: create plan → run workout → finish → history; resume after relaunch; import a plan link |
 | Release | `scripts/verify-ios-bundle.py` on the actual Release bundle in CI and before every signed export |
 
@@ -326,7 +326,7 @@ The first prototype implements the core loop and deliberately simplifies some of
 | --- | --- | --- |
 | Modules | `AmmuttaCore` + `AmmuttaPersistence` in the package; screens, app model and formatting live in the app target | `AmmuttaFeatures` and the service packages (§3) as features arrive |
 | Persistence | `AmmuttaStore` on the main actor; plans and workouts stored as one JSON blob per row with scalar columns for queries | Background `ModelActor` (§5) |
-| Timers | Deadlines in the engine; in-app task and haptic while open; one AlarmKit alarm (or a notification when alarms are declined) per workout, derived purely from state (`Workout.pendingTimerAlert`) and replaced in order on every event, so the phone alerts on time when locked | Time-sensitive notifications for the fallback (§4.3, §6, §7) |
+| Timers | Deadlines in the engine; in-app task, haptic and chime while open; one notification per workout, derived purely from state (`Workout.pendingTimerAlert`) and replaced in order on every event, so the phone alerts on time when locked | Time-sensitive notifications (§4.3, §6, §7) |
 | Formatting | `Format` in the app target, tested on iOS | `Formatting` in the core (§4.4) |
 | Not yet built | QR/file/CSV sharing (plan links are built), export, personal bests, archiving exercises | §7–§9, product spec §11–§12 |
 

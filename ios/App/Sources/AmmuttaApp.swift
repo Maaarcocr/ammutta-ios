@@ -18,7 +18,7 @@ struct AmmuttaApp: App {
         // UI tests must not raise the notification permission prompt.
         let alerts: any TimerAlerting = uiTesting
             ? DisabledAlerting()
-            : SystemAlerting(alarms: AlarmKitAlerting(), notifications: NotificationAlerting())
+            : NotificationAlerting()
         let activityPresenter: any WorkoutActivityPresenting = uiTesting ? DisabledActivityPresenter() : LiveActivityPresenter()
         // UI tests never touch Bluetooth; -fake-heart-rate shows a connected sensor.
         let heartRate: any HeartRateSource = if uiTesting {

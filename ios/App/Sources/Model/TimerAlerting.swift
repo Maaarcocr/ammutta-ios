@@ -5,19 +5,20 @@ enum AlertAuthorization: Equatable, Sendable {
     case notDetermined, allowed, denied
 }
 
+/// The chime timer alerts play, bundled with the app (`Resources/rest-chime.wav`).
+nonisolated enum TimerSound {
+    static let fileName = "rest-chime.wav"
+}
+
 /// One scheduled alert, already localized.
 struct TimerAlertRequest: Equatable, Sendable {
     var fireDate: Date
     var title: String
     var body: String
-    /// When the countdown started and what it is ("Rest"), for the alarm's own Live Activity.
-    var countdownStart: Date? = nil
-    var countdownLabel: String? = nil
 }
 
 /// Delivers timer alerts when the app is in the background, the phone is locked, or the app
-/// isn't running. Product spec §6.4: AlarmKit alarms first (`AlarmKitAlerting`), local
-/// notifications when alarms are declined (`SystemAlerting` picks).
+/// isn't running (product spec §6.4). The workout's Live Activity shows the countdown.
 @MainActor
 protocol TimerAlerting: AnyObject, Sendable {
     func authorization() async -> AlertAuthorization
@@ -29,10 +30,17 @@ protocol TimerAlerting: AnyObject, Sendable {
     func dismissFired(id: String) async
 }
 
-/// Local notifications, the fallback when AlarmKit is declined. Only Sendable values cross
-/// into the UserNotifications calls.
+/// Timer alerts as local notifications with the app's chime. Only Sendable values cross into
+/// the UserNotifications calls.
 @MainActor
 final class NotificationAlerting: TimerAlerting {
+    private let foreground = ForegroundChime()
+
+    init() {
+        // The notification center holds its delegate weakly; this object keeps it.
+        UNUserNotificationCenter.current().delegate = foreground
+    }
+
     func authorization() async -> AlertAuthorization {
         Self.map(await Self.currentStatus())
     }
@@ -79,6 +87,17 @@ final class NotificationAlerting: TimerAlerting {
         content.interruptionLevel = .active
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: delay, repeats: false)
         try? await center.add(UNNotificationRequest(identifier: id, content: content, trigger: trigger))
+    }
+}
+
+/// With the app open, a timer alert plays its chime without a banner: the workout screen
+/// already shows that the timer ended.
+nonisolated final class ForegroundChime: NSObject, UNUserNotificationCenterDelegate {
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification
+    ) async -> UNNotificationPresentationOptions {
+        [.sound]
     }
 }
 
