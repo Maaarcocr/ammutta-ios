@@ -35,13 +35,13 @@ The owner's top rule: plain, standard, boring code. A clever construct needs a r
 - **Free to use.** Everything that runs on the phone is free, and the app is fully usable without paying. The only paid thing is an optional add-on that needs our servers (the AI agents subscription, StoreKit), priced to cover compute. Never lock on-device features behind it. Ads, if ever added, must never degrade the experience (nothing during workouts, nothing that interrupts, no tracking).
 - **Localized.** Every user-facing string goes through String Catalogs (`.xcstrings`), in **English and Italian**. This covers:
   - UI text and accessibility labels;
-  - notification, AlarmKit and Live Activity text;
+  - notification and Live Activity text;
   - App Intent phrases;
   - permission purpose strings;
   - error messages.
 
   Use `FormatStyle` for numbers, dates, durations and measurements, never manual formatting. No string concatenation for sentences; use plural variants.
-- **Optional capabilities stay optional.** The app must remain fully usable with Bluetooth, Apple Health, notifications or AlarmKit denied or unavailable.
+- **Optional capabilities stay optional.** The app must remain fully usable with Bluetooth, Apple Health or notifications denied or unavailable.
 - **Heart-rate sensors** use only the standard BLE Heart Rate Service (`0x180D` / `0x2A37`). Google Fitbit Air works through that profile. Do not add vendor-specific code paths.
 - **Privacy manifest** must declare no tracking and no collected data. `scripts/verify-ios-bundle.py` enforces this on the built bundle. Before an App Store release, declare the fitness data the AI agents connector sends (docs/agents.md).
 - No explainer, onboarding or justification copy in the UI unless the user asks for it. Confirmations only for destructive, unrecoverable actions.
@@ -49,7 +49,7 @@ The owner's top rule: plain, standard, boring code. A clever construct needs a r
 ## Architecture conventions
 
 - `AmmuttaCore` is pure Swift (Foundation only), with value types that are `Sendable`, `Codable` and `Equatable`. Business rules, validation, the workout engine, codecs and parsers live here.
-- The workout engine is a pure reducer that takes `now` explicitly. Side effects (alarms, Live Activity) are derived from state diffs and executed by a coordinator.
+- The workout engine is a pure reducer that takes `now` explicitly. Side effects (timer alerts, Live Activity) are derived from state diffs and executed by a coordinator.
 - SwiftData `@Model` types are persistence DTOs. Map to domain types at the repository boundary, and keep them out of SwiftUI views and feature models.
 - Schema changes add a new `VersionedSchema` and a migration stage, with a migration test. Never use destructive migrations.
 - Weights are integer grams; durations are integer seconds; deadlines are absolute `Date`s. Never decrement countdown state.

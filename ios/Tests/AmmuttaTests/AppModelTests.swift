@@ -23,49 +23,6 @@ final class RecordingAlerting: TimerAlerting {
     func dismissFired(id: String) async { dismissals += 1 }
 }
 
-/// AlarmKit first; notifications only when alarms are declined.
-@MainActor
-struct SystemAlertingTests {
-    private let alert = TimerAlertRequest(fireDate: .now.addingTimeInterval(90), title: "Rest over", body: "Next: Squat")
-
-    @Test func alarmsHoldTheAlertWhenAllowed() async {
-        let alarms = RecordingAlerting()
-        let notifications = RecordingAlerting()
-        let system = SystemAlerting(alarms: alarms, notifications: notifications)
-        await system.replace(id: "timer", with: alert)
-        #expect(alarms.current["timer"] == alert)
-        #expect(notifications.current["timer"] == nil)
-
-        await system.replace(id: "timer", with: nil)
-        #expect(alarms.current["timer"] == nil)
-    }
-
-    @Test func notificationsTakeOverWhenAlarmsAreDeclined() async {
-        let alarms = RecordingAlerting()
-        alarms.status = .denied
-        let notifications = RecordingAlerting()
-        notifications.status = .notDetermined
-        let system = SystemAlerting(alarms: alarms, notifications: notifications)
-        #expect(await system.authorization() == .notDetermined)
-        #expect(await system.requestAuthorization() == .allowed)
-        #expect(notifications.permissionRequests == 1)
-
-        await system.replace(id: "timer", with: alert)
-        #expect(notifications.current["timer"] == alert)
-        #expect(alarms.current["timer"] == nil)
-    }
-
-    @Test func askingForAlarmsComesFirst() async {
-        let alarms = RecordingAlerting()
-        alarms.status = .notDetermined
-        let notifications = RecordingAlerting()
-        let system = SystemAlerting(alarms: alarms, notifications: notifications)
-        #expect(await system.requestAuthorization() == .allowed)
-        #expect(alarms.permissionRequests == 1)
-        #expect(notifications.permissionRequests == 0)
-    }
-}
-
 @MainActor
 struct TimerAlertTests {
     private func plan() -> Plan {
@@ -137,9 +94,7 @@ struct TimerAlertTests {
         session.send(.logSet(try #require(session.workout.nextPendingSetID)))
         await session.alertsSettled()
         #expect(alerts.dismissals == before + 1, "logging a set puts away an old alert")
-        let alert = try #require(alerts.current.values.first)
-        #expect(alert.countdownLabel == L10n.timerRestText)
-        #expect(alert.countdownStart == session.workout.timer?.startedAt)
+        #expect(alerts.current.values.first != nil, "the rest alert is scheduled")
 
         session.send(.timerElapsed)
         await session.alertsSettled()

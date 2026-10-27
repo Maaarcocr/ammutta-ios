@@ -472,8 +472,7 @@ final class AppModel {
                 body = L10n.alertNextSet(name(of: exercise.exercise, snapshot: exercise.nameSnapshot), location.set + 1)
             }
             return TimerAlertRequest(
-                fireDate: plan.fireDate, title: L10n.alertRestTitle, body: body,
-                countdownStart: workout.timer?.startedAt, countdownLabel: L10n.timerRestText
+                fireDate: plan.fireDate, title: L10n.alertRestTitle, body: body
             )
         case .workDone(let set):
             var name = ""
@@ -482,8 +481,7 @@ final class AppModel {
                 name = self.name(of: exercise.exercise, snapshot: exercise.nameSnapshot)
             }
             return TimerAlertRequest(
-                fireDate: plan.fireDate, title: L10n.alertWorkTitle, body: L10n.alertWorkBody(name),
-                countdownStart: workout.timer?.startedAt, countdownLabel: L10n.timerWorkText
+                fireDate: plan.fireDate, title: L10n.alertWorkTitle, body: L10n.alertWorkBody(name)
             )
         }
     }
