@@ -50,7 +50,7 @@ struct TimerAlertTests {
 
         session.send(.logSet(try #require(session.workout.nextPendingSetID)))
         await session.alertsSettled()
-        #expect(alerts.current.values.first != nil, "the rest alert is scheduled")
+        let alert = try #require(alerts.current.values.first)
         #expect(alert.fireDate == session.workout.timer?.endsAt)
         #expect(alert.title == L10n.alertRestTitle)
         #expect(alert.body.contains(ExerciseText.name("barbell-back-squat")))
