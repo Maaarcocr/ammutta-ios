@@ -76,11 +76,15 @@ final class NotificationAlerting: TimerAlerting {
 
     private nonisolated static func schedule(id: String, alert: TimerAlertRequest?) async {
         let center = UNUserNotificationCenter.current()
-        // While the app is awake, its own timer ends a moment before the system delivers the
-        // alert and clears it: that alert must still go off.
-        if alert == nil, await isDue(id: id) { return }
+        guard let alert else {
+            // While the app is awake, its own timer ends a moment before the system delivers
+            // the alert and clears it: that alert must still go off.
+            if await !isDue(id: id) {
+                center.removePendingNotificationRequests(withIdentifiers: [id])
+            }
+            return
+        }
         center.removePendingNotificationRequests(withIdentifiers: [id])
-        guard let alert else { return }
         let delay = alert.fireDate.timeIntervalSinceNow
         guard delay > 0 else { return }
         let content = UNMutableNotificationContent()
