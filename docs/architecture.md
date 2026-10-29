@@ -194,7 +194,7 @@ protocol TimerAlerting: Sendable {
 }
 ```
 
-- The `NotificationAlerting` implementation schedules one `UNNotificationRequest` per workout with a time-interval trigger and the app's chime (`rest-chime.wav`). `replace` removes only the pending request, so an alert that went off isn't swept away; `dismissFired`, which the session calls when the person acts or the app comes back, removes the delivered one. Its `ForegroundChime` delegate plays the chime without a banner while the app is open.
+- The `NotificationAlerting` implementation schedules one `UNNotificationRequest` per workout with a time-interval trigger and the app's chime (`rest-chime.wav`). `replace` removes only the pending request, so an alert that went off isn't swept away, and never removes one due within two seconds (the app's own timer ends a moment before the system delivers it; the fire date is in `userInfo`); `dismissFired`, which the session calls when the person acts or the app comes back, removes the delivered one. Its `ForegroundChime` delegate plays the chime without a banner while the app is open.
 - Time-sensitive delivery would need the Time Sensitive Notifications entitlement, which must also be in the App Store profile (not added yet).
 - No AlarmKit: every AlarmKit alarm is a system Live Activity of its own. Next to the workout's, the two competed for the Dynamic Island and ours often went missing, and AlarmKit has open bugs that leave blank activities (Apple developer forums threads 817305 and 819556). The workout's Live Activity is the app's only one.
 - Alert IDs are derived deterministically from `(workoutID, exerciseIndex, setIndex, kind)`. Rescheduling replaces rather than duplicates, and cleanup on finish or discard is exhaustive.

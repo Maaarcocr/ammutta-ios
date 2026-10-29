@@ -76,8 +76,15 @@ final class NotificationAlerting: TimerAlerting {
 
     private nonisolated static func schedule(id: String, alert: TimerAlertRequest?) async {
         let center = UNUserNotificationCenter.current()
+        guard let alert else {
+            // While the app is awake, its own timer ends a moment before the system delivers
+            // the alert and clears it: that alert must still go off.
+            if await !isDue(id: id) {
+                center.removePendingNotificationRequests(withIdentifiers: [id])
+            }
+            return
+        }
         center.removePendingNotificationRequests(withIdentifiers: [id])
-        guard let alert else { return }
         let delay = alert.fireDate.timeIntervalSinceNow
         guard delay > 0 else { return }
         let content = UNMutableNotificationContent()
@@ -85,8 +92,20 @@ final class NotificationAlerting: TimerAlerting {
         content.body = alert.body
         content.sound = UNNotificationSound(named: UNNotificationSoundName(TimerSound.fileName))
         content.interruptionLevel = .active
+        content.userInfo = [fireDateKey: alert.fireDate.timeIntervalSince1970]
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: delay, repeats: false)
         try? await center.add(UNNotificationRequest(identifier: id, content: content, trigger: trigger))
+    }
+
+    private nonisolated static let fireDateKey = "fireDate"
+
+    /// The pending alert `id` goes off within two seconds.
+    private nonisolated static func isDue(id: String) async -> Bool {
+        let requests = await UNUserNotificationCenter.current().pendingNotificationRequests()
+        guard let request = requests.first(where: { $0.identifier == id }),
+              let fireDate = request.content.userInfo[fireDateKey] as? TimeInterval
+        else { return false }
+        return Date(timeIntervalSince1970: fireDate) <= .now.addingTimeInterval(2)
     }
 }
 
